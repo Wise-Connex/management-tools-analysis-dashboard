@@ -121,3 +121,14 @@ def create_schema(self):
 - Use environment variables for secrets
 - Validate user inputs in callbacks
 - Implement proper CORS headers for production deployment
+
+### Documentation Maintenance
+- **Keep README.md current** when making changes to:
+  - Installation procedures or dependencies
+  - Configuration options or environment variables
+  - API interfaces or function signatures
+  - Project structure or file organization
+  - Docker deployment or build processes
+- Update screenshots and examples when UI changes
+- Maintain version compatibility information
+- Update troubleshooting section for common issues
