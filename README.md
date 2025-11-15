@@ -297,7 +297,7 @@ sequenceDiagram
 ### Analysis Types Flowchart
 
 ```mermaid
-flowchart TD
+flowchart LR
     A[Data Selection] --> B{Analysis Type}
     
     B -->|Temporal| C[Time Series Analysis]
@@ -358,7 +358,7 @@ flowchart TD
 ### Configuration Architecture
 
 ```mermaid
-graph TB
+graph LR
     A[Environment Variables] --> D[Configuration Manager]
     B[JSON Config Files] --> D
     C[Default Values] --> D
