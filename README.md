@@ -2,6 +2,58 @@
 
 An interactive Dash application for analyzing management tools data with AI-powered insights. This dashboard provides comprehensive statistical analysis, bilingual support, and real-time data visualization for management research.
 
+## 🎯 System Overview
+
+```mermaid
+graph TB
+    A[User Interface] --> B[Dash Application]
+    B --> C[Data Sources]
+    B --> D[Analysis Engine]
+    B --> E[AI Services]
+    B --> F[Database Layer]
+    
+    C --> C1[Google Trends]
+    C --> C2[Google Books]
+    C --> C3[Bain Survey]
+    C --> C4[Crossref]
+    
+    D --> D1[Statistical Analysis]
+    D --> D2[Time Series]
+    D --> D3[PCA Analysis]
+    D --> D4[Correlation]
+    
+    E --> E1[Key Findings]
+    E --> E2[Data Insights]
+    E --> E3[Recommendations]
+    
+    F --> F1[SQLite Database]
+    F --> F2[Cache Management]
+    F --> F3[Metadata Storage]
+```
+
+## 🏗️ Architecture Flow
+
+```mermaid
+flowchart LR
+    subgraph "Data Layer"
+        A1[CSV Files] --> A2[Database Manager]
+        A2 --> A3[SQLite DB]
+    end
+    
+    subgraph "Processing Layer"
+        B1[Data Aggregator] --> B2[Statistical Engine]
+        B2 --> B3[AI Service]
+    end
+    
+    subgraph "Presentation Layer"
+        C1[Dash Components] --> C2[Interactive Charts]
+        C2 --> C3[User Interface]
+    end
+    
+    A3 --> B1
+    B3 --> C1
+```
+
 ## 🌟 Features
 
 ### Core Functionality
@@ -25,12 +77,126 @@ An interactive Dash application for analyzing management tools data with AI-powe
 - **Regression Analysis**: Linear and non-linear modeling
 - **Fourier Analysis**: Frequency domain analysis and periodograms
 
+## 🧠 Concept Map
+
+```mermaid
+mindmap
+  root((Management Tools Analysis))
+    Data Sources
+      Google Trends
+        Search Interest
+        Regional Data
+        Time Series
+      Google Books
+        Ngrams Analysis
+        Historical Trends
+        Publication Frequency
+      Bain Survey
+        Usage Metrics
+        Satisfaction Scores
+        Industry Benchmarks
+      Crossref
+        Academic Citations
+        Publication Impact
+        Research Trends
+    
+    Analysis Methods
+      Statistical Analysis
+        Descriptive Stats
+        Hypothesis Testing
+        Confidence Intervals
+      Time Series
+        Trend Analysis
+        Seasonal Decomposition
+        Forecasting
+      Multivariate
+        PCA
+        Factor Analysis
+        Cluster Analysis
+      Frequency Domain
+        Fourier Transform
+        Periodograms
+        Spectral Analysis
+    
+    AI Integration
+      Key Findings
+        Pattern Recognition
+        Anomaly Detection
+        Insight Generation
+      Natural Language
+        Report Generation
+        Summary Creation
+        Recommendation Engine
+    
+    User Interface
+      Interactive Charts
+        2D Visualizations
+        3D Plots
+        Heatmaps
+      Controls
+        Tool Selection
+        Source Filtering
+        Time Range
+        Language Switch
+      Export Options
+        Data Downloads
+        Chart Images
+        Report Generation
+```
+
+## 🔄 Data Processing Pipeline
+
+```mermaid
+flowchart TD
+    A[Raw Data Sources] --> B[Data Validation]
+    B --> C[Data Cleaning]
+    C --> D[Normalization]
+    D --> E[Interpolation]
+    E --> F[Database Storage]
+    
+    F --> G[User Request]
+    G --> H[Data Retrieval]
+    H --> I[Statistical Analysis]
+    I --> J[Visualization]
+    J --> K[User Display]
+    
+    subgraph "AI Processing"
+        L[Data Aggregation] --> M[Pattern Analysis]
+        M --> N[Insight Generation]
+        N --> O[Report Creation]
+    end
+    
+    I --> L
+    O --> K
+```
+
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Python 3.8 or higher
 - `uv` package manager (recommended) or `pip`
 - Git
+
+### Installation Process Flow
+
+```mermaid
+flowchart TD
+    A[Clone Repository] --> B[Choose Installation Method]
+    B --> C[UV Method]
+    B --> D[Pip Method]
+    B --> E[Script Method]
+    
+    C --> F[uv sync]
+    D --> G[pip install -r requirements.txt]
+    E --> H[./run_dashboard.sh]
+    
+    F --> I[Run Application]
+    G --> I
+    H --> I
+    
+    I --> J[Access Dashboard]
+    J --> K[http://127.0.0.1:8050]
+```
 
 ### Installation
 
@@ -86,9 +252,39 @@ Open your web browser and navigate to:
 
 ## 📊 Usage Guide
 
+### User Workflow Diagram
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant UI as Dashboard UI
+    participant DB as Database
+    participant AI as AI Service
+    participant Viz as Visualization Engine
+    
+    U->>UI: Select Management Tool
+    UI->>DB: Query Available Data
+    DB-->>UI: Return Data Sources
+    UI->>U: Display Source Options
+    
+    U->>UI: Choose Data Sources
+    U->>UI: Configure Analysis Parameters
+    UI->>DB: Retrieve Filtered Data
+    DB-->>UI: Return Dataset
+    
+    U->>UI: Request Analysis Type
+    UI->>Viz: Generate Visualizations
+    Viz-->>UI: Return Charts
+    
+    U->>UI: Request AI Insights
+    UI->>AI: Send Data for Analysis
+    AI-->>UI: Return Key Findings
+    UI->>U: Display Results
+```
+
 ### Basic Workflow
 
-1. **Select a Management Tool**: Choose from the dropdown menu (e.g., "Benchmarking", "Calidad Total", "Cuadro de Mando Integral")
+1. **Select a Management Tool**: Choose from dropdown menu (e.g., "Benchmarking", "Calidad Total", "Cuadro de Mando Integral")
 2. **Choose Data Sources**: Select which data sources to include in analysis
 3. **Configure Analysis**: 
    - Select time range (5, 10, 15, 20 years or custom)
@@ -99,6 +295,46 @@ Open your web browser and navigate to:
    - **Statistical Analysis**: Correlations, PCA, regression
    - **AI Insights**: Automated key findings and recommendations
    - **Data Table**: Raw data export and filtering
+
+### Analysis Types Flowchart
+
+```mermaid
+flowchart TD
+    A[Data Selection] --> B{Analysis Type}
+    
+    B -->|Temporal| C[Time Series Analysis]
+    C --> C1[2D Line Charts]
+    C --> C2[3D Surface Plots]
+    C --> C3[Trend Analysis]
+    
+    B -->|Statistical| D[Statistical Methods]
+    D --> D1[Correlation Matrix]
+    D --> D2[PCA Analysis]
+    D --> D3[Regression Models]
+    
+    B -->|Frequency| E[Fourier Analysis]
+    E --> E1[Periodograms]
+    E --> E2[Spectral Density]
+    E --> E3[Frequency Components]
+    
+    B -->|AI Insights| F[AI Processing]
+    F --> F1[Pattern Recognition]
+    F --> F2[Anomaly Detection]
+    F --> F3[Recommendation Engine]
+    
+    C1 --> G[Visualization Dashboard]
+    C2 --> G
+    C3 --> G
+    D1 --> G
+    D2 --> G
+    D3 --> G
+    E1 --> G
+    E2 --> G
+    E3 --> G
+    F1 --> G
+    F2 --> G
+    F3 --> G
+```
 
 ### Advanced Features
 
@@ -121,8 +357,34 @@ Open your web browser and navigate to:
 
 ## 🛠️ Configuration
 
+### Configuration Architecture
+
+```mermaid
+graph TB
+    A[Environment Variables] --> D[Configuration Manager]
+    B[JSON Config Files] --> D
+    C[Default Values] --> D
+    
+    D --> E[Database Config]
+    D --> F[Server Config]
+    D --> G[Path Config]
+    D --> H[AI Service Config]
+    
+    E --> I[SQLite Settings]
+    E --> J[Connection Pool]
+    
+    F --> K[Host/Port]
+    F --> L[Debug Mode]
+    
+    G --> M[Data Sources]
+    G --> N[Asset Paths]
+    
+    H --> O[API Keys]
+    H --> P[Service URLs]
+```
+
 ### Environment Variables
-Create a `.env` file in the project root:
+Create a `.env` file in project root:
 
 ```bash
 # Database Configuration
@@ -143,11 +405,25 @@ DASHBOARD_CONFIG_DIR=config
 ```
 
 ### Configuration Files
-The application uses JSON configuration files in the `config/` directory:
+The application uses JSON configuration files in `config/` directory:
 
 - `database.json`: Database schema and connection settings
 - `server.json`: Server and deployment configuration  
 - `paths.json`: File paths and directory structure
+
+### Configuration Priority
+
+```mermaid
+flowchart LR
+    A[Default Values] --> B[JSON Config Files]
+    B --> C[Environment Variables]
+    C --> D[Runtime Configuration]
+    
+    style A fill:#f9f9f9
+    style B fill:#e3f2fd
+    style C fill:#fff3e0
+    style D fill:#e8f5e8
+```
 
 ## 🐳 Docker Deployment
 
