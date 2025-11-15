@@ -1,0 +1,1103 @@
+"""
+Key Findings Service
+
+Main service that integrates all components for AI-powered
+doctoral-level analysis with intelligent caching and performance monitoring.
+"""
+
+import asyncio
+import json
+import time
+import logging
+from typing import Dict, List, Any, Optional, Tuple
+from datetime import datetime, date
+from pathlib import Path
+
+# Import Key Findings components
+from .database_manager import KeyFindingsDBManager
+from .unified_ai_service import UnifiedAIService, get_unified_ai_service
+from .data_aggregator import DataAggregator
+from .prompt_engineer import PromptEngineer
+from .modal_component import KeyFindingsModal
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+class KeyFindingsService:
+    """
+    Main service for Key Findings functionality.
+    
+    Integrates data aggregation, AI analysis, caching, and performance monitoring
+    to provide doctoral-level insights with optimal performance.
+    """
+
+    def __init__(self, db_manager, groq_api_key: str = None, openrouter_api_key: str = None, config: Dict[str, Any] = None):
+        """
+        Initialize Key Findings service.
+        
+        Args:
+            db_manager: Main database manager instance
+            groq_api_key: Groq API key (optional)
+            openrouter_api_key: OpenRouter API key (optional)
+            config: Configuration dictionary
+        """
+        self.db_manager = db_manager
+        
+        # Initialize Key Findings database
+        db_path = config.get('key_findings_db_path', '/app/data/key_findings.db') if config else '/app/data/key_findings.db'
+        self.kf_db_manager = KeyFindingsDBManager(db_path)
+        
+        # Initialize Unified AI service (Groq primary, OpenRouter fallback)
+        self.ai_service = get_unified_ai_service(groq_api_key, openrouter_api_key, config)
+        
+        # Initialize data aggregator
+        self.data_aggregator = DataAggregator(db_manager, self.kf_db_manager)
+        
+        # Initialize prompt engineer
+        self.prompt_engineer = PromptEngineer()
+        
+        # Initialize modal component (will be set later with app instance)
+        self.modal_component = None
+        
+        # Configuration
+        self.config = {
+            'cache_ttl': config.get('cache_ttl', 86400) if config else 86400,  # 24 hours
+            'max_retries': config.get('max_retries', 3) if config else 3,
+            'enable_pca_emphasis': config.get('enable_pca_emphasis', True) if config else True,
+            'confidence_threshold': config.get('confidence_threshold', 0.7) if config else 0.7
+        }
+        
+        # Performance tracking
+        self.performance_metrics = {
+            'total_requests': 0,
+            'cache_hits': 0,
+            'cache_misses': 0,
+            'avg_response_time_ms': 0,
+            'error_count': 0
+        }
+    
+    def set_modal_component(self, app, language_store):
+        """
+        Set the modal component for this service.
+        
+        Args:
+            app: Dash application instance
+            language_store: Language state store
+        """
+        self.modal_component = KeyFindingsModal(app, language_store)
+    
+    def get_modal_component(self):
+        """
+        Get the modal component instance.
+        
+        Returns:
+            KeyFindingsModal instance or None
+        """
+        return self.modal_component
+
+    async def generate_key_findings(self, tool_name: str, selected_sources: List[str],
+                                  language: str = 'es', force_refresh: bool = False) -> Dict[str, Any]:
+        """
+        Generate Key Findings analysis with intelligent caching.
+        
+        Args:
+            tool_name: Selected management tool
+            selected_sources: List of selected data sources
+            language: Analysis language ('es' or 'en')
+            force_refresh: Force regeneration even if cached
+            
+        Returns:
+            Dictionary containing analysis results and metadata
+        """
+        start_time = time.time()
+        self.performance_metrics['total_requests'] += 1
+        
+        try:
+            # Generate scenario hash for caching - use display names for consistency
+            scenario_hash = self.kf_db_manager.generate_scenario_hash(
+                tool_name, selected_sources, language=language
+            )
+            
+            # Check cache first (unless force refresh)
+            if not force_refresh:
+                cached_report = self.kf_db_manager.get_cached_report(scenario_hash)
+                if cached_report:
+                    self.performance_metrics['cache_hits'] += 1
+                    response_time_ms = int((time.time() - start_time) * 1000)
+                    
+                    # Update cache statistics
+                    today = date.today().strftime('%Y-%m-%d')
+                    self.kf_db_manager.update_cache_statistics(today, True, response_time_ms)
+                    
+                    logging.info(f"Cache hit for scenario {scenario_hash[:8]}...")
+                    
+                    return {
+                        'success': True,
+                        'data': cached_report,
+                        'cache_hit': True,
+                        'response_time_ms': response_time_ms,
+                        'scenario_hash': scenario_hash
+                    }
+            
+            # Cache miss - generate new analysis
+            self.performance_metrics['cache_misses'] += 1
+            logging.info(f"Cache miss for scenario {scenario_hash[:8]}... Generating new analysis")
+            
+            # Check if this is a single source analysis
+            is_single_source = len(selected_sources) == 1
+            if is_single_source:
+                logging.info(f"🔍 Single source detected: {selected_sources[0]}. Using single source workflow.")
+                return await self._generate_single_source_analysis(
+                    tool_name, selected_sources, language, scenario_hash, start_time
+                )
+            
+            # Multi-source analysis path (original implementation)
+            # Collect analysis data - convert display names to source IDs
+            from fix_source_mapping import map_display_names_to_source_ids
+            selected_source_ids = map_display_names_to_source_ids(selected_sources)
+            
+            analysis_data = self.data_aggregator.collect_analysis_data(
+                tool_name, selected_source_ids, language, selected_sources
+            )
+            
+            # Update analysis data with original display names for consistency
+            if 'error' not in analysis_data:
+                analysis_data['selected_sources'] = selected_sources
+            
+            if 'error' in analysis_data:
+                raise Exception(f"Data collection failed: {analysis_data['error']}")
+            
+            # Generate AI analysis
+            ai_result = await self._generate_ai_analysis(analysis_data, language)
+            
+            if not ai_result['success']:
+                raise Exception(f"AI analysis failed: {ai_result.get('error', 'Unknown error')}")
+            
+            # Prepare report data for caching with new structure
+            # Handle both old and new JSON structures
+            content = ai_result['content']
+            
+            # Extract PCA Analysis from appropriate field
+            pca_analysis = ''
+            if 'pca_analysis' in content:
+                pca_analysis = content['pca_analysis']
+            elif 'pca_insights' in content and isinstance(content['pca_insights'], dict):
+                if 'analysis' in content['pca_insights']:
+                    pca_analysis = content['pca_insights']['analysis']
+            
+            report_data = {
+                'tool_name': tool_name,
+                'selected_sources': selected_sources,
+                'language': language,
+                'executive_summary': content.get('executive_summary', ''),
+                'principal_findings': content.get('principal_findings', ''),
+                'heatmap_analysis': content.get('heatmap_analysis', ''),
+                'pca_analysis': pca_analysis,
+                'model_used': ai_result['model_used'],
+                'api_latency_ms': ai_result['response_time_ms'],
+                'confidence_score': self._calculate_confidence_score(content),
+                'data_points_analyzed': analysis_data.get('data_points_analyzed', 0),
+                'sources_count': len(selected_sources),
+                'analysis_depth': 'comprehensive',
+                'json_structure': content.get('original_structure', 'unknown')
+            }
+            
+            # Cache the report
+            report_id = self.kf_db_manager.cache_report(scenario_hash, report_data)
+            
+            # Get cached report with all metadata
+            cached_report = self.kf_db_manager.get_cached_report(scenario_hash)
+            
+            response_time_ms = int((time.time() - start_time) * 1000)
+            
+            # Update cache statistics
+            today = date.today().strftime('%Y-%m-%d')
+            self.kf_db_manager.update_cache_statistics(today, False, response_time_ms)
+            
+            # Log model performance
+            self.kf_db_manager.log_model_performance(
+                ai_result['model_used'],
+                ai_result['response_time_ms'],
+                ai_result['token_count'],
+                True,
+                None,
+                None  # User satisfaction to be provided later
+            )
+            
+            logging.info(f"Generated new analysis for scenario {scenario_hash[:8]}... in {response_time_ms}ms")
+            
+            return {
+                'success': True,
+                'data': cached_report,
+                'cache_hit': False,
+                'response_time_ms': response_time_ms,
+                'scenario_hash': scenario_hash,
+                'report_id': report_id
+            }
+            
+        except Exception as e:
+            self.performance_metrics['error_count'] += 1
+            response_time_ms = int((time.time() - start_time) * 1000)
+            
+            logging.error(f"Key Findings generation failed: {e}")
+            
+            return {
+                'success': False,
+                'error': str(e),
+                'response_time_ms': response_time_ms,
+                'cache_hit': False
+            }
+
+    async def _generate_single_source_analysis(self, tool_name: str, selected_sources: List[str],
+                                             language: str, scenario_hash: str, start_time: float) -> Dict[str, Any]:
+        """
+        Generate single source analysis with temporal, seasonal, and Fourier analysis.
+        
+        Args:
+            tool_name: Selected management tool
+            selected_sources: List containing a single data source
+            language: Analysis language ('es' or 'en')
+            scenario_hash: Hash for caching
+            start_time: Analysis start time
+            
+        Returns:
+            Dictionary containing analysis results and metadata
+        """
+        try:
+            # Collect analysis data for single source
+            from fix_source_mapping import map_display_names_to_source_ids
+            selected_source_ids = map_display_names_to_source_ids(selected_sources)
+            
+            analysis_data = self.data_aggregator.collect_analysis_data(
+                tool_name, selected_source_ids, language, selected_sources
+            )
+            
+            # Update analysis data with original display names for consistency
+            if 'error' not in analysis_data:
+                analysis_data['selected_sources'] = selected_sources
+            
+            if 'error' in analysis_data:
+                raise Exception(f"Data collection failed: {analysis_data['error']}")
+            
+            # Extract single source insights from the analysis data
+            single_source_insights = analysis_data.get('single_source_insights', {})
+            logging.info(f"🔍 Single source insights: {single_source_insights}")
+            if not single_source_insights:
+                logging.warning("⚠️ No single_source_insights found in analysis_data")
+                raise Exception("Single source analysis failed: No insights data available")
+            if 'error' in single_source_insights:
+                logging.error(f"❌ Error in single_source_insights: {single_source_insights['error']}")
+                raise Exception(f"Single source analysis failed: {single_source_insights['error']}")
+            
+            # Prepare data for single source report generation
+            logging.info(f"📊 Preparing single source data for {tool_name} with source {selected_sources[0]}")
+
+            # Extract temporal metrics
+            temporal_metrics = self._extract_temporal_metrics(single_source_insights)
+            logging.info(f"📈 Temporal metrics: {temporal_metrics}")
+
+            # Extract seasonal patterns
+            seasonal_patterns = self._extract_seasonal_patterns(single_source_insights)
+            logging.info(f"📅 Seasonal patterns: {seasonal_patterns}")
+
+            # Extract Fourier analysis
+            fourier_analysis = self._extract_fourier_analysis(single_source_insights)
+            logging.info(f"🌊 Fourier analysis: {fourier_analysis}")
+
+            # Extract summary statistics
+            summary_statistics = self._extract_summary_statistics(analysis_data)
+            logging.info(f"📊 Summary statistics: {summary_statistics}")
+
+            # Extract visualization attributes
+            visualization_attributes = self._extract_visualization_attributes(single_source_insights)
+            logging.info(f"📊 Visualization attributes: {visualization_attributes}")
+
+            single_source_data = {
+                'tool_name': tool_name,
+                'source_name': selected_sources[0],
+                'date_range_start': analysis_data.get('date_range_start', 'N/A'),
+                'date_range_end': analysis_data.get('date_range_end', 'N/A'),
+                'data_points_analyzed': analysis_data.get('data_points_analyzed', 0),
+
+                # Extract temporal metrics
+                'temporal_metrics': temporal_metrics,
+
+                # Extract seasonal patterns
+                'seasonal_patterns': seasonal_patterns,
+
+                # Extract Fourier analysis
+                'fourier_analysis': fourier_analysis,
+
+                # Extract summary statistics
+                'summary_statistics': summary_statistics,
+
+                # Extract visualization attributes
+                'visualization_attributes': visualization_attributes
+            }
+
+            logging.info(f"✅ Single source data prepared: {len(single_source_data)} fields")
+            
+            # Generate single source report using AI service
+            logging.info(f"🤖 Calling AI service for single source report generation")
+            ai_result = await self.ai_service.generate_single_source_report(single_source_data, language)
+            logging.info(f"🤖 AI service result: success={ai_result.get('success', False)}")
+
+            if not ai_result['success']:
+                error_msg = ai_result.get('error', 'Unknown error')
+                logging.error(f"❌ AI service failed: {error_msg}")
+                raise Exception(f"Single source AI analysis failed: {error_msg}")
+            
+            # Prepare report data for caching with single source structure
+            content = ai_result['content']
+            logging.info(f"📝 AI content received: {list(content.keys()) if content else 'None'}")
+
+            # Calculate confidence score
+            confidence_score = self._calculate_confidence_score_single_source(content)
+            logging.info(f"📊 Confidence score: {confidence_score}")
+
+            report_data = {
+                'tool_name': tool_name,
+                'selected_sources': selected_sources,
+                'language': language,
+                'executive_summary': content.get('executive_summary', ''),
+                'temporal_analysis': content.get('temporal_analysis', ''),
+                'seasonal_analysis': content.get('seasonal_analysis', ''),
+                'fourier_analysis': content.get('fourier_analysis', ''),
+                'model_used': ai_result['model_used'],
+                'api_latency_ms': ai_result['response_time_ms'],
+                'confidence_score': confidence_score,
+                'data_points_analyzed': analysis_data.get('data_points_analyzed', 0),
+                'sources_count': len(selected_sources),
+                'analysis_depth': 'single_source',
+                'report_type': 'single_source'
+            }
+
+            logging.info(f"📋 Report data prepared: {len(report_data)} fields")
+            
+            # Cache the report
+            report_id = self.kf_db_manager.cache_report(scenario_hash, report_data)
+            logging.info(f"📦 Report cached with ID: {report_id}")
+
+            # Get cached report with all metadata
+            cached_report = self.kf_db_manager.get_cached_report(scenario_hash)
+            logging.info(f"📦 Retrieved cached report: {cached_report is not None}")
+
+            response_time_ms = int((time.time() - start_time) * 1000)
+
+            # Update cache statistics
+            today = date.today().strftime('%Y-%m-%d')
+            self.kf_db_manager.update_cache_statistics(today, False, response_time_ms)
+
+            # Log model performance
+            self.kf_db_manager.log_model_performance(
+                ai_result['model_used'],
+                ai_result['response_time_ms'],
+                ai_result['token_count'],
+                True,
+                None,
+                None  # User satisfaction to be provided later
+            )
+
+            logging.info(f"Generated single source analysis for scenario {scenario_hash[:8]}... in {response_time_ms}ms")
+
+            # Ensure cached_report is not None before accessing its methods
+            if cached_report is None:
+                logging.error("❌ Cached report is None after caching - returning report_data directly")
+                # Return the report_data directly as fallback
+                cached_report = report_data
+            else:
+                # Add single source specific fields to cached report if missing
+                if 'report_type' not in cached_report:
+                    cached_report['report_type'] = 'single_source'
+                if 'temporal_analysis' not in cached_report:
+                    cached_report['temporal_analysis'] = report_data.get('temporal_analysis', '')
+                if 'seasonal_analysis' not in cached_report:
+                    cached_report['seasonal_analysis'] = report_data.get('seasonal_analysis', '')
+                if 'fourier_analysis' not in cached_report:
+                    cached_report['fourier_analysis'] = report_data.get('fourier_analysis', '')
+
+            return {
+                'success': True,
+                'data': cached_report,
+                'cache_hit': False,
+                'response_time_ms': response_time_ms,
+                'scenario_hash': scenario_hash,
+                'report_id': report_id,
+                'report_type': 'single_source'
+            }
+            
+        except Exception as e:
+            response_time_ms = int((time.time() - start_time) * 1000)
+            logging.error(f"Single source analysis failed: {e}")
+            
+            return {
+                'success': False,
+                'error': str(e),
+                'response_time_ms': response_time_ms,
+                'cache_hit': False,
+                'report_type': 'single_source'
+            }
+
+    async def _generate_ai_analysis(self, analysis_data: Dict[str, Any], language: str) -> Dict[str, Any]:
+        """
+        Generate AI analysis using prompt engineering.
+        
+        Args:
+            analysis_data: Collected analysis data
+            language: Analysis language
+            
+        Returns:
+            AI analysis result
+        """
+        try:
+            # Update prompt engineer language
+            self.prompt_engineer.language = language
+            
+            # Create comprehensive analysis prompt
+            prompt = self.prompt_engineer.create_analysis_prompt(analysis_data, {
+                'analysis_type': 'comprehensive',
+                'emphasis': 'pca' if self.config['enable_pca_emphasis'] else 'balanced'
+            })
+            
+            # Generate AI analysis
+            ai_result = await self.ai_service.generate_analysis(prompt, language=language)
+            
+            return ai_result
+            
+        except Exception as e:
+            logging.error(f"AI analysis generation failed: {e}")
+            raise
+
+    def _extract_temporal_metrics(self, single_source_insights: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Extract temporal metrics from single source insights.
+        
+        Args:
+            single_source_insights: Single source analysis insights
+            
+        Returns:
+            Dictionary with temporal metrics
+        """
+        temporal_trends = single_source_insights.get('temporal_trends', {})
+        
+        if not temporal_trends or 'error' in temporal_trends:
+            return {
+                'trend_direction': 'stable',
+                'trend_strength': 0.0,
+                'volatility': 0.0,
+                'momentum': 0.0,
+                'acceleration': 0.0
+            }
+        
+        # Extract trend information
+        linear_trend = temporal_trends.get('linear_trend', {})
+        trend_direction = linear_trend.get('trend_direction', 'stable')
+        trend_strength = abs(linear_trend.get('slope', 0.0))
+        
+        # Extract volatility
+        volatility = temporal_trends.get('volatility', {}).get('overall', 0.0)
+        
+        # Extract momentum (from recent vs historical comparison)
+        recent_vs_historical = temporal_trends.get('recent_vs_historical', {})
+        momentum = recent_vs_historical.get('change_percentage', 0.0) / 100.0  # Convert to decimal
+        
+        # For acceleration, we'll use the difference between recent and historical volatility
+        recent_volatility = temporal_trends.get('volatility', {}).get('recent', 0.0)
+        overall_volatility = temporal_trends.get('volatility', {}).get('overall', 0.0)
+        acceleration = (recent_volatility - overall_volatility) / max(overall_volatility, 0.1)
+        
+        return {
+            'trend_direction': trend_direction,
+            'trend_strength': min(abs(trend_strength), 1.0),  # Normalize to 0-1
+            'volatility': min(volatility, 1.0),  # Normalize to 0-1
+            'momentum': min(abs(momentum), 1.0),  # Normalize to 0-1
+            'acceleration': max(-1.0, min(acceleration, 1.0))  # Clamp to -1 to 1
+        }
+
+    def _extract_seasonal_patterns(self, single_source_insights: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Extract seasonal patterns from single source insights.
+        
+        Args:
+            single_source_insights: Single source analysis insights
+            
+        Returns:
+            Dictionary with seasonal patterns
+        """
+        seasonal_patterns = single_source_insights.get('seasonal_patterns', {})
+        
+        if not seasonal_patterns or 'error' in seasonal_patterns:
+            return {
+                'seasonal_strength': 0.0,
+                'peak_season': 'N/A',
+                'low_season': 'N/A',
+                'seasonal_periodicity': 12.0
+            }
+        
+        # Extract seasonal strength
+        seasonality_strength = seasonal_patterns.get('seasonality_strength', {})
+        seasonal_strength = seasonality_strength.get('strength_value', 0.0)
+        
+        # Extract peak and low seasons
+        monthly_patterns = seasonal_patterns.get('monthly_patterns', {})
+        peak_month = monthly_patterns.get('peak_month', 0)
+        low_month = monthly_patterns.get('low_month', 0)
+        
+        # Convert month numbers to season names
+        month_to_season = {
+            12: 'Q4', 1: 'Q1', 2: 'Q1',  # Winter
+            3: 'Q2', 4: 'Q2', 5: 'Q2',     # Spring
+            6: 'Q3', 7: 'Q3', 8: 'Q3',     # Summer
+            9: 'Q4', 10: 'Q4', 11: 'Q4'    # Fall
+        }
+        
+        peak_season = month_to_season.get(peak_month, 'Q1')
+        low_season = month_to_season.get(low_month, 'Q3')
+        
+        # Extract periodicity (default to 12 months for annual patterns)
+        seasonal_periodicity = 12.0
+        
+        return {
+            'seasonal_strength': min(seasonal_strength, 1.0),  # Normalize to 0-1
+            'peak_season': peak_season,
+            'low_season': low_season,
+            'seasonal_periodicity': seasonal_periodicity
+        }
+
+    def _extract_fourier_analysis(self, single_source_insights: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Extract Fourier analysis from single source insights.
+        
+        Args:
+            single_source_insights: Single source analysis insights
+            
+        Returns:
+            Dictionary with Fourier analysis
+        """
+        fourier_analysis = single_source_insights.get('fourier_analysis', {})
+        
+        if not fourier_analysis or 'error' in fourier_analysis:
+            return {
+                'dominant_frequency': 0.0,
+                'dominant_period': 12.0,
+                'spectral_power': {},
+                'frequency_peaks': []
+            }
+        
+        # Extract dominant frequency and period
+        dominant_frequencies = fourier_analysis.get('dominant_frequencies', [])
+        if dominant_frequencies:
+            dominant_freq = dominant_frequencies[0]
+            dominant_frequency = dominant_freq.get('frequency', 0.0)
+            dominant_period = dominant_freq.get('period', 12.0)
+        else:
+            dominant_frequency = 0.0
+            dominant_period = 12.0
+        
+        # Extract spectral power
+        signal_quality = fourier_analysis.get('signal_quality', {})
+        spectral_power = {
+            'total_power': signal_quality.get('total_power', 0.0),
+            'signal_power': signal_quality.get('signal_power', 0.0),
+            'noise_power': signal_quality.get('noise_power', 0.0)
+        }
+        
+        # Extract frequency peaks
+        frequency_peaks = []
+        for freq_data in dominant_frequencies[:5]:  # Top 5 frequencies
+            frequency_peaks.append({
+                'frequency': freq_data.get('frequency', 0.0),
+                'period': freq_data.get('period', 0.0),
+                'power': freq_data.get('power', 0.0)
+            })
+        
+        return {
+            'dominant_frequency': dominant_frequency,
+            'dominant_period': dominant_period,
+            'spectral_power': spectral_power,
+            'frequency_peaks': frequency_peaks
+        }
+
+    def _extract_summary_statistics(self, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Extract summary statistics from analysis data.
+        
+        Args:
+            analysis_data: Complete analysis data
+            
+        Returns:
+            Dictionary with summary statistics
+        """
+        statistical_summary = analysis_data.get('statistical_summary', {})
+        source_statistics = statistical_summary.get('source_statistics', {})
+        
+        # Get the first (and only) source's statistics
+        if source_statistics:
+            first_source_key = next(iter(source_statistics))
+            stats = source_statistics[first_source_key]
+            
+            return {
+                'mean': stats.get('mean', 0.0),
+                'std': stats.get('std', 0.0),
+                'min': stats.get('min', 0.0),
+                'max': stats.get('max', 0.0)
+            }
+        
+        return {
+            'mean': 0.0,
+            'std': 0.0,
+            'min': 0.0,
+            'max': 0.0
+        }
+
+    def _extract_visualization_attributes(self, single_source_insights: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Extract visualization attributes from single source insights.
+        
+        Args:
+            single_source_insights: Single source analysis insights
+            
+        Returns:
+            Dictionary with visualization attributes
+        """
+        seasonal_patterns = single_source_insights.get('seasonal_patterns', {})
+        fourier_analysis = single_source_insights.get('fourier_analysis', {})
+        
+        # Extract peak and low months
+        monthly_patterns = seasonal_patterns.get('monthly_patterns', {})
+        peak_month = monthly_patterns.get('peak_month', 0)
+        low_month = monthly_patterns.get('low_month', 0)
+        
+        # Convert month numbers to month names
+        month_names = {
+            1: 'January', 2: 'February', 3: 'March', 4: 'April',
+            5: 'May', 6: 'June', 7: 'July', 8: 'August',
+            9: 'September', 10: 'October', 11: 'November', 12: 'December'
+        }
+        
+        peak_months = [month_names.get(peak_month, 'January')]
+        low_months = [month_names.get(low_month, 'July')]
+        
+        # Extract seasonal amplitude
+        monthly_means = monthly_patterns.get('monthly_means', {})
+        if monthly_means:
+            max_value = max(monthly_means.values()) if monthly_means else 0
+            min_value = min(monthly_means.values()) if monthly_means else 0
+            seasonal_amplitude = (max_value - min_value) / max(1.0, max_value)
+        else:
+            seasonal_amplitude = 0.0
+        
+        # Extract periodogram peaks
+        dominant_frequencies = fourier_analysis.get('dominant_frequencies', [])
+        periodogram_peaks = [freq.get('frequency', 0.0) for freq in dominant_frequencies[:5]]
+        
+        # Extract significant frequencies
+        significant_frequencies = [freq.get('frequency', 0.0) for freq in dominant_frequencies if freq.get('relative_strength', 0) > 0.1]
+        
+        # Determine power spectrum shape
+        signal_quality = fourier_analysis.get('signal_quality', {})
+        signal_to_noise_ratio = signal_quality.get('signal_to_noise_ratio', 0.0)
+        
+        if signal_to_noise_ratio > 10:
+            power_spectrum_shape = 'sharp_peaks'
+        elif signal_to_noise_ratio > 5:
+            power_spectrum_shape = 'moderate_peaks'
+        elif signal_to_noise_ratio > 2:
+            power_spectrum_shape = 'broad_peaks'
+        else:
+            power_spectrum_shape = 'noisy'
+        
+        return {
+            'peak_months': peak_months,
+            'low_months': low_months,
+            'seasonal_amplitude': seasonal_amplitude,
+            'periodogram_peaks': periodogram_peaks,
+            'significant_frequencies': significant_frequencies,
+            'power_spectrum_shape': power_spectrum_shape
+        }
+
+    def _calculate_confidence_score_single_source(self, ai_content: Dict[str, Any]) -> float:
+        """
+        Calculate confidence score for single source AI-generated content.
+        
+        Args:
+            ai_content: AI-generated content for single source analysis
+            
+        Returns:
+            Confidence score between 0 and 1
+        """
+        try:
+            # Base confidence on content quality indicators
+            confidence_factors = []
+            
+            # Executive summary quality
+            executive_summary = ai_content.get('executive_summary', '')
+            if executive_summary:
+                summary_quality = min(len(executive_summary) / 150, 1.0)  # Target 150+ chars
+                confidence_factors.append(summary_quality)
+            
+            # Temporal analysis quality
+            temporal_analysis = ai_content.get('temporal_analysis', '')
+            if temporal_analysis:
+                temporal_quality = min(len(temporal_analysis) / 300, 1.0)  # Target 300+ chars
+                confidence_factors.append(temporal_quality)
+                
+                # Check for specific temporal terms
+                temporal_terms = ['tendencia', 'volatilidad', 'momento', 'aceleración', 'temporal']
+                temporal_count = sum(1 for term in temporal_terms if term.lower() in temporal_analysis.lower())
+                if temporal_count >= 2:
+                    confidence_factors.append(0.8)  # Bonus for temporal language
+            
+            # Seasonal analysis quality
+            seasonal_analysis = ai_content.get('seasonal_analysis', '')
+            if seasonal_analysis:
+                seasonal_quality = min(len(seasonal_analysis) / 250, 1.0)  # Target 250+ chars
+                confidence_factors.append(seasonal_quality)
+                
+                # Check for seasonal terms
+                seasonal_terms = ['estacional', 'temporada', 'pico', 'baja', 'ciclo']
+                seasonal_count = sum(1 for term in seasonal_terms if term.lower() in seasonal_analysis.lower())
+                if seasonal_count >= 2:
+                    confidence_factors.append(0.8)  # Bonus for seasonal language
+            
+            # Fourier analysis quality
+            fourier_analysis = ai_content.get('fourier_analysis', '')
+            if fourier_analysis:
+                fourier_quality = min(len(fourier_analysis) / 250, 1.0)  # Target 250+ chars
+                confidence_factors.append(fourier_quality)
+                
+                # Check for Fourier terms
+                fourier_terms = ['frecuencia', 'período', 'espectro', 'fourier', 'armónico']
+                fourier_count = sum(1 for term in fourier_terms if term.lower() in fourier_analysis.lower())
+                if fourier_count >= 2:
+                    confidence_factors.append(0.8)  # Bonus for Fourier language
+            
+            # Calculate overall confidence
+            if confidence_factors:
+                return sum(confidence_factors) / len(confidence_factors)
+            else:
+                return 0.5  # Default confidence
+                
+        except Exception as e:
+            logging.error(f"Single source confidence score calculation failed: {e}")
+            return 0.5
+
+    def _calculate_confidence_score(self, ai_content: Dict[str, Any]) -> float:
+        """
+        Calculate confidence score for AI-generated content.
+        
+        Args:
+            ai_content: AI-generated content
+            
+        Returns:
+            Confidence score between 0 and 1
+        """
+        try:
+            # Base confidence on content quality indicators
+            confidence_factors = []
+            
+            # Principal findings quality (now narrative text)
+            principal_findings = ai_content.get('principal_findings', '')
+            if principal_findings:
+                # Check for detailed narrative content
+                findings_quality = min(len(principal_findings) / 500, 1.0)  # Target 500+ chars for narrative
+                confidence_factors.append(findings_quality)
+                
+                # Check for academic language indicators
+                academic_terms = ['análisis', 'componente', 'varianza', 'carga', 'patrón', 'tendencia']
+                academic_count = sum(1 for term in academic_terms if term.lower() in principal_findings.lower())
+                if academic_count >= 2:
+                    confidence_factors.append(0.8)  # Bonus for academic language
+            
+            # PCA analysis quality (now narrative text)
+            pca_analysis = ''
+            
+            # Extract PCA Analysis from appropriate field (handle both structures)
+            if 'pca_analysis' in ai_content:
+                pca_analysis = ai_content['pca_analysis']
+            elif 'pca_insights' in ai_content and isinstance(ai_content['pca_insights'], dict):
+                if 'analysis' in ai_content['pca_insights']:
+                    pca_analysis = ai_content['pca_insights']['analysis']
+            
+            if pca_analysis:
+                # Check for detailed PCA analysis
+                pca_quality = min(len(pca_analysis) / 400, 1.0)  # Target 400+ chars for PCA analysis
+                confidence_factors.append(pca_quality)
+                
+                # Check for paragraph structure (should have 3 paragraphs)
+                paragraph_count = len([p.strip() for p in pca_analysis.split('\n\n') if p.strip()])
+                if paragraph_count >= 3:
+                    confidence_factors.append(0.8)  # Bonus for proper paragraph structure
+                elif paragraph_count >= 2:
+                    confidence_factors.append(0.4)  # Partial bonus for some paragraph structure
+                
+                # Check for specific numerical values
+                import re
+                numerical_values = re.findall(r'[+-]?\d+\.?\d*', pca_analysis)
+                if len(numerical_values) >= 3:  # Should have multiple numerical references
+                    confidence_factors.append(0.7)  # Bonus for quantitative analysis
+            
+            # Executive summary quality
+            executive_summary = ai_content.get('executive_summary', '')
+            if executive_summary:
+                # Check length and completeness
+                summary_quality = min(len(executive_summary) / 150, 1.0)  # Target 150+ chars
+                confidence_factors.append(summary_quality)
+            
+            # Calculate overall confidence
+            if confidence_factors:
+                return sum(confidence_factors) / len(confidence_factors)
+            else:
+                return 0.5  # Default confidence
+                
+        except Exception as e:
+            logging.error(f"Confidence score calculation failed: {e}")
+            return 0.5
+
+    def get_performance_metrics(self) -> Dict[str, Any]:
+        """
+        Get comprehensive performance metrics.
+        
+        Returns:
+            Performance metrics dictionary
+        """
+        # Calculate cache hit rate
+        total_requests = self.performance_metrics['total_requests']
+        cache_hit_rate = (self.performance_metrics['cache_hits'] / total_requests * 100) if total_requests > 0 else 0
+        
+        # Get database statistics
+        db_stats = self.kf_db_manager.get_cache_stats()
+        
+        # Get AI service performance
+        ai_performance = self.ai_service.get_performance_stats()
+        
+        return {
+            'service_metrics': {
+                'total_requests': total_requests,
+                'cache_hits': self.performance_metrics['cache_hits'],
+                'cache_misses': self.performance_metrics['cache_misses'],
+                'cache_hit_rate': round(cache_hit_rate, 2),
+                'error_count': self.performance_metrics['error_count'],
+                'error_rate': round(self.performance_metrics['error_count'] / total_requests * 100, 2) if total_requests > 0 else 0
+            },
+            'database_metrics': db_stats,
+            'ai_performance': ai_performance,
+            'database_size_mb': round(self.kf_db_manager.get_database_size() / 1024 / 1024, 2)
+        }
+
+    def update_user_feedback(self, scenario_hash: str, rating: int, feedback: str = None):
+        """
+        Update user feedback for a report.
+        
+        Args:
+            scenario_hash: Report scenario hash
+            rating: User rating (1-5)
+            feedback: Optional user feedback text
+        """
+        try:
+            # Get current report
+            report = self.kf_db_manager.get_cached_report(scenario_hash)
+            if not report:
+                logging.warning(f"Report not found for feedback: {scenario_hash}")
+                return
+            
+            # Update report with feedback
+            with self.kf_db_manager.get_connection() as conn:
+                conn.execute("""
+                    UPDATE key_findings_reports 
+                    SET user_rating = ?, user_feedback = ?
+                    WHERE scenario_hash = ?
+                """, (rating, feedback, scenario_hash))
+            
+            # Log model performance with user satisfaction
+            model_used = report.get('model_used')
+            if model_used:
+                self.kf_db_manager.log_model_performance(
+                    model_used,
+                    0,  # No response time for feedback
+                    0,  # No token count for feedback
+                    True,
+                    None,
+                    rating
+                )
+            
+            logging.info(f"Updated user feedback for scenario {scenario_hash[:8]}... Rating: {rating}")
+            
+        except Exception as e:
+            logging.error(f"Failed to update user feedback: {e}")
+
+    def cleanup_old_cache(self, days_to_keep: int = 90) -> Dict[str, int]:
+        """
+        Clean up old cache entries.
+        
+        Args:
+            days_to_keep: Number of days to keep cache entries
+            
+        Returns:
+            Dictionary with cleanup results
+        """
+        try:
+            return self.kf_db_manager.cleanup_old_cache(days_to_keep)
+        except Exception as e:
+            logging.error(f"Cache cleanup failed: {e}")
+            return {'error': str(e)}
+
+    def export_report(self, scenario_hash: str, format_type: str = 'json') -> Dict[str, Any]:
+        """
+        Export a report in specified format.
+        
+        Args:
+            scenario_hash: Report scenario hash
+            format_type: Export format ('json', 'pdf', 'csv')
+            
+        Returns:
+            Export result with file path or content
+        """
+        try:
+            # Get report data
+            report = self.kf_db_manager.get_cached_report(scenario_hash)
+            if not report:
+                return {'success': False, 'error': 'Report not found'}
+            
+            if format_type == 'json':
+                # Export as JSON
+                export_data = {
+                    'report': report,
+                    'export_timestamp': datetime.now().isoformat(),
+                    'export_format': 'json'
+                }
+                
+                return {
+                    'success': True,
+                    'content': json.dumps(export_data, indent=2, ensure_ascii=False),
+                    'filename': f"key_findings_{scenario_hash[:8]}.json"
+                }
+            
+            elif format_type == 'csv':
+                # Export findings as CSV
+                findings = report.get('principal_findings', [])
+                if findings:
+                    df = pd.DataFrame(findings)
+                    csv_content = df.to_csv(index=False)
+                    
+                    return {
+                        'success': True,
+                        'content': csv_content,
+                        'filename': f"key_findings_{scenario_hash[:8]}.csv"
+                    }
+                else:
+                    return {'success': False, 'error': 'No findings to export'}
+            
+            elif format_type == 'pdf':
+                # PDF export would require additional dependencies
+                return {'success': False, 'error': 'PDF export not implemented yet'}
+            
+            else:
+                return {'success': False, 'error': f'Unsupported format: {format_type}'}
+                
+        except Exception as e:
+            logging.error(f"Report export failed: {e}")
+            return {'success': False, 'error': str(e)}
+
+    def verify_service_health(self) -> Dict[str, Any]:
+        """
+        Verify service health and connectivity.
+        
+        Returns:
+            Health check results
+        """
+        health_status = {
+            'overall_status': 'healthy',
+            'timestamp': datetime.now().isoformat(),
+            'components': {}
+        }
+        
+        try:
+            # Check database connectivity
+            db_healthy = self.kf_db_manager.verify_persistence()
+            health_status['components']['database'] = {
+                'status': 'healthy' if db_healthy else 'unhealthy',
+                'details': 'Database accessible and schema valid' if db_healthy else 'Database connection failed'
+            }
+            
+            # Check AI service availability
+            try:
+                # This would be an async call in a real implementation
+                # For now, just check if API key is configured
+                api_key_configured = bool(self.ai_service.api_key)
+                health_status['components']['ai_service'] = {
+                    'status': 'healthy' if api_key_configured else 'unhealthy',
+                    'details': 'API key configured' if api_key_configured else 'API key not configured'
+                }
+            except Exception as e:
+                health_status['components']['ai_service'] = {
+                    'status': 'unhealthy',
+                    'details': f'AI service error: {str(e)}'
+                }
+            
+            # Check data aggregator
+            try:
+                # Test with a simple query
+                keywords = self.db_manager.get_keywords_list()
+                health_status['components']['data_aggregator'] = {
+                    'status': 'healthy',
+                    'details': f'Data accessible, {len(keywords)} keywords available'
+                }
+            except Exception as e:
+                health_status['components']['data_aggregator'] = {
+                    'status': 'unhealthy',
+                    'details': f'Data aggregator error: {str(e)}'
+                }
+            
+            # Determine overall status
+            component_statuses = [comp['status'] for comp in health_status['components'].values()]
+            if all(status == 'healthy' for status in component_statuses):
+                health_status['overall_status'] = 'healthy'
+            elif any(status == 'healthy' for status in component_statuses):
+                health_status['overall_status'] = 'degraded'
+            else:
+                health_status['overall_status'] = 'unhealthy'
+            
+        except Exception as e:
+            health_status['overall_status'] = 'unhealthy'
+            health_status['error'] = str(e)
+        
+        return health_status
+
+    def reset_performance_metrics(self):
+        """Reset performance metrics."""
+        self.performance_metrics = {
+            'total_requests': 0,
+            'cache_hits': 0,
+            'cache_misses': 0,
+            'avg_response_time_ms': 0,
+            'error_count': 0
+        }
+        self.ai_service.reset_performance_stats()
+
+# Global service instance
+_key_findings_service = None
+
+def get_key_findings_service(db_manager, api_key: str = None, config: Dict[str, Any] = None) -> KeyFindingsService:
+    """
+    Get or create global Key Findings service instance.
+    
+    Args:
+        db_manager: Database manager instance
+        api_key: OpenRouter API key (optional)
+        config: Configuration dictionary (optional)
+        
+    Returns:
+        Key Findings service instance
+    """
+    global _key_findings_service
+    
+    if _key_findings_service is None:
+        _key_findings_service = KeyFindingsService(db_manager, api_key, config)
+    
+    return _key_findings_service
+
+def reset_key_findings_service():
+    """Reset global Key Findings service instance."""
+    global _key_findings_service
+    _key_findings_service = None
