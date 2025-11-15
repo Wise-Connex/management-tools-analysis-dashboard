@@ -5,7 +5,7 @@ An interactive Dash application for analyzing management tools data with AI-powe
 ## 🎯 System Overview
 
 ```mermaid
-graph TB
+graph LR
     A[User Interface] --> B[Dash Application]
     B --> C[Data Sources]
     B --> D[Analysis Engine]
@@ -34,7 +34,7 @@ graph TB
 ## 🏗️ Architecture Flow
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph "Data Layer"
         A1[CSV Files] --> A2[Database Manager]
         A2 --> A3[SQLite DB]
@@ -457,7 +457,7 @@ management-tools-analysis-dashboard/
 │   │   ├── database_manager.py  # Findings database
 │   │   └── key_findings_service.py # Analysis service
 │   ├── assets/                  # Static assets (images, icons)
-│   ├── data/                    # SQLite databases
+│   ├── data/                    # SQLite databases:
 │   ├── requirements.txt          # Python dependencies
 │   └── pyproject.toml          # UV project configuration
 ├── config/                      # Configuration files
