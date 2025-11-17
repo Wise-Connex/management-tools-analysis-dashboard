@@ -91,7 +91,7 @@ class PrecomputationPipeline:
         ]
 
         # Get all non-empty subsets of sources (2^5 - 1 = 31 combinations)
-        all_combinations = []
+        result_combinations = []
 
         for tool in management_tools:
             tool_name = tool["name"]
@@ -125,9 +125,9 @@ class PrecomputationPipeline:
                         )
                         combination["combination_hash"] = combination_hash
 
-                        all_combinations.append(combination)
+                        result_combinations.append(combination)
 
-        self.total_combinations = len(all_combinations)
+        self.total_combinations = len(result_combinations)
         logger.info(f"✅ Generated {self.total_combinations} combinations")
         logger.info(f"   - Tools: {len(management_tools)}")
         logger.info(f"   - Source combinations: 31 per tool")
@@ -136,7 +136,7 @@ class PrecomputationPipeline:
             f"   - Total: {len(management_tools)} × 31 × 2 = {self.total_combinations}"
         )
 
-        return all_combinations
+        return result_combinations
 
     def simulate_ai_analysis(self, combination: Dict[str, Any]) -> Dict[str, Any]:
         """

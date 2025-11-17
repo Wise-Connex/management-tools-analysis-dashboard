@@ -271,19 +271,23 @@ class PrecomputedFindingsDBManager:
                 "heatmap_analysis": analysis_data.get("heatmap_analysis", ""),
             }
 
-            # Insert into database
+            # Insert or replace existing record (for updating with real AI data)
             cursor = conn.execute(
                 """
-                INSERT INTO precomputed_findings (
-                    combination_hash, tool_id, tool_name, tool_display_name,
+                INSERT OR REPLACE INTO precomputed_findings (
+                    id, combination_hash, tool_id, tool_name, tool_display_name,
                     sources_text, sources_ids, sources_bitmask, sources_count,
                     language, analysis_type, executive_summary, principal_findings,
                     temporal_analysis, seasonal_analysis, fourier_analysis,
                     pca_analysis, heatmap_analysis, data_points_analyzed,
                     confidence_score, model_used, computation_timestamp
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ) VALUES (
+                    (SELECT id FROM precomputed_findings WHERE combination_hash = ?),
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP
+                )
             """,
                 (
+                    combination_hash,  # for the subquery
                     combination_hash,
                     tool_id,
                     tool_name,
@@ -307,7 +311,7 @@ class PrecomputedFindingsDBManager:
                 ),
             )
 
-            return cursor.lastrowid
+            return cursor.lastrowid or 0
 
     def create_computation_job(
         self,
@@ -341,7 +345,7 @@ class PrecomputedFindingsDBManager:
                 (tool_id, sources_bitmask, language, priority),
             )
 
-            return cursor.lastrowid
+            return cursor.lastrowid or 0
 
     def get_next_pending_job(self) -> Optional[Dict[str, Any]]:
         """
@@ -367,8 +371,8 @@ class PrecomputedFindingsDBManager:
         self,
         job_id: int,
         status: str,
-        progress_percent: int = None,
-        error_message: str = None,
+        progress_percent: Optional[int] = None,
+        error_message: Optional[str] = None,
     ) -> bool:
         """
         Update job status with progress and error information.
@@ -683,7 +687,9 @@ class PrecomputedFindingsDBManager:
 _precomputed_db_manager = None
 
 
-def get_precomputed_db_manager(db_path: str = None) -> PrecomputedFindingsDBManager:
+def get_precomputed_db_manager(
+    db_path: Optional[str] = None,
+) -> PrecomputedFindingsDBManager:
     """
     Get or create global precomputed findings database manager instance.
 
