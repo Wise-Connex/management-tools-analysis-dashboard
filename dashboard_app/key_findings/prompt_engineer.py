@@ -10,25 +10,28 @@ import logging
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 
+
 class PromptEngineer:
     """
     Creates sophisticated prompts for doctoral-level analysis.
-    
+
     Generates context-aware prompts with PCA emphasis, bilingual support,
     and structured output requirements for AI analysis.
     """
 
-    def __init__(self, language: str = 'es'):
+    def __init__(self, language: str = "es"):
         """
         Initialize prompt engineer.
-        
+
         Args:
             language: Analysis language ('es' or 'en')
         """
         self.language = language
         self.prompt_templates = self._load_templates()
 
-    def create_analysis_prompt(self, data: Dict[str, Any], context: Dict[str, Any]) -> str:
+    def create_narrative_analysis_prompt(
+        self, data: Dict[str, Any], context: Dict[str, Any]
+    ) -> str:
         """
         Create comprehensive analysis prompt.
 
@@ -40,19 +43,22 @@ class PromptEngineer:
             Complete analysis prompt string
         """
         import time
-        start_time = time.time()
-        logging.info(f"📝 Starting prompt generation for tool '{data.get('tool_name', 'Unknown')}' in {self.language}")
 
-        template = self.prompt_templates['comprehensive_analysis'][self.language]
-        
+        start_time = time.time()
+        logging.info(
+            f"📝 Starting prompt generation for tool '{data.get('tool_name', 'Unknown')}' in {self.language}"
+        )
+
+        template = self.prompt_templates["comprehensive_analysis"][self.language]
+
         # Extract key information
-        tool_name = data.get('tool_name', 'Unknown Tool')
-        sources = data.get('selected_sources', [])
-        pca_insights = data.get('pca_insights', {})
-        stats_summary = data.get('statistical_summary', {})
-        trends = data.get('trends_analysis', {})
-        data_quality = data.get('data_quality', {})
-        heatmap_data = data.get('heatmap_analysis', {})
+        tool_name = data.get("tool_name", "Unknown Tool")
+        sources = data.get("selected_sources", [])
+        pca_insights = data.get("pca_insights", {})
+        stats_summary = data.get("statistical_summary", {})
+        trends = data.get("trends_analysis", {})
+        data_quality = data.get("data_quality", {})
+        heatmap_data = data.get("heatmap_analysis", {})
 
         # Build prompt sections
         sections = []
@@ -80,163 +86,198 @@ class PromptEngineer:
 
         # Output format
         sections.append(self._build_output_format_section())
-        
+
         prompt = template.format(
-            analysis_date=datetime.now().strftime('%Y-%m-%d'),
-            context='\n\n'.join(sections)
+            analysis_date=datetime.now().strftime("%Y-%m-%d"),
+            context="\n\n".join(sections),
         )
 
         generation_time = time.time() - start_time
-        logging.info(f"✅ Prompt generation completed in {generation_time:.2f}s - prompt length: {len(prompt)} characters")
+        logging.info(
+            f"✅ Prompt generation completed in {generation_time:.2f}s - prompt length: {len(prompt)} characters"
+        )
         logging.info(f"📊 Prompt sections created: {len(sections)} sections")
 
         return prompt
 
-    def create_pca_focused_prompt(self, pca_data: Dict[str, Any], context: Dict[str, Any]) -> str:
+    def create_pca_focused_prompt(
+        self, pca_data: Dict[str, Any], context: Dict[str, Any]
+    ) -> str:
         """
         Create PCA-focused analysis prompt.
-        
+
         Args:
             pca_data: PCA analysis data
             context: Additional context for analysis
-            
+
         Returns:
             PCA-focused analysis prompt string
         """
-        template = self.prompt_templates['pca_focused'][self.language]
-        
-        tool_name = context.get('tool_name', 'Unknown Tool')
-        components = pca_data.get('dominant_patterns', [])
-        variance_explained = pca_data.get('total_variance_explained', 0)
-        
+        template = self.prompt_templates["pca_focused"][self.language]
+
+        tool_name = context.get("tool_name", "Unknown Tool")
+        components = pca_data.get("dominant_patterns", [])
+        variance_explained = pca_data.get("total_variance_explained", 0)
+
         sections = []
-        
+
         # PCA context
-        sections.append(f"## Herramienta de Gestión Analizada: {tool_name}" if self.language == 'es' 
-                      else f"## Management Tool Analyzed: {tool_name}")
-        
+        sections.append(
+            f"## Herramienta de Gestión Analizada: {tool_name}"
+            if self.language == "es"
+            else f"## Management Tool Analyzed: {tool_name}"
+        )
+
         # Component analysis
         for i, component in enumerate(components[:3]):  # Top 3 components
-            sections.append(self._build_component_analysis(component, i+1))
-        
+            sections.append(self._build_component_analysis(component, i + 1))
+
         # Variance explanation
         sections.append(self._build_variance_analysis(variance_explained))
-        
+
         # Interpretation requirements
         sections.append(self._build_pca_requirements())
-        
+
         return template.format(
-            analysis_date=datetime.now().strftime('%Y-%m-%d'),
-            pca_analysis='\n\n'.join(sections)
+            analysis_date=datetime.now().strftime("%Y-%m-%d"),
+            pca_analysis="\n\n".join(sections),
         )
 
     def create_executive_summary_prompt(self, findings: Dict[str, Any]) -> str:
         """
         Create prompt for executive summary generation.
-        
+
         Args:
             findings: Analysis findings to summarize
-            
+
         Returns:
             Executive summary prompt string
         """
-        template = self.prompt_templates['executive_summary'][self.language]
-        
-        tool_name = findings.get('tool_name', 'Unknown Tool')
-        principal_findings = findings.get('principal_findings', [])
-        
+        template = self.prompt_templates["executive_summary"][self.language]
+
+        tool_name = findings.get("tool_name", "Unknown Tool")
+        principal_findings = findings.get("principal_findings", [])
+
         sections = []
-        
+
         # Executive context
-        sections.append(f"## Herramienta: {tool_name}" if self.language == 'es' 
-                      else f"## Tool: {tool_name}")
-        
-        # Key findings synthesis
-        sections.append(self._build_findings_synthesis(principal_findings))
-        
-        # Strategic implications
-        sections.append(self._build_strategic_implications(findings))
-        
-        # Recommendations
-        sections.append(self._build_recommendations(findings))
-        
-        return template.format(
-            executive_date=datetime.now().strftime('%Y-%m-%d'),
-            executive_content='\n\n'.join(sections)
+        sections.append(
+            f"## Herramienta: {tool_name}"
+            if self.language == "es"
+            else f"## Tool: {tool_name}"
         )
 
-    def create_single_source_prompt(self, data: Dict[str, Any], context: Dict[str, Any]) -> str:
+        # Key findings synthesis
+        sections.append(self._build_findings_synthesis(principal_findings))
+
+        # Strategic implications
+        sections.append(self._build_strategic_implications(findings))
+
+        # Recommendations
+        sections.append(self._build_recommendations(findings))
+
+        return template.format(
+            executive_date=datetime.now().strftime("%Y-%m-%d"),
+            executive_content="\n\n".join(sections),
+        )
+
+    def create_single_source_prompt(
+        self, data: Dict[str, Any], context: Dict[str, Any]
+    ) -> str:
         """
         Create single source analysis prompt with temporal, seasonal, and Fourier series analysis.
-        
+
         Args:
             data: Aggregated analysis data from a single source
             context: Additional context for analysis
-            
+
         Returns:
             Single source analysis prompt string
         """
         import time
-        start_time = time.time()
-        logging.info(f"📝 Starting single source prompt generation for tool '{data.get('tool_name', 'Unknown')}' in {self.language}")
 
-        template = self.prompt_templates['single_source_analysis'][self.language]
-        
+        start_time = time.time()
+        logging.info(
+            f"📝 Starting single source prompt generation for tool '{data.get('tool_name', 'Unknown')}' in {self.language}"
+        )
+
+        template = self.prompt_templates["single_source_analysis"][self.language]
+
         # Extract key information
-        tool_name = data.get('tool_name', 'Unknown Tool')
-        source_name = data.get('source_name', 'Unknown Source')
-        temporal_metrics = data.get('temporal_metrics', {})
-        seasonal_patterns = data.get('seasonal_patterns', {})
-        fourier_analysis = data.get('fourier_analysis', {})
-        summary_statistics = data.get('summary_statistics', {})
-        visualization_attributes = data.get('visualization_attributes', {})
+        tool_name = data.get("tool_name", "Unknown Tool")
+        source_name = data.get("source_name", "Unknown Source")
+        temporal_metrics = data.get("temporal_metrics", {})
+        seasonal_patterns = data.get("seasonal_patterns", {})
+        fourier_analysis = data.get("fourier_analysis", {})
+        summary_statistics = data.get("summary_statistics", {})
+        visualization_attributes = data.get("visualization_attributes", {})
 
         # Build prompt sections
         sections = []
 
         # Context section
-        sections.append(self._build_single_source_context_section(tool_name, source_name, data))
+        sections.append(
+            self._build_single_source_context_section(tool_name, source_name, data)
+        )
 
         # Executive Summary section
-        sections.append(self._build_executive_summary_section(temporal_metrics, seasonal_patterns, fourier_analysis))
+        sections.append(
+            self._build_executive_summary_section(
+                temporal_metrics, seasonal_patterns, fourier_analysis
+            )
+        )
 
         # Temporal Analysis section
-        sections.append(self._build_temporal_analysis_section(temporal_metrics, summary_statistics))
+        sections.append(
+            self._build_temporal_analysis_section(temporal_metrics, summary_statistics)
+        )
 
         # Seasonal Analysis section
-        sections.append(self._build_seasonal_analysis_section(seasonal_patterns, visualization_attributes))
+        sections.append(
+            self._build_seasonal_analysis_section(
+                seasonal_patterns, visualization_attributes
+            )
+        )
 
         # Fourier Series Analysis section
-        sections.append(self._build_fourier_analysis_section(fourier_analysis, visualization_attributes))
+        sections.append(
+            self._build_fourier_analysis_section(
+                fourier_analysis, visualization_attributes
+            )
+        )
 
         # Analysis requirements
         sections.append(self._build_single_source_requirements_section())
 
         # Output format
         sections.append(self._build_single_source_output_format_section())
-        
+
         prompt = template.format(
-            analysis_date=datetime.now().strftime('%Y-%m-%d'),
-            context='\n\n'.join(sections)
+            analysis_date=datetime.now().strftime("%Y-%m-%d"),
+            context="\n\n".join(sections),
         )
 
         generation_time = time.time() - start_time
-        logging.info(f"✅ Single source prompt generation completed in {generation_time:.2f}s - prompt length: {len(prompt)} characters")
+        logging.info(
+            f"✅ Single source prompt generation completed in {generation_time:.2f}s - prompt length: {len(prompt)} characters"
+        )
         logging.info(f"📊 Prompt sections created: {len(sections)} sections")
 
         return prompt
 
-    def _build_context_section(self, tool_name: str, sources: List[str], data: Dict[str, Any]) -> str:
+    def _build_context_section(
+        self, tool_name: str, sources: List[str], data: Dict[str, Any]
+    ) -> str:
         """Build context section of prompt."""
         date_range = f"del {data.get('date_range_start', 'N/A')} al {data.get('date_range_end', 'N/A')}"
-        data_points = data.get('data_points_analyzed', 0)
-        
-        if self.language == 'es':
+        data_points = data.get("data_points_analyzed", 0)
+
+        if self.language == "es":
             return f"""
 ### CONTEXTO DEL ANÁLISIS
 
 **Herramienta de Gestión:** {tool_name}
-**Fuentes de Datos Seleccionadas:** {', '.join(sources)}
+**Fuentes de Datos Seleccionadas:** {", ".join(sources)}
 **Rango Temporal:** {date_range}
 **Puntos de Datos Analizados:** {data_points:,}
 
@@ -248,7 +289,7 @@ proporcionando una visión integral del comportamiento de la herramienta de gest
 ### ANALYSIS CONTEXT
 
 **Management Tool:** {tool_name}
-**Selected Data Sources:** {', '.join(sources)}
+**Selected Data Sources:** {", ".join(sources)}
 **Time Range:** {date_range}
 **Data Points Analyzed:** {data_points:,}
 
@@ -258,24 +299,26 @@ providing a comprehensive view of the management tool's behavior over time.
 
     def _build_pca_section(self, pca_insights: Dict[str, Any]) -> str:
         """Build PCA emphasis section with unified narrative prompt."""
-        if not pca_insights or pca_insights.get('error'):
+        if not pca_insights or pca_insights.get("error"):
             return ""
 
-        components = pca_insights.get('dominant_patterns', [])
-        variance_explained = pca_insights.get('total_variance_explained', 0)
-        tool_name = pca_insights.get('tool_name', 'Unknown Tool')
+        components = pca_insights.get("dominant_patterns", [])
+        variance_explained = pca_insights.get("total_variance_explained", 0)
+        tool_name = pca_insights.get("tool_name", "Unknown Tool")
 
         # Extract variable relationships for narrative
         variable_relationships = self._extract_variable_relationships(pca_insights)
-        
+
         # Check for data quality issues
-        sources_count = len(components[0].get('loadings', {})) if components else 0
+        sources_count = len(components[0].get("loadings", {})) if components else 0
         has_quality_issues = variance_explained < 10 or sources_count < 2
 
         # Build detailed PCA analysis with specific numerical insights
-        detailed_pca_analysis = self._build_detailed_pca_narrative(components, tool_name, variance_explained)
+        detailed_pca_analysis = self._build_detailed_pca_narrative(
+            components, tool_name, variance_explained
+        )
 
-        if self.language == 'es':
+        if self.language == "es":
             section = f"""
 ### ANÁLISIS DE COMPONENTES PRINCIPALES (PCA) - NARRATIVA UNIFICADA
 
@@ -318,7 +361,7 @@ Finalmente, el análisis muestra que el discurso académico riguroso sobre {tool
 - Data Sources Available: {sources_count}
 
 """
-            
+
             # Add specific guidance for low-quality data scenarios
             if has_quality_issues:
                 section += f"""
@@ -339,10 +382,12 @@ The current analysis shows significant limitations:
 "The current PCA analysis is limited by {sources_count} data source(s), explaining only {variance_explained:.1f}% of variance. This suggests the need to incorporate additional sources like [suggest specific sources] for a more comprehensive view. Meanwhile, available data indicates [extract any possible insight]..."
 
 """
-            
+
             # Build detailed PCA analysis with specific numerical insights
-            detailed_pca_analysis = self._build_detailed_pca_narrative(components, tool_name, variance_explained)
-            
+            detailed_pca_analysis = self._build_detailed_pca_narrative(
+                components, tool_name, variance_explained
+            )
+
             # Continue with regular PCA instructions
             section += f"""
 {detailed_pca_analysis}
@@ -370,11 +415,11 @@ Finally, the analysis shows that the rigorous academic discourse on {tool_name} 
 
         for i, component in enumerate(components[:3]):
             comp_num = i + 1
-            interpretation = component.get('interpretation', f'Component {comp_num}')
-            variance = component.get('variance_explained', 0)
-            loadings = component.get('loadings', {})
+            interpretation = component.get("interpretation", f"Component {comp_num}")
+            variance = component.get("variance_explained", 0)
+            loadings = component.get("loadings", {})
 
-            if self.language == 'es':
+            if self.language == "es":
                 section += f"""
 **Componente {comp_num}** ({variance:.1f}% varianza explicada):
 {interpretation}
@@ -399,11 +444,11 @@ Finally, the analysis shows that the rigorous academic discourse on {tool_name} 
         """Build statistical analysis section."""
         if not stats_summary:
             return ""
-        
-        source_stats = stats_summary.get('source_statistics', {})
-        correlations = stats_summary.get('correlations', {})
-        
-        if self.language == 'es':
+
+        source_stats = stats_summary.get("source_statistics", {})
+        correlations = stats_summary.get("correlations", {})
+
+        if self.language == "es":
             section = """
 ### ANÁLISIS ESTADÍSTICO COMPRENSIVO
 
@@ -415,53 +460,53 @@ Finally, the analysis shows that the rigorous academic discourse on {tool_name} 
 
 **Statistics by Data Source:**
 """
-        
+
         # Add source statistics
         for source, stats in source_stats.items():
-            if self.language == 'es':
+            if self.language == "es":
                 section += f"""
 **{source}:**
-- Media: {stats.get('mean', 'N/A'):.2f}
-- Desviación Estándar: {stats.get('std', 'N/A'):.2f}
-- Tendencia: {stats.get('trend', {}).get('trend_direction', 'N/A')}
-- Significancia: {stats.get('trend', {}).get('significance', 'N/A')}
+- Media: {stats.get("mean", "N/A"):.2f}
+- Desviación Estándar: {stats.get("std", "N/A"):.2f}
+- Tendencia: {stats.get("trend", {}).get("trend_direction", "N/A")}
+- Significancia: {stats.get("trend", {}).get("significance", "N/A")}
 """
             else:
                 section += f"""
 **{source}:**
-- Mean: {stats.get('mean', 'N/A'):.2f}
-- Standard Deviation: {stats.get('std', 'N/A'):.2f}
-- Trend: {stats.get('trend', {}).get('trend_direction', 'N/A')}
-- Significance: {stats.get('trend', {}).get('significance', 'N/A')}
+- Mean: {stats.get("mean", "N/A"):.2f}
+- Standard Deviation: {stats.get("std", "N/A"):.2f}
+- Trend: {stats.get("trend", {}).get("trend_direction", "N/A")}
+- Significance: {stats.get("trend", {}).get("significance", "N/A")}
 """
-        
+
         # Add correlations
         if correlations:
-            if self.language == 'es':
+            if self.language == "es":
                 section += "\n**Correlaciones Significativas Entre Fuentes:**\n"
             else:
                 section += "\n**Significant Correlations Between Sources:**\n"
-            
+
             for corr_pair, corr_data in correlations.items():
-                if corr_data.get('significance') == 'significant':
-                    strength = corr_data.get('strength', 'unknown')
-                    if self.language == 'es':
+                if corr_data.get("significance") == "significant":
+                    strength = corr_data.get("strength", "unknown")
+                    if self.language == "es":
                         section += f"- {corr_pair}: Correlación {strength} ({corr_data.get('correlation', 0):.3f})\n"
                     else:
                         section += f"- {corr_pair}: {strength} correlation ({corr_data.get('correlation', 0):.3f})\n"
-        
+
         return section
 
     def _build_trends_section(self, trends: Dict[str, Any]) -> str:
         """Build trends and patterns section with emphasis on integration."""
         if not trends:
             return ""
-        
-        trend_data = trends.get('trends', {})
-        anomalies = trends.get('anomalies', {})
-        patterns = trends.get('overall_patterns', [])
-        
-        if self.language == 'es':
+
+        trend_data = trends.get("trends", {})
+        anomalies = trends.get("anomalies", {})
+        patterns = trends.get("overall_patterns", [])
+
+        if self.language == "es":
             section = """
 ### ANÁLISIS TEMPORAL INTEGRADO PARA HALLAZGOS PRINCIPALES
 
@@ -481,73 +526,83 @@ Finally, the analysis shows that the rigorous academic discourse on {tool_name} 
 
 **Key Temporal Trends:**
 """
-        
+
         # Add trend information with integration guidance
         for source, trend_info in trend_data.items():
-            direction = trend_info.get('trend_direction', 'stable')
-            momentum = trend_info.get('momentum', 0)
-            volatility = trend_info.get('volatility', 0)
-            
-            if self.language == 'es':
+            direction = trend_info.get("trend_direction", "stable")
+            momentum = trend_info.get("momentum", 0)
+            volatility = trend_info.get("volatility", 0)
+
+            if self.language == "es":
                 section += f"""
 **{source}:** tendencia {direction} con momento de {momentum:.3f} y volatilidad de {volatility:.3f}
 """
                 # Add integration guidance
-                if direction in ['strong_upward', 'moderate_upward']:
+                if direction in ["strong_upward", "moderate_upward"]:
                     section += f"→ Integrar este crecimiento con cargas PCA positivas de {source}\n"
-                elif direction in ['strong_downward', 'moderate_downward']:
+                elif direction in ["strong_downward", "moderate_downward"]:
                     section += f"→ Conectar esta disminución con posibles cargas PCA negativas\n"
                 else:
-                    section += f"→ Analizar estabilidad de {source} en contexto multivariado\n"
+                    section += (
+                        f"→ Analizar estabilidad de {source} en contexto multivariado\n"
+                    )
             else:
                 section += f"""
 **{source}:** {direction} trend with momentum of {momentum:.3f} and volatility of {volatility:.3f}
 """
                 # Add integration guidance
-                if direction in ['strong_upward', 'moderate_upward']:
+                if direction in ["strong_upward", "moderate_upward"]:
                     section += f"→ Integrate this growth with positive PCA loadings of {source}\n"
-                elif direction in ['strong_downward', 'moderate_downward']:
-                    section += f"→ Connect this decline with possible negative PCA loadings\n"
+                elif direction in ["strong_downward", "moderate_downward"]:
+                    section += (
+                        f"→ Connect this decline with possible negative PCA loadings\n"
+                    )
                 else:
-                    section += f"→ Analyze stability of {source} in multivariate context\n"
-        
+                    section += (
+                        f"→ Analyze stability of {source} in multivariate context\n"
+                    )
+
         # Add anomalies with integration guidance
         if anomalies:
-            if self.language == 'es':
+            if self.language == "es":
                 section += "\n**Anomalías Temporales para Análisis:**\n"
                 section += "**INSTRUCCIÓN:** Conecte estas anomalías con patrones PCA inesperados\n\n"
             else:
                 section += "\n**Temporal Anomalies for Analysis:**\n"
                 section += "**INSTRUCTION:** Connect these anomalies with unexpected PCA patterns\n\n"
-            
+
             for source, anomaly_info in anomalies.items():
-                count = anomaly_info.get('count', 0)
-                percentage = anomaly_info.get('percentage', 0)
-                max_z = anomaly_info.get('max_z_score', 0)
-                
-                if self.language == 'es':
+                count = anomaly_info.get("count", 0)
+                percentage = anomaly_info.get("percentage", 0)
+                max_z = anomaly_info.get("max_z_score", 0)
+
+                if self.language == "es":
                     section += f"- {source}: {count} anomalías ({percentage:.1f}%), Z-score máximo: {max_z:.2f}\n"
                     section += f"  → Analizar cómo estas anomalías afectan las relaciones PCA\n"
                 else:
                     section += f"- {source}: {count} anomalies ({percentage:.1f}%), Max Z-score: {max_z:.2f}\n"
-                    section += f"  → Analyze how these anomalies affect PCA relationships\n"
-        
+                    section += (
+                        f"  → Analyze how these anomalies affect PCA relationships\n"
+                    )
+
         # Add overall patterns with integration guidance
         if patterns:
-            if self.language == 'es':
+            if self.language == "es":
                 section += "\n**Patrones Temporales Generales para Integración:**\n"
                 section += "**INSTRUCCIÓN:** Use estos patrones para enriquecer la narrativa de Hallazgos Principales\n\n"
             else:
                 section += "\n**Overall Temporal Patterns for Integration:**\n"
                 section += "**INSTRUCTION:** Use these patterns to enrich the Principal Findings narrative\n\n"
-            
+
             for pattern in patterns:
                 section += f"- {pattern}\n"
-                if self.language == 'es':
+                if self.language == "es":
                     section += f"  → Conectar este patrón con la dinámica de componentes principales\n"
                 else:
-                    section += f"  → Connect this pattern with principal component dynamics\n"
-        
+                    section += (
+                        f"  → Connect this pattern with principal component dynamics\n"
+                    )
+
         return section
 
     def _build_heatmap_section(self, heatmap_data: Dict[str, Any]) -> str:
@@ -556,14 +611,14 @@ Finally, the analysis shows that the rigorous academic discourse on {tool_name} 
             return ""
 
         # Extract heatmap metrics
-        value_ranges = heatmap_data.get('value_ranges', {})
-        dense_regions = heatmap_data.get('most_dense_regions', [])
-        sparse_regions = heatmap_data.get('least_dense_regions', [])
-        clusters = heatmap_data.get('detected_clusters', [])
-        outliers = heatmap_data.get('detected_outliers', [])
-        gradients = heatmap_data.get('gradients', {})
+        value_ranges = heatmap_data.get("value_ranges", {})
+        dense_regions = heatmap_data.get("most_dense_regions", [])
+        sparse_regions = heatmap_data.get("least_dense_regions", [])
+        clusters = heatmap_data.get("detected_clusters", [])
+        outliers = heatmap_data.get("detected_outliers", [])
+        gradients = heatmap_data.get("gradients", {})
 
-        if self.language == 'es':
+        if self.language == "es":
             section = """
 ### ANÁLISIS DEL MAPA DE CALOR
 
@@ -578,22 +633,22 @@ Finally, the analysis shows that the rigorous academic discourse on {tool_name} 
 
         # Add value ranges
         if value_ranges:
-            if self.language == 'es':
+            if self.language == "es":
                 section += "\n**Rangos de Valores del Mapa de Calor:**\n"
             else:
                 section += "\n**Heatmap Value Ranges:**\n"
 
             for source, ranges in value_ranges.items():
-                min_val = ranges.get('min', 'N/A')
-                max_val = ranges.get('max', 'N/A')
-                if self.language == 'es':
+                min_val = ranges.get("min", "N/A")
+                max_val = ranges.get("max", "N/A")
+                if self.language == "es":
                     section += f"- {source}: mínimo {min_val}, máximo {max_val}\n"
                 else:
                     section += f"- {source}: min {min_val}, max {max_val}\n"
 
         # Add dense regions
         if dense_regions:
-            if self.language == 'es':
+            if self.language == "es":
                 section += "\n**Regiones Más Densas:**\n"
             else:
                 section += "\n**Most Dense Regions:**\n"
@@ -603,7 +658,7 @@ Finally, the analysis shows that the rigorous academic discourse on {tool_name} 
 
         # Add sparse regions
         if sparse_regions:
-            if self.language == 'es':
+            if self.language == "es":
                 section += "\n**Regiones Menos Densas:**\n"
             else:
                 section += "\n**Least Dense Regions:**\n"
@@ -613,7 +668,7 @@ Finally, the analysis shows that the rigorous academic discourse on {tool_name} 
 
         # Add detected clusters
         if clusters:
-            if self.language == 'es':
+            if self.language == "es":
                 section += "\n**Agrupamientos Detectados:**\n"
             else:
                 section += "\n**Detected Clusters:**\n"
@@ -623,7 +678,7 @@ Finally, the analysis shows that the rigorous academic discourse on {tool_name} 
 
         # Add detected outliers
         if outliers:
-            if self.language == 'es':
+            if self.language == "es":
                 section += "\n**Valores Atípicos Detectados:**\n"
             else:
                 section += "\n**Detected Outliers:**\n"
@@ -633,7 +688,7 @@ Finally, the analysis shows that the rigorous academic discourse on {tool_name} 
 
         # Add gradients
         if gradients:
-            if self.language == 'es':
+            if self.language == "es":
                 section += "\n**Gradientes Observados:**\n"
             else:
                 section += "\n**Observed Gradients:**\n"
@@ -642,7 +697,7 @@ Finally, the analysis shows that the rigorous academic discourse on {tool_name} 
                 section += f"- {gradient_type}: {description}\n"
 
         # Add analysis instructions
-        if self.language == 'es':
+        if self.language == "es":
             section += """
 
 **INSTRUCCIONES OBLIGATORIAS PARA ANÁLISIS DEL MAPA DE CALOR:**
@@ -702,11 +757,11 @@ Based on the data provided above, analyze the heatmap and discuss:
         if not data_quality:
             return ""
 
-        overall_score = data_quality.get('overall_score', 0)
-        completeness = data_quality.get('completeness', {})
-        timeliness = data_quality.get('timeliness', {})
+        overall_score = data_quality.get("overall_score", 0)
+        completeness = data_quality.get("completeness", {})
+        timeliness = data_quality.get("timeliness", {})
 
-        if self.language == 'es':
+        if self.language == "es":
             section = f"""
 ### EVALUACIÓN DE CALIDAD DE DATOS
 
@@ -725,21 +780,21 @@ Based on the data provided above, analyze the heatmap and discuss:
 
         # Add completeness information
         for source, comp_data in completeness.items():
-            comp_pct = comp_data.get('completeness_percentage', 0)
-            missing_pct = comp_data.get('missing_percentage', 0)
+            comp_pct = comp_data.get("completeness_percentage", 0)
+            missing_pct = comp_data.get("missing_percentage", 0)
 
-            if self.language == 'es':
+            if self.language == "es":
                 section += f"- {source}: {comp_pct:.1f}% completo, {missing_pct:.1f}% faltante\n"
             else:
                 section += f"- {source}: {comp_pct:.1f}% complete, {missing_pct:.1f}% missing\n"
 
         # Add timeliness
         if timeliness:
-            latest_date = timeliness.get('latest_date', 'N/A')
-            days_since = timeliness.get('days_since_latest', 0)
-            timeliness_score = timeliness.get('timeliness_score', 0)
+            latest_date = timeliness.get("latest_date", "N/A")
+            days_since = timeliness.get("days_since_latest", 0)
+            timeliness_score = timeliness.get("timeliness_score", 0)
 
-            if self.language == 'es':
+            if self.language == "es":
                 section += f"""
 **Actualidad de los Datos:**
 - Fecha más reciente: {latest_date}
@@ -758,7 +813,7 @@ Based on the data provided above, analyze the heatmap and discuss:
 
     def _build_requirements_section(self) -> str:
         """Build analysis requirements section."""
-        if self.language == 'es':
+        if self.language == "es":
             return """
 ### REQUISITOS DEL ANÁLISIS
 
@@ -961,7 +1016,7 @@ If you don't follow this exact format, your response will be rejected and you'll
 
     def _build_output_format_section(self) -> str:
         """Build output format section."""
-        if self.language == 'es':
+        if self.language == "es":
             return """
 ### FORMATO DE SALIDA
 
@@ -1044,30 +1099,32 @@ The strategic implications of these patterns suggest that successful tool implem
 **NOTE**: Observe the TWO blank lines between each paragraph to create 3 distinct paragraphs.
 """
 
-    def _build_component_analysis(self, component: Dict[str, Any], comp_num: int) -> str:
+    def _build_component_analysis(
+        self, component: Dict[str, Any], comp_num: int
+    ) -> str:
         """Build individual component analysis."""
-        variance = component.get('variance_explained', 0)
-        interpretation = component.get('interpretation', '')
-        dominant_sources = component.get('dominant_sources', [])
-        
-        if self.language == 'es':
+        variance = component.get("variance_explained", 0)
+        interpretation = component.get("interpretation", "")
+        dominant_sources = component.get("dominant_sources", [])
+
+        if self.language == "es":
             return f"""
 **Análisis del Componente {comp_num}:**
 - Varianza Explicada: {variance:.1f}%
 - Interpretación: {interpretation}
-- Fuentes Dominantes: {', '.join(dominant_sources)}
+- Fuentes Dominantes: {", ".join(dominant_sources)}
 """
         else:
             return f"""
 **Component {comp_num} Analysis:**
 - Variance Explained: {variance:.1f}%
 - Interpretation: {interpretation}
-- Dominant Sources: {', '.join(dominant_sources)}
+- Dominant Sources: {", ".join(dominant_sources)}
 """
 
     def _build_variance_analysis(self, variance_explained: float) -> str:
         """Build variance analysis section."""
-        if self.language == 'es':
+        if self.language == "es":
             if variance_explained >= 80:
                 quality = "Excelente"
                 explanation = "Los componentes principales capturan la mayoría de la variabilidad en los datos"
@@ -1080,7 +1137,7 @@ The strategic implications of these patterns suggest that successful tool implem
             else:
                 quality = "Limitado"
                 explanation = "Los componentes principales capturan una porción limitada de la variabilidad"
-            
+
             return f"""
 **Evaluación de Varianza Explicada:**
 - Porcentaje Total: {variance_explained:.1f}%
@@ -1090,17 +1147,25 @@ The strategic implications of these patterns suggest that successful tool implem
         else:
             if variance_explained >= 80:
                 quality = "Excellent"
-                explanation = "Principal components capture most of the data variability"
+                explanation = (
+                    "Principal components capture most of the data variability"
+                )
             elif variance_explained >= 60:
                 quality = "Good"
-                explanation = "Principal components capture a significant portion of variability"
+                explanation = (
+                    "Principal components capture a significant portion of variability"
+                )
             elif variance_explained >= 40:
                 quality = "Acceptable"
-                explanation = "Principal components capture a moderate portion of variability"
+                explanation = (
+                    "Principal components capture a moderate portion of variability"
+                )
             else:
                 quality = "Limited"
-                explanation = "Principal components capture a limited portion of variability"
-            
+                explanation = (
+                    "Principal components capture a limited portion of variability"
+                )
+
             return f"""
 **Explained Variance Assessment:**
 - Total Percentage: {variance_explained:.1f}%
@@ -1108,46 +1173,60 @@ The strategic implications of these patterns suggest that successful tool implem
 - Interpretation: {explanation}
 """
 
-    def _build_findings_synthesis(self, principal_findings: List[Dict[str, Any]]) -> str:
+    def _build_findings_synthesis(
+        self, principal_findings: List[Dict[str, Any]]
+    ) -> str:
         """Build findings synthesis section."""
         if not principal_findings:
             return ""
-        
-        if self.language == 'es':
+
+        if self.language == "es":
             section = "### SÍNTESIS DE HALLAZGOS PRINCIPALES\n\n"
         else:
             section = "### PRINCIPAL FINDINGS SYNTHESIS\n\n"
-        
+
         # Group findings by confidence
-        high_confidence = [f for f in principal_findings if f.get('confidence') == 'high']
-        medium_confidence = [f for f in principal_findings if f.get('confidence') == 'medium']
-        low_confidence = [f for f in principal_findings if f.get('confidence') == 'low']
-        
+        high_confidence = [
+            f for f in principal_findings if f.get("confidence") == "high"
+        ]
+        medium_confidence = [
+            f for f in principal_findings if f.get("confidence") == "medium"
+        ]
+        low_confidence = [f for f in principal_findings if f.get("confidence") == "low"]
+
         if high_confidence:
-            if self.language == 'es':
+            if self.language == "es":
                 section += "**Hallazgos de Alta Confianza:**\n"
             else:
                 section += "**High Confidence Findings:**\n"
-            
+
             for finding in high_confidence:
-                bullet = finding.get('bullet_point', '')[:100] + "..." if len(finding.get('bullet_point', '')) > 100 else finding.get('bullet_point', '')
+                bullet = (
+                    finding.get("bullet_point", "")[:100] + "..."
+                    if len(finding.get("bullet_point", "")) > 100
+                    else finding.get("bullet_point", "")
+                )
                 section += f"- {bullet}\n"
-        
+
         if medium_confidence:
-            if self.language == 'es':
+            if self.language == "es":
                 section += "\n**Hallazgos de Confianza Media:**\n"
             else:
                 section += "\n**Medium Confidence Findings:**\n"
-            
+
             for finding in medium_confidence:
-                bullet = finding.get('bullet_point', '')[:100] + "..." if len(finding.get('bullet_point', '')) > 100 else finding.get('bullet_point', '')
+                bullet = (
+                    finding.get("bullet_point", "")[:100] + "..."
+                    if len(finding.get("bullet_point", "")) > 100
+                    else finding.get("bullet_point", "")
+                )
                 section += f"- {bullet}\n"
-        
+
         return section
 
     def _build_strategic_implications(self, findings: Dict[str, Any]) -> str:
         """Build strategic implications section."""
-        if self.language == 'es':
+        if self.language == "es":
             return """
 ### IMPLICACIONES ESTRATÉGICAS
 
@@ -1176,7 +1255,7 @@ Provide actionable strategic insights for business leaders.
 
     def _build_recommendations(self, findings: Dict[str, Any]) -> str:
         """Build recommendations section."""
-        if self.language == 'es':
+        if self.language == "es":
             return """
 ### RECOMENDACIONES EJECUTIVAS
 
@@ -1213,7 +1292,7 @@ Each recommendation should be:
 
     def _build_pca_requirements(self) -> str:
         """Build PCA-specific requirements with emphasis on loadings."""
-        if self.language == 'es':
+        if self.language == "es":
             return """
 ### REQUISITOS ESPECÍFICOS DE PCA - ANÁLISIS DE CARGAS Y COMPONENTES
 
@@ -1268,110 +1347,154 @@ Connect these findings with temporal trends to explain the evolution of these pa
 
     def _extract_variable_relationships(self, pca_insights: Dict[str, Any]) -> str:
         """Extract key variable relationships for narrative prompt."""
-        components = pca_insights.get('dominant_patterns', [])
-        tool_name = pca_insights.get('tool_name', 'Unknown Tool')
+        components = pca_insights.get("dominant_patterns", [])
+        tool_name = pca_insights.get("tool_name", "Unknown Tool")
 
         # Default relationships based on common management tools analysis
         default_vars = {
-            'es': "'popularidad pública', 'complejidad de implementación', 'efectividad reportada'",
-            'en': "'public popularity', 'implementation complexity', 'reported effectiveness'"
+            "es": "'popularidad pública', 'complejidad de implementación', 'efectividad reportada'",
+            "en": "'public popularity', 'implementation complexity', 'reported effectiveness'",
         }
 
         # Try to extract from actual PCA data
         variables = []
         for component in components[:2]:  # Focus on first two components
-            loadings = component.get('loadings', {})
+            loadings = component.get("loadings", {})
             if loadings:
                 # Get variables with highest absolute loadings
-                sorted_vars = sorted(loadings.items(), key=lambda x: abs(x[1]), reverse=True)
-                variables.extend([var for var, _ in sorted_vars[:2]])  # Top 2 per component
+                sorted_vars = sorted(
+                    loadings.items(), key=lambda x: abs(x[1]), reverse=True
+                )
+                variables.extend(
+                    [var for var, _ in sorted_vars[:2]]
+                )  # Top 2 per component
 
         if variables:
             unique_vars = list(set(variables))[:3]  # Limit to 3 unique variables
-            if self.language == 'es':
-                return ', '.join([f"'{var}'" for var in unique_vars])
+            if self.language == "es":
+                return ", ".join([f"'{var}'" for var in unique_vars])
             else:
-                return ', '.join([f"'{var}'" for var in unique_vars])
+                return ", ".join([f"'{var}'" for var in unique_vars])
 
         return default_vars[self.language]
 
-    def _build_detailed_pca_narrative(self, components: List[Dict[str, Any]], tool_name: str, variance_explained: float) -> str:
+    def _build_detailed_pca_narrative(
+        self,
+        components: List[Dict[str, Any]],
+        tool_name: str,
+        variance_explained: float,
+    ) -> str:
         """Build detailed PCA narrative with specific numerical insights."""
         if not components:
             return ""
-        
+
         narrative = f"""
 **ANÁLISIS NUMÉRICO DETALLADO DE COMPONENTES:**
 
 """
-        
+
         # Analyze first two components in detail
         for i, component in enumerate(components[:2]):
             comp_num = i + 1
-            variance = component.get('variance_explained', 0)
-            interpretation = component.get('interpretation', '')
-            loadings = component.get('loadings', {})
-            
+            variance = component.get("variance_explained", 0)
+            interpretation = component.get("interpretation", "")
+            loadings = component.get("loadings", {})
+
             narrative += f"""
 **Componente {comp_num} ({variance:.1f}% varianza explicada):**
 {interpretation}
 
 **Cargas Específicas:**
 """
-            
+
             # Sort loadings by absolute value for emphasis
-            sorted_loadings = sorted(loadings.items(), key=lambda x: abs(x[1]), reverse=True)
-            
+            sorted_loadings = sorted(
+                loadings.items(), key=lambda x: abs(x[1]), reverse=True
+            )
+
             for source, loading in sorted_loadings:
-                direction = "positiva" if loading > 0 else "negativa" if loading < 0 else "neutral"
-                strength = "fuerte" if abs(loading) >= 0.4 else "moderada" if abs(loading) >= 0.2 else "débil"
-                narrative += f"- {source}: carga {direction} {strength} de {loading:.3f}\n"
-            
+                direction = (
+                    "positiva"
+                    if loading > 0
+                    else "negativa"
+                    if loading < 0
+                    else "neutral"
+                )
+                strength = (
+                    "fuerte"
+                    if abs(loading) >= 0.4
+                    else "moderada"
+                    if abs(loading) >= 0.2
+                    else "débil"
+                )
+                narrative += (
+                    f"- {source}: carga {direction} {strength} de {loading:.3f}\n"
+                )
+
             # Add specific insights for this component
             if i == 0:  # PC1
-                positive_sources = [src for src, loading in loadings.items() if loading > 0.2]
-                negative_sources = [src for src, loading in loadings.items() if loading < -0.2]
-                
+                positive_sources = [
+                    src for src, loading in loadings.items() if loading > 0.2
+                ]
+                negative_sources = [
+                    src for src, loading in loadings.items() if loading < -0.2
+                ]
+
                 if positive_sources and negative_sources:
                     narrative += f"""
 **Relación de Oposición en PC1:**
-- Fuentes con influencia positiva: {', '.join(positive_sources)}
-- Fuentes con influencia negativa: {', '.join(negative_sources)}
+- Fuentes con influencia positiva: {", ".join(positive_sources)}
+- Fuentes con influencia negativa: {", ".join(negative_sources)}
 - Esto sugiere una tensión entre popularidad/acceso y satisfacción/efectividad
 """
                 elif len(positive_sources) >= 2:
                     narrative += f"""
 **Patrón de Alineación en PC1:**
-- Fuentes trabajando en sinergia: {', '.join(positive_sources)}
+- Fuentes trabajando en sinergia: {", ".join(positive_sources)}
 - Indica un patrón coherente de adopción o interés
 """
-            
+
             elif i == 1:  # PC2
                 # Identify perpendicular/independent factors
-                independent_sources = [src for src, loading in loadings.items() if abs(loading) >= 0.2]
+                independent_sources = [
+                    src for src, loading in loadings.items() if abs(loading) >= 0.2
+                ]
                 if independent_sources:
                     narrative += f"""
 **Factores Independientes en PC2:**
-- Fuentes con influencia única: {', '.join(independent_sources)}
+- Fuentes con influencia única: {", ".join(independent_sources)}
 - Representa dimensiones ortogonales al patrón principal
 """
-        
+
         # Add combined variance analysis
+        combined_variance = 0
         if len(components) >= 2:
-            combined_variance = components[0].get('variance_explained', 0) + components[1].get('variance_explained', 0)
+            combined_variance = components[0].get("variance_explained", 0) + components[
+                1
+            ].get("variance_explained", 0)
             narrative += f"""
 **ANÁLISIS COMBINADO DE PRIMEROS DOS COMPONENTES:**
 - Varianza combinada explicada: {combined_variance:.1f}%
 - """
-            
+
             if combined_variance >= 70:
                 narrative += "Poder explicativo excelente para análisis robusto"
             elif combined_variance >= 50:
                 narrative += "Poder explicativo bueno para insights significativos"
             else:
-                narrative += "Poder explicativo moderado, requiere interpretación cuidadosa"
-        
+                narrative += (
+                    "Poder explicativo moderado, requiere interpretación cuidadosa"
+                )
+
         # Add specific guidance for narrative construction
+        variance_to_mention = (
+            combined_variance if len(components) >= 2 else variance_explained
+        )
+
+        # Add specific guidance for narrative construction
+        variance_to_mention = (
+            combined_variance if len(components) >= 2 else variance_explained
+        )
         narrative += f"""
 
 **GUÍA PARA CONSTRUIR LA NARRATIVA:**
@@ -1379,18 +1502,20 @@ Connect these findings with temporal trends to explain the evolution of these pa
 2. Explica la tensión entre fuentes con cargas opuestas
 3. Conecta PC1 con "dinámicas de adopción popular" vs "satisfacción real"
 4. Conecta PC2 con "factores académicos/independientes" vs "factores comerciales"
-5. Menciona específicamente el {combined_variance if len(components) >= 2 else variance_explained:.1f}% de varianza explicada
+5. Menciona específicamente el {variance_to_mention:.1f}% de varianza explicada
 6. Relaciona con la brecha teoría-práctica en gestión organizacional
 """
-        
+
         return narrative
 
-    def _build_single_source_context_section(self, tool_name: str, source_name: str, data: Dict[str, Any]) -> str:
+    def _build_single_source_context_section(
+        self, tool_name: str, source_name: str, data: Dict[str, Any]
+    ) -> str:
         """Build context section for single source analysis."""
         date_range = f"del {data.get('date_range_start', 'N/A')} al {data.get('date_range_end', 'N/A')}"
-        data_points = data.get('data_points_analyzed', 0)
-        
-        if self.language == 'es':
+        data_points = data.get("data_points_analyzed", 0)
+
+        if self.language == "es":
             return f"""
 ### CONTEXTO DEL ANÁLISIS DE FUENTE ÚNICA
 
@@ -1413,16 +1538,19 @@ Este análisis se basa en datos de una única fuente, proporcionando un análisi
 This analysis is based on data from a single source, providing a deep analysis of temporal, seasonal, and frequency patterns of the management tool over time.
 """
 
-    def _build_executive_summary_section(self, temporal_metrics: Dict[str, Any],
-                                      seasonal_patterns: Dict[str, Any],
-                                      fourier_analysis: Dict[str, Any]) -> str:
+    def _build_executive_summary_section(
+        self,
+        temporal_metrics: Dict[str, Any],
+        seasonal_patterns: Dict[str, Any],
+        fourier_analysis: Dict[str, Any],
+    ) -> str:
         """Build executive summary section for single source analysis."""
-        trend_direction = temporal_metrics.get('trend_direction', 'stable')
-        trend_strength = temporal_metrics.get('trend_strength', 0)
-        seasonal_strength = seasonal_patterns.get('seasonal_strength', 0)
-        dominant_frequency = fourier_analysis.get('dominant_frequency', 0)
-        
-        if self.language == 'es':
+        trend_direction = temporal_metrics.get("trend_direction", "stable")
+        trend_strength = temporal_metrics.get("trend_strength", 0)
+        seasonal_strength = seasonal_patterns.get("seasonal_strength", 0)
+        dominant_frequency = fourier_analysis.get("dominant_frequency", 0)
+
+        if self.language == "es":
             return f"""
 ### RESUMEN EJECUTIVO
 
@@ -1451,21 +1579,22 @@ Based on these key indicators, provide an executive summary that:
 4. Connects these patterns with the management tool's lifecycle
 """
 
-    def _build_temporal_analysis_section(self, temporal_metrics: Dict[str, Any],
-                                       summary_statistics: Dict[str, Any]) -> str:
+    def _build_temporal_analysis_section(
+        self, temporal_metrics: Dict[str, Any], summary_statistics: Dict[str, Any]
+    ) -> str:
         """Build temporal analysis section."""
-        trend_direction = temporal_metrics.get('trend_direction', 'stable')
-        trend_strength = temporal_metrics.get('trend_strength', 0)
-        volatility = temporal_metrics.get('volatility', 0)
-        momentum = temporal_metrics.get('momentum', 0)
-        acceleration = temporal_metrics.get('acceleration', 0)
-        
-        mean_value = summary_statistics.get('mean', 0)
-        std_dev = summary_statistics.get('std', 0)
-        min_value = summary_statistics.get('min', 0)
-        max_value = summary_statistics.get('max', 0)
-        
-        if self.language == 'es':
+        trend_direction = temporal_metrics.get("trend_direction", "stable")
+        trend_strength = temporal_metrics.get("trend_strength", 0)
+        volatility = temporal_metrics.get("volatility", 0)
+        momentum = temporal_metrics.get("momentum", 0)
+        acceleration = temporal_metrics.get("acceleration", 0)
+
+        mean_value = summary_statistics.get("mean", 0)
+        std_dev = summary_statistics.get("std", 0)
+        min_value = summary_statistics.get("min", 0)
+        max_value = summary_statistics.get("max", 0)
+
+        if self.language == "es":
             return f"""
 ### ANÁLISIS TEMPORAL
 
@@ -1512,20 +1641,23 @@ Based on these key indicators, provide an executive summary that:
 4. Connect summary statistics with the tool's maturity
 """
 
-    def _build_seasonal_analysis_section(self, seasonal_patterns: Dict[str, Any],
-                                       visualization_attributes: Dict[str, Any]) -> str:
+    def _build_seasonal_analysis_section(
+        self,
+        seasonal_patterns: Dict[str, Any],
+        visualization_attributes: Dict[str, Any],
+    ) -> str:
         """Build seasonal analysis section."""
-        seasonal_strength = seasonal_patterns.get('seasonal_strength', 0)
-        peak_season = seasonal_patterns.get('peak_season', 'N/A')
-        low_season = seasonal_patterns.get('low_season', 'N/A')
-        seasonal_periodicity = seasonal_patterns.get('seasonal_periodicity', 0)
-        
+        seasonal_strength = seasonal_patterns.get("seasonal_strength", 0)
+        peak_season = seasonal_patterns.get("peak_season", "N/A")
+        low_season = seasonal_patterns.get("low_season", "N/A")
+        seasonal_periodicity = seasonal_patterns.get("seasonal_periodicity", 0)
+
         # Extract visualization attributes
-        peak_months = visualization_attributes.get('peak_months', [])
-        low_months = visualization_attributes.get('low_months', [])
-        seasonal_amplitude = visualization_attributes.get('seasonal_amplitude', 0)
-        
-        if self.language == 'es':
+        peak_months = visualization_attributes.get("peak_months", [])
+        low_months = visualization_attributes.get("low_months", [])
+        seasonal_amplitude = visualization_attributes.get("seasonal_amplitude", 0)
+
+        if self.language == "es":
             return f"""
 ### ANÁLISIS ESTACIONAL
 
@@ -1536,8 +1668,8 @@ Based on these key indicators, provide an executive summary that:
 - Periodicidad Estacional: {seasonal_periodicity:.1f} meses
 
 **Atributos de Visualización:**
-- Meses Pico: {', '.join(peak_months) if peak_months else 'N/A'}
-- Meses Bajos: {', '.join(low_months) if low_months else 'N/A'}
+- Meses Pico: {", ".join(peak_months) if peak_months else "N/A"}
+- Meses Bajos: {", ".join(low_months) if low_months else "N/A"}
 - Amplitud Estacional: {seasonal_amplitude:.3f}
 
 **Instrucciones de Análisis:**
@@ -1557,8 +1689,8 @@ Based on these key indicators, provide an executive summary that:
 - Seasonal Periodicity: {seasonal_periodicity:.1f} months
 
 **Visualization Attributes:**
-- Peak Months: {', '.join(peak_months) if peak_months else 'N/A'}
-- Low Months: {', '.join(low_months) if low_months else 'N/A'}
+- Peak Months: {", ".join(peak_months) if peak_months else "N/A"}
+- Low Months: {", ".join(low_months) if low_months else "N/A"}
 - Seasonal Amplitude: {seasonal_amplitude:.3f}
 
 **Analysis Instructions:**
@@ -1568,20 +1700,25 @@ Based on these key indicators, provide an executive summary that:
 4. Connect seasonal patterns with external factors (economic, social, technological)
 """
 
-    def _build_fourier_analysis_section(self, fourier_analysis: Dict[str, Any],
-                                      visualization_attributes: Dict[str, Any]) -> str:
+    def _build_fourier_analysis_section(
+        self, fourier_analysis: Dict[str, Any], visualization_attributes: Dict[str, Any]
+    ) -> str:
         """Build Fourier Series Analysis (Periodogram) section."""
-        dominant_frequency = fourier_analysis.get('dominant_frequency', 0)
-        dominant_period = fourier_analysis.get('dominant_period', 0)
-        spectral_power = fourier_analysis.get('spectral_power', {})
-        frequency_peaks = fourier_analysis.get('frequency_peaks', [])
-        
+        dominant_frequency = fourier_analysis.get("dominant_frequency", 0)
+        dominant_period = fourier_analysis.get("dominant_period", 0)
+        spectral_power = fourier_analysis.get("spectral_power", {})
+        frequency_peaks = fourier_analysis.get("frequency_peaks", [])
+
         # Extract visualization attributes
-        periodogram_peaks = visualization_attributes.get('periodogram_peaks', [])
-        significant_frequencies = visualization_attributes.get('significant_frequencies', [])
-        power_spectrum_shape = visualization_attributes.get('power_spectrum_shape', 'N/A')
-        
-        if self.language == 'es':
+        periodogram_peaks = visualization_attributes.get("periodogram_peaks", [])
+        significant_frequencies = visualization_attributes.get(
+            "significant_frequencies", []
+        )
+        power_spectrum_shape = visualization_attributes.get(
+            "power_spectrum_shape", "N/A"
+        )
+
+        if self.language == "es":
             return f"""
 ### ANÁLISIS DE SERIES DE FOURIER (PERIODOGRAMA)
 
@@ -1594,8 +1731,8 @@ Based on these key indicators, provide an executive summary that:
 {chr(10).join([f"- Frecuencia {peak.get('frequency', 0):.4f} (período {peak.get('period', 0):.1f} meses, potencia {peak.get('power', 0):.3f})" for peak in frequency_peaks[:5]])}
 
 **Atributos de Visualización del Periodograma:**
-- Picos del Periodograma: {', '.join([f"frecuencia {p:.4f}" for p in periodogram_peaks]) if periodogram_peaks else 'N/A'}
-- Frecuencias Significativas: {', '.join([f"frecuencia {f:.4f}" for f in significant_frequencies]) if significant_frequencies else 'N/A'}
+- Picos del Periodograma: {", ".join([f"frecuencia {p:.4f}" for p in periodogram_peaks]) if periodogram_peaks else "N/A"}
+- Frecuencias Significativas: {", ".join([f"frecuencia {f:.4f}" for f in significant_frequencies]) if significant_frequencies else "N/A"}
 
 **Instrucciones de Análisis:**
 1. Interprete la frecuencia dominante y su significado para los ciclos de la herramienta
@@ -1617,8 +1754,8 @@ Based on these key indicators, provide an executive summary that:
 {chr(10).join([f"- Frequency {peak.get('frequency', 0):.4f} (period {peak.get('period', 0):.1f} months, power {peak.get('power', 0):.3f})" for peak in frequency_peaks[:5]])}
 
 **Periodogram Visualization Attributes:**
-- Periodogram Peaks: {', '.join([f"frequency {p:.4f}" for p in periodogram_peaks]) if periodogram_peaks else 'N/A'}
-- Significant Frequencies: {', '.join([f"frequency {f:.4f}" for f in significant_frequencies]) if significant_frequencies else 'N/A'}
+- Periodogram Peaks: {", ".join([f"frequency {p:.4f}" for p in periodogram_peaks]) if periodogram_peaks else "N/A"}
+- Significant Frequencies: {", ".join([f"frequency {f:.4f}" for f in significant_frequencies]) if significant_frequencies else "N/A"}
 
 **Analysis Instructions:**
 1. Interpret the dominant frequency and its meaning for tool cycles
@@ -1630,7 +1767,7 @@ Based on these key indicators, provide an executive summary that:
 
     def _build_single_source_requirements_section(self) -> str:
         """Build analysis requirements section for single source analysis."""
-        if self.language == 'es':
+        if self.language == "es":
             return """
 ### REQUISITOS DEL ANÁLISIS
 
@@ -1705,7 +1842,7 @@ Generate a doctoral analysis with the following four main sections:
 
     def _build_single_source_output_format_section(self) -> str:
         """Build output format section for single source analysis."""
-        if self.language == 'es':
+        if self.language == "es":
             return """
 ### FORMATO DE SALIDA
 
@@ -1788,11 +1925,497 @@ Start your response with { and end with }. Nothing else.
 - Valid JSON syntax only
 """
 
+    def create_improved_single_source_prompt(
+        self, data: Dict[str, Any], context: Dict[str, Any]
+    ) -> str:
+        """
+        Create improved single source analysis prompt (4000+ words, narrative-focused).
+        Focuses on temporal, seasonal, and Fourier analysis without statistical reporting.
+
+        Args:
+            data: Aggregated analysis data from a single source
+            context: Additional context for analysis
+
+        Returns:
+            Single source analysis prompt string with narrative focus
+        """
+        import time
+
+        start_time = time.time()
+        logging.info(
+            f"📝 Starting improved single source prompt generation for '{data.get('tool_name', 'Unknown')}' in {self.language}"
+        )
+
+        # Extract key information
+        tool_name = data.get("tool_name", "Unknown Tool")
+        source_name = data.get("source_name", "Unknown Source")
+        temporal_metrics = data.get("temporal_metrics", {})
+        seasonal_patterns = data.get("seasonal_patterns", {})
+        fourier_analysis = data.get("fourier_analysis", {})
+        date_range = f"del {data.get('date_range_start', 'N/A')} al {data.get('date_range_end', 'N/A')}"
+        data_points = data.get("data_points_analyzed", 0)
+
+        # Build the improved narrative prompt
+        if self.language == "es":
+            prompt = f"""
+ANÁLISIS NARRATIVO MEJORADO DE FUENTE ÚNICA - HERRAMIENTAS DE GESTIÓN
+Herramienta Analizada: {tool_name}
+Fuente de Datos: {source_name}
+Período: {date_range}
+Fecha del Análisis: {datetime.now().strftime("%Y-%m-%d")}
+
+=== CONTEXTO DEL ANÁLISIS ===
+
+**Enfoque Narrativo Empresarial:**
+Este análisis se enfoca en la interpretación práctica y estratégica de los datos, no en la presentación de estadísticas. Los números están disponibles en el dashboard - aquí nos concentramos en responder "qué significa esto para el negocio".
+
+**Datos Disponibles (No Reportar Numéricamente):**
+- Análisis temporal con tendencias, momentum, volatilidad y aceleración
+- Patrones estacionales con fuerza estacional y periodicidad
+- Análisis de Fourier con frecuencias dominantes y picos espectrales
+- {data_points:,} puntos de datos del período {date_range}
+
+=== ESTRUCTURA REQUERIDA (4000+ PALABRAS) ===
+
+**SECCIÓN 1: RESUMEN EJECUTIVO** (400 palabras)
+- Implicaciones estratégicas para la adopción de {tool_name}
+- Insights profundos del análisis temporal profundo
+- Indicadores de madurez y adopción de la herramienta
+- Relevancia empresarial y posicionamiento competitivo
+
+**SECCIÓN 2: ANÁLISIS TEMPORAL PROFUNDO** (1000 palabras) [PRIMARIO]
+- Interpretación de la trayectoria a largo plazo en contexto empresarial
+- Puntos de inflexión y cambios de tendencia con significado de negocio
+- Insights de ciclo de adopción y madurez del mercado
+- Indicadores predictivos de patrones temporales
+- Conectarlo con decisiones estratégicas de implementación
+
+**SECCIÓN 3: ANÁLISIS ESTACIONAL Y CICLOS** (800 palabras) [PRIMARIO]
+- Implicaciones de ciclos empresariales para {tool_name}
+- Timing óptimo para implementación basado en patrones estacionales
+- Indicadores de timing de mercado desde análisis estacional
+- Insights de planificación operacional
+- Conectar patrones estacionales con ciclos de gestión
+
+**SECCIÓN 4: ANÁLISIS ESPECTRAL Y PERIODOGRAMA** (1000 palabras) [PRIMARIO]
+- Frecuencias dominantes y ciclos empresariales para esta herramienta
+- Patrones espectrales indicando madurez del mercado
+- Análisis de frecuencia para planificación estratégica
+- Interpretación del comportamiento cíclico de datos espectrales
+- Implicaciones para sincronización con ciclos de mercado
+
+**SECCIÓN 5: EVALUACIÓN DE CONFIABILIDAD DE DATOS** (400 palabras)
+- Confiabilidad y completitud de datos de fuente única
+- Implicaciones de cobertura temporal
+- Indicadores de confiabilidad de tendencias
+- Limitaciones de datos y fronteras de interpretación
+
+**SECCIÓN 6: INSIGHTS ESTRATÉGICOS Y RECOMENDACIONES** (400 palabras)
+- Guía de implementación desde perspectiva de fuente única
+- Recomendaciones de timing y enfoque
+- Factores de éxito específicos para {tool_name}-fuente específica
+- Posicionamiento empresarial
+
+=== INSTRUCCIONES DE ANÁLISIS ===
+
+**Enfoque Narrativo Sobre Estadístico:**
+- NO presente valores numéricos (el usuario ya los tiene en el dashboard)
+- NO haga reportes estadísticos
+- SÍ interprete: "Los datos muestran..." en lugar de "La correlación es 0.73"
+- SÍ conecte patrones con teoría empresarial y práctica industrial
+- SÍ proporcione insights estratégicos accionables
+
+**Contexto Empresarial por Fuente:**
+- **Google Trends**: "Los datos de interés público sugieren..."
+- **Google Books**: "Los patrones de investigación académica indican..."
+- **Bain Usage**: "La adopción real revela..."
+- **Crossref**: "La investigación académica muestra..."
+- **Bain Satisfaction**: "La satisfacción ejecutiva indica..."
+
+**Conexiones Estratégicas:**
+1. Integrar análisis temporal con planificación estratégica
+2. Conectar patrones estacionales con ciclos de negocio
+3. Relacionar análisis espectral con madurez del mercado
+4. Posicionar hallazgos en contexto competitivo
+
+**Rigor Académico pero Accesible:**
+- Mantenga estándares académicos pero use lenguaje ejecutivo
+- Cite conceptos de gestión sin presentar fórmulas
+- Conecte teoría académica con práctica empresarial
+- Proporcione recomendaciones específicas y medibles
+
+**PROHIBICIONES ABSOLUTAS:**
+- NO incluir sección de Referencias
+- NO presentar cálculos estadísticos
+- NO usar formato de viñetas para el análisis principal
+- NO repetir números del dashboard
+
+**RESULTADO ESPERADO:**
+Un ensayo narrativo integrado de 4000+ palabras que transforme datos estadísticos en insights estratégicos empresariales, con cada sección fluyendo naturalmente hacia la siguiente y conectando conceptos teóricos con implicaciones prácticas.
+"""
+        else:
+            prompt = f"""
+IMPROVED SINGLE SOURCE NARRATIVE ANALYSIS - MANAGEMENT TOOLS
+Tool Analyzed: {tool_name}
+Data Source: {source_name}
+Period: {date_range}
+Analysis Date: {datetime.now().strftime("%Y-%m-%d")}
+
+=== ANALYSIS CONTEXT ===
+
+**Business Narrative Focus:**
+This analysis focuses on practical and strategic interpretation of data, not statistical presentation. Numbers are available in the dashboard - here we concentrate on answering "what does this mean for business?"
+
+**Available Data (Do Not Report Numerically):**
+- Temporal analysis with trends, momentum, volatility, and acceleration
+- Seasonal patterns with seasonal strength and periodicity
+- Fourier analysis with dominant frequencies and spectral peaks
+- {data_points:,} data points from period {date_range}
+
+=== REQUIRED STRUCTURE (4000+ WORDS) ===
+
+**SECTION 1: EXECUTIVE OVERVIEW** (400 words)
+- Strategic implications for {tool_name} adoption
+- Deep insights from comprehensive temporal analysis
+- Tool maturity and adoption indicators
+- Business relevance and competitive positioning
+
+**SECTION 2: DEEP TEMPORAL ANALYSIS** (1000 words) [PRIMARY]
+- Long-term trajectory interpretation in business context
+- Trend changes and inflection points with business meaning
+- Market adoption cycle insights
+- Predictive indicators from temporal patterns
+- Connect with strategic implementation decisions
+
+**SECTION 3: SEASONAL AND CYCLICAL PATTERNS** (800 words) [PRIMARY]
+- Business cycle implications for {tool_name}
+- Optimal timing for implementation based on seasonal patterns
+- Market timing indicators from seasonal analysis
+- Operational planning insights
+- Connect seasonal patterns with management cycles
+
+**SECTION 4: SPECTRAL ANALYSIS AND PERIODOGRAM** (1000 words) [PRIMARY]
+- Dominant frequencies and business cycles for this tool
+- Spectral patterns indicating market maturity
+- Frequency analysis for strategic planning
+- Cyclical behavior interpretation from spectral data
+- Implications for market cycle synchronization
+
+**SECTION 5: DATA QUALITY AND RELIABILITY ASSESSMENT** (400 words)
+- Single-source data completeness and confidence
+- Temporal coverage implications
+- Trend reliability indicators
+- Data limitations and interpretation boundaries
+
+**SECTION 6: STRATEGIC INSIGHTS AND RECOMMENDATIONS** (400 words)
+- Single-source implementation guidance
+- Timing and approach recommendations
+- Success factors specific to {tool_name}-specific-source combination
+- Business positioning insights
+
+=== ANALYSIS INSTRUCTIONS ===
+
+**Narrative Over Statistical Focus:**
+- DO NOT present numerical values (user already has them in dashboard)
+- DO NOT make statistical reports
+- DO interpret: "Data shows..." instead of "Correlation is 0.73"
+- DO connect patterns with business theory and industrial practice
+- DO provide actionable strategic insights
+
+**Business Context by Source:**
+- **Google Trends**: "Public interest data suggests..."
+- **Google Books**: "Academic research patterns indicate..."
+- **Bain Usage**: "Real-world adoption reveals..."
+- **Crossref**: "Peer-reviewed research shows..."
+- **Bain Satisfaction**: "Executive satisfaction indicates..."
+
+**Strategic Connections:**
+1. Integrate temporal analysis with strategic planning
+2. Connect seasonal patterns with business cycles
+3. Relate spectral analysis with market maturity
+4. Position findings in competitive context
+
+**Academic Rigor but Accessible:**
+- Maintain academic standards but use executive language
+- Cite management concepts without presenting formulas
+- Connect academic theory with business practice
+- Provide specific and measurable recommendations
+
+**ABSOLUTE PROHIBITIONS:**
+- DO NOT include References section
+- DO NOT present statistical calculations
+- DO NOT use bullet format for main analysis
+- DO NOT repeat dashboard numbers
+
+**EXPECTED RESULT:**
+A integrated narrative essay of 4000+ words that transforms statistical data into business strategic insights, with each section flowing naturally into the next and connecting theoretical concepts with practical implications.
+"""
+
+        generation_time = time.time() - start_time
+        logging.info(
+            f"✅ Improved single source prompt generation completed in {generation_time:.2f}s - prompt length: {len(prompt)} characters"
+        )
+
+        return prompt
+
+    def create_improved_multi_source_prompt(
+        self, data: Dict[str, Any], context: Dict[str, Any]
+    ) -> str:
+        """
+        Create improved multi-source analysis prompt (4000+ words, narrative-focused).
+        Focuses on correlation, PCA, and cross-source synthesis with practical interpretation.
+        INTERPRETS ACTUAL PCA RESULTS - does not hardcode PC1/PC2 meanings.
+
+        Args:
+            data: Aggregated analysis data from multiple sources
+            context: Additional context for analysis
+
+        Returns:
+            Multi-source analysis prompt string with narrative focus
+        """
+        import time
+
+        start_time = time.time()
+        logging.info(
+            f"📝 Starting improved multi-source prompt generation for '{data.get('tool_name', 'Unknown')}' in {self.language}"
+        )
+
+        # Extract key information
+        tool_name = data.get("tool_name", "Unknown Tool")
+        sources = data.get("selected_sources", [])
+        pca_insights = data.get("pca_insights", {})
+        heatmap_data = data.get("heatmap_analysis", {})
+        date_range = f"del {data.get('date_range_start', 'N/A')} al {data.get('date_range_end', 'N/A')}"
+        data_points = data.get("data_points_analyzed", 0)
+
+        # Extract actual PCA results for dynamic interpretation
+        pca_components = pca_insights.get("dominant_patterns", [])
+        variance_explained = pca_insights.get("total_variance_explained", 0)
+
+        # Build the improved narrative prompt with data-driven PCA interpretation
+        if self.language == "es":
+            prompt = f"""
+ANÁLISIS NARRATIVO MEJORADO MULTI-FUENTE - HERRAMIENTAS DE GESTIÓN
+Herramienta Analizada: {tool_name}
+Fuentes de Datos: {", ".join(sources)}
+Período: {date_range}
+Fecha del Análisis: {datetime.now().strftime("%Y-%m-%d")}
+
+=== CONTEXTO DEL ANÁLISIS ===
+
+**Enfoque Narrativo Empresarial Multi-Fuente:**
+Este análisis integra insights de múltiples fuentes de datos para proporcionar una perspectiva empresarial holística. Se enfoca en la interpretación estratégica basada en LOS RESULTADOS REALES, no en análisis predeterminado.
+
+**Datos Disponibles (Síntesis Interpretativa):**
+- Análisis de correlación entre fuentes múltiples
+- Análisis de Componentes Principales (PCA) con cargas y componentes
+- Mapa de calor y patrones visuales de correlación
+- Análisis temporal combinado de múltiples fuentes
+- {data_points:,} puntos de datos integrados del período {date_range}
+
+**RESULTADOS PCA REALES PARA INTERPRETAR:**
+- Varianza Explicada Total: {variance_explained:.1f}%
+- Número de Componentes: {len(pca_components)}
+- **IMPORTANTE**: Interprete estos componentes específicos, no significado predeterminado
+
+=== ESTRUCTURA REQUERIDA (4000+ PALABRAS) ===
+
+**SECCIÓN 1: RESUMEN EJECUTIVO** (400 palabras)
+- Implicaciones estratégicas de la perspectiva multi-fuente
+- Patrones clave a través de múltiples fuentes de datos
+- Insights de brecha teoría-práctica
+- Recomendaciones de adopción empresarial
+
+**SECCIÓN 2: ANÁLISIS DE CORRELACIÓN MULTI-FUENTE** (800 palabras) [PRIMARIO]
+- Interpretación de relaciones entre fuentes de datos
+- Fortalezas de correlación y su significado empresarial
+- Patrones de oposición y lo que revelan sobre adopción
+- Señales de mercado desde patrones de correlación
+- Validación cruzada entre fuentes
+
+**SECCIÓN 3: ANÁLISIS DE COMPONENTES PRINCIPALES (PCA)** (1000 palabras) [PRIMARIO]
+- **INTERPRETACIÓN DATA-DRIVEN**: Use los componentes específicos calculados
+- Analice las cargas reales de cada fuente en cada componente
+- Explique qué patrones reales revelan estos componentes
+- Relaciones entre fuentes y patrones de oposición OBSERVADOS
+- Varianza explicada real y lo que revela sobre complejidad
+- **NO asuma significados predeterminados** - interprete los resultados reales
+
+**SECCIÓN 4: ANÁLISIS DE PERIODOGRAMA Y FOURIER COMBINADO** (800 palabras) [PRIMARIO]
+- Análisis espectral combinado a través de todas las fuentes
+- Ciclos dominantes y su significado empresarial
+- Patrones de frecuencia indicando ondas de adopción
+- Indicadores de madurez del mercado desde análisis espectral
+- Insights de timing estratégico desde análisis cíclico
+
+**SECCIÓN 5: SÍNTESIS TEMPORAL MULTI-FUENTE** (600 palabras)
+- Tendencias a largo plazo a través de múltiples fuentes
+- Interpretación de ciclo de adopción
+- Indicadores de madurez del mercado
+- Implicaciones de trayectoria futura
+
+**SECCIÓN 6: INSIGHTS DE IMPLEMENTACIÓN ESTRATÉGICA** (400 palabras)
+- Recomendaciones accionables basadas en análisis multi-fuente
+- Factores de riesgo y indicadores de éxito
+- Timing y enfoque de implementación
+- Implicaciones de ventaja competitiva
+
+=== INSTRUCCIONES DE ANÁLISIS ===
+
+**ENFOQUE DATA-DRIVEN ESPECIALMENTE PARA PCA:**
+- Examine las cargas reales de cada fuente en cada componente
+- Identifique qué fuentes tienen influencia alta vs baja en cada componente
+- Observe tensiones reales (cargas opuestas) entre fuentes
+- Interprete la varianza explicada real en términos de complejidad del mercado
+- Conecte patrones observados con teoría empresarial
+
+**Enfoque Narrativo Sobre Estadístico:**
+- NO presente coeficientes de correlación específicos
+- NO reporte varianza explicada numéricamente
+- SÍ interprete: "Las fuentes muestran fuerte alineación, sugiriendo..."
+- SÍ conecte patrones con dinámica de mercado
+- SÍ proporcione insights estratégicos accionables
+
+**Conexiones Estratégicas Multi-Fuente:**
+1. Validar patrones mediante concordancia entre fuentes
+2. Identificar tensiones mediante discordancia entre fuentes
+3. Posicionar insights en contexto competitivo
+4. Traducir hallazgos técnicos en decisiones empresariales
+
+**Rigor Académico-Profesional:**
+- Mantenga estándares académicos pero accesible para ejecutivos
+- Conecte teoría de gestión con práctica empresarial
+- Use terminología profesional precisa
+- Proporcione insights diferenciadores y accionables
+
+**PROHIBICIONES ABSOLUTAS:**
+- NO incluir sección de Referencias
+- NO presentar matrices de correlación numéricas
+- NO usar formato de viñetas para el análisis principal
+- NO repetir estadísticas del dashboard
+- NO asignar significados predeterminados a componentes PCA
+
+**RESULTADO ESPERADO:**
+Un ensayo narrativo integrado de 4000+ palabras que interprete LOS RESULTADOS REALES de múltiples fuentes de datos en insights estratégicos coherentes, con énfasis en correlaciones, PCA y patrones espectrales como fuentes primarias de insights empresariales.
+"""
+        else:
+            prompt = f"""
+IMPROVED MULTI-SOURCE NARRATIVE ANALYSIS - MANAGEMENT TOOLS
+Tool Analyzed: {tool_name}
+Data Sources: {", ".join(sources)}
+Period: {date_range}
+Analysis Date: {datetime.now().strftime("%Y-%m-%d")}
+
+=== ANALYSIS CONTEXT ===
+
+**Multi-Source Business Narrative Focus:**
+This analysis integrates insights from multiple data sources to provide a holistic business perspective. Focuses on strategic interpretation based on ACTUAL RESULTS, not predetermined analysis.
+
+**Available Data (Interpretive Synthesis):**
+- Correlation analysis between multiple sources
+- Principal Component Analysis (PCA) with loadings and components
+- Heatmap and visual correlation patterns
+- Combined temporal analysis from multiple sources
+- {data_points:,} integrated data points from period {date_range}
+
+**ACTUAL PCA RESULTS TO INTERPRET:**
+- Total Explained Variance: {variance_explained:.1f}%
+- Number of Components: {len(pca_components)}
+- **IMPORTANT**: Interpret these specific components, not predetermined meaning
+
+=== REQUIRED STRUCTURE (4000+ WORDS) ===
+
+**SECTION 1: EXECUTIVE OVERVIEW** (400 words)
+- Strategic implications from multi-source perspective
+- Key patterns across multiple data sources
+- Theory-practice gap insights
+- Business adoption recommendations
+
+**SECTION 2: MULTI-SOURCE CORRELATION ANALYSIS** (800 words) [PRIMARY]
+- Relationship interpretation between multiple data sources
+- Correlation strengths and their business meaning
+- Opposition patterns and what they reveal about tool adoption
+- Market signals from correlation patterns
+- Cross-source validation
+
+**SECTION 3: PRINCIPAL COMPONENT ANALYSIS (PCA)** (1000 words) [PRIMARY]
+- **DATA-DRIVEN INTERPRETATION**: Use the specific calculated components
+- Analyze real loadings of each source on each component
+- Explain what patterns these specific components reveal
+- Observed source relationships and opposition patterns
+- Real explained variance and what it reveals about complexity
+- **DO NOT assume predetermined meanings** - interpret actual results
+
+**SECTION 4: COMBINED PERIODOGRAM AND FOURIER ANALYSIS** (800 words) [PRIMARY]
+- Combined spectral analysis across all sources
+- Dominant cycles and their business significance
+- Frequency patterns indicating adoption waves
+- Market maturity indicators from spectral analysis
+- Strategic timing insights from cyclical analysis
+
+**SECTION 5: MULTI-SOURCE TEMPORAL SYNTHESIS** (600 words)
+- Long-term trends across multiple sources
+- Adoption lifecycle interpretation
+- Market maturity indicators
+- Future trajectory implications
+
+**SECTION 6: STRATEGIC IMPLEMENTATION INSIGHTS** (400 words)
+- Actionable recommendations based on multi-source analysis
+- Risk factors and success indicators
+- Implementation timing and approach
+- Competitive advantage implications
+
+=== ANALYSIS INSTRUCTIONS ===
+
+**DATA-DRIVEN APPROACH ESPECIALLY FOR PCA:**
+- Examine real loadings of each source on each component
+- Identify which sources have high vs low influence on each component
+- Observe real tensions (opposite loadings) between sources
+- Interpret real explained variance in terms of market complexity
+- Connect observed patterns with business theory
+
+**Narrative Over Statistical Focus:**
+- DO NOT present specific correlation coefficients
+- DO NOT report numerical variance explained
+- DO interpret: "Sources show strong alignment, suggesting..."
+- DO connect patterns with market dynamics
+- DO provide actionable strategic insights
+
+**Multi-Source Strategic Connections:**
+1. Validate patterns through source agreement
+2. Identify tensions through source discordance
+3. Position insights in competitive context
+4. Translate technical findings into business decisions
+
+**Academic-Professional Rigor:**
+- Maintain academic standards but accessible to executives
+- Connect management theory with business practice
+- Use precise professional terminology
+- Provide differentiating and actionable insights
+
+**ABSOLUTE PROHIBITIONS:**
+- DO NOT include References section
+- DO NOT present numerical correlation matrices
+- DO NOT use bullet format for main analysis
+- DO NOT repeat dashboard statistics
+- DO NOT assign predetermined meanings to PCA components
+
+**EXPECTED RESULT:**
+A integrated narrative essay of 4000+ words that interprets ACTUAL RESULTS from multiple data sources into coherent strategic insights, with emphasis on correlations, PCA, and spectral patterns as primary sources of business insights.
+"""
+
+        generation_time = time.time() - start_time
+        logging.info(
+            f"✅ Improved multi-source prompt generation completed in {generation_time:.2f}s - prompt length: {len(prompt)} characters"
+        )
+
+        return prompt
+
     def _load_templates(self) -> Dict[str, Dict[str, str]]:
         """Load bilingual prompt templates."""
         return {
-            'comprehensive_analysis': {
-                'es': """
+            "comprehensive_analysis": {
+                "es": """
 ANÁLISIS DOCTORAL DE HERRAMIENTAS DE GESTIÓN
 Fecha: {analysis_date}
 
@@ -1800,17 +2423,17 @@ Fecha: {analysis_date}
 
 Por favor, genera un análisis doctoral-level que integre todos los elementos anteriores.
 """,
-                'en': """
+                "en": """
 DOCTORAL-LEVEL MANAGEMENT TOOLS ANALYSIS
 Date: {analysis_date}
 
 {context}
 
 Please generate a doctoral-level analysis that integrates all the above elements.
-"""
+""",
             },
-            'pca_focused': {
-                'es': """
+            "pca_focused": {
+                "es": """
 ANÁLISIS ENFOCADO EN PCA DE HERRAMIENTAS DE GESTIÓN
 Fecha: {analysis_date}
 
@@ -1818,17 +2441,17 @@ Fecha: {analysis_date}
 
 Genera insights profundos basados en el análisis de componentes principales.
 """,
-                'en': """
+                "en": """
 PCA-FOCUSED MANAGEMENT TOOLS ANALYSIS
 Date: {analysis_date}
 
 {pca_analysis}
 
 Generate deep insights based on principal component analysis.
-"""
+""",
             },
-            'executive_summary': {
-                'es': """
+            "executive_summary": {
+                "es": """
 RESUMEN EJECUTIVO DE HERRAMIENTAS DE GESTIÓN
 Fecha: {executive_date}
 
@@ -1836,17 +2459,17 @@ Fecha: {executive_date}
 
 Genera un resumen conciso y accionable para líderes empresariales.
 """,
-                'en': """
+                "en": """
 EXECUTIVE SUMMARY OF MANAGEMENT TOOLS
 Date: {executive_date}
 
 {executive_content}
 
 Generate a concise, actionable summary for business leaders.
-"""
+""",
             },
-            'single_source_analysis': {
-                'es': """
+            "single_source_analysis": {
+                "es": """
 ANÁLISIS DE FUENTE ÚNICA DE HERRAMIENTAS DE GESTIÓN
 Fecha: {analysis_date}
 
@@ -1854,13 +2477,13 @@ Fecha: {analysis_date}
 
 Por favor, genera un análisis doctoral-level que integre todos los elementos anteriores.
 """,
-                'en': """
+                "en": """
 SINGLE SOURCE MANAGEMENT TOOLS ANALYSIS
 Date: {analysis_date}
 
 {context}
 
 Please generate a doctoral-level analysis that integrates all the above elements.
-"""
-            }
+""",
+            },
         }
