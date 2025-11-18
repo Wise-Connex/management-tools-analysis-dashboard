@@ -6558,10 +6558,26 @@ if KEY_FINDINGS_AVAILABLE and key_findings_service:
                 # Return loading state immediately
                 print("🔄 Returning loading state to user")
 
+                # Force fresh AI generation by clearing any cache first
+                try:
+                    if hasattr(key_findings_service, "kf_db_manager"):
+                        # Clear cache for this specific scenario to force fresh AI generation
+                        scenario_hash = (
+                            key_findings_service.kf_db_manager.generate_scenario_hash(
+                                selected_tool, selected_sources, language=language
+                            )
+                        )
+                        key_findings_service.kf_db_manager.clear_scenario_cache(
+                            scenario_hash
+                        )
+                        print(
+                            f"🧹 Cache cleared for scenario {scenario_hash[:8]}... forcing fresh AI generation"
+                        )
+                except Exception as e:
+                    print(f"⚠️ Cache clear failed (not critical): {e}")
+
                 # Since signal doesn't work in Dash threads, use a simple time-based approach
-                print(
-                    "⏰ TESTING: Starting data collection with manual timeout check..."
-                )
+                print("⏰ Starting data collection with fresh AI generation...")
                 data_collection_start = time.time()
 
                 try:

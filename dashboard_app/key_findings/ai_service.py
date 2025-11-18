@@ -16,21 +16,26 @@ from dataclasses import dataclass
 import os
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
 
 @dataclass
 class AIModelConfig:
     """Configuration for AI models."""
+
     name: str
     max_tokens: int
     temperature: float
     timeout: int = 30
     cost_per_1k_tokens: float = 0.001
 
+
 class OpenRouterService:
     """
     Service for interacting with OpenRouter.ai API with fallback models.
-    
+
     Provides robust AI analysis with multiple model options, retry logic,
     and performance monitoring.
     """
@@ -38,77 +43,78 @@ class OpenRouterService:
     def __init__(self, api_key: str, config: Dict[str, Any] = None):
         """
         Initialize OpenRouter service.
-        
+
         Args:
             api_key: OpenRouter.ai API key
             config: Configuration dictionary with model settings
         """
         self.api_key = api_key
         self.base_url = "https://openrouter.ai/api/v1"
-        
+
         # Default configuration - only available models, optimized for speed
         default_config = {
-            'models': [
-                'nvidia/nemotron-nano-9b-v2:free',
-                'openai/gpt-oss-20b:free',
-                'mistralai/mistral-small-3.2-24b-instruct:free',
-                'cognitivecomputations/dolphin-mistral-24b-venice-edition:free',
-                'google/gemma-3-27b-it:free'
+            "models": [
+                "nvidia/nemotron-nano-9b-v2:free",
+                "openai/gpt-oss-20b:free",
+                "mistralai/mistral-small-3.2-24b-instruct:free",
+                "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
+                "google/gemma-3-27b-it:free",
             ],
-            'timeout': 8,  # Aggressive timeout for faster responses
-            'max_retries': 1,  # Minimal retries for speed
-            'retry_delay': 0.1,  # Very fast retries
-            'max_tokens': 1500,  # Reduced for faster generation
-            'temperature': 0.7
+            "timeout": 8,  # Aggressive timeout for faster responses
+            "max_retries": 1,  # Minimal retries for speed
+            "retry_delay": 0.1,  # Very fast retries
+            "max_tokens": 1500,  # Reduced for faster generation
+            "temperature": 0.7,
         }
-        
+
         # Merge with provided config
         self.config = {**default_config, **(config or {})}
-        
+
         # Model configurations - only available models, optimized for speed
         self.model_configs = {
-            'nvidia/nemotron-nano-9b-v2:free': AIModelConfig(
-                name='nvidia/nemotron-nano-9b-v2:free',
+            "nvidia/nemotron-nano-9b-v2:free": AIModelConfig(
+                name="nvidia/nemotron-nano-9b-v2:free",
                 max_tokens=2000,
                 temperature=0.7,
                 timeout=6,  # Very fast timeout
-                cost_per_1k_tokens=0.0
+                cost_per_1k_tokens=0.0,
             ),
-            'openai/gpt-oss-20b:free': AIModelConfig(
-                name='openai/gpt-oss-20b:free',
+            "openai/gpt-oss-20b:free": AIModelConfig(
+                name="openai/gpt-oss-20b:free",
                 max_tokens=2000,
                 temperature=0.7,
                 timeout=8,
-                cost_per_1k_tokens=0.0
+                cost_per_1k_tokens=0.0,
             ),
-            'mistralai/mistral-small-3.2-24b-instruct:free': AIModelConfig(
-                name='mistralai/mistral-small-3.2-24b-instruct:free',
+            "mistralai/mistral-small-3.2-24b-instruct:free": AIModelConfig(
+                name="mistralai/mistral-small-3.2-24b-instruct:free",
                 max_tokens=2000,
                 temperature=0.7,
                 timeout=8,  # Good balance of speed and capability
-                cost_per_1k_tokens=0.0
+                cost_per_1k_tokens=0.0,
             ),
-            'cognitivecomputations/dolphin-mistral-24b-venice-edition:free': AIModelConfig(
-                name='cognitivecomputations/dolphin-mistral-24b-venice-edition:free',
+            "cognitivecomputations/dolphin-mistral-24b-venice-edition:free": AIModelConfig(
+                name="cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
                 max_tokens=2000,
                 temperature=0.7,
                 timeout=10,
-                cost_per_1k_tokens=0.0
+                cost_per_1k_tokens=0.0,
             ),
-            'google/gemma-3-27b-it:free': AIModelConfig(
-                name='google/gemma-3-27b-it:free',
+            "google/gemma-3-27b-it:free": AIModelConfig(
+                name="google/gemma-3-27b-it:free",
                 max_tokens=2000,
                 temperature=0.7,
                 timeout=12,  # Largest model, slightly longer timeout
-                cost_per_1k_tokens=0.0
-            )
+                cost_per_1k_tokens=0.0,
+            ),
         }
-        
+
         # Performance tracking
         self.performance_stats = {}
 
-    async def generate_analysis(self, prompt: str, model: str = None,
-                               language: str = 'es') -> Dict[str, Any]:
+    async def generate_analysis(
+        self, prompt: str, model: str = None, language: str = "es"
+    ) -> Dict[str, Any]:
         """
         Generate AI analysis with fallback models.
 
@@ -121,19 +127,21 @@ class OpenRouterService:
             Dictionary containing analysis results and metadata
         """
         start_time = time.time()
-        logging.info(f"🚀 Starting AI analysis generation - prompt length: {len(prompt)} characters")
-        
+        logging.info(
+            f"🚀 Starting AI analysis generation - prompt length: {len(prompt)} characters"
+        )
+
         # Determine model order
-        if model and model in self.config['models']:
-            models_to_try = [model] + [m for m in self.config['models'] if m != model]
+        if model and model in self.config["models"]:
+            models_to_try = [model] + [m for m in self.config["models"] if m != model]
         else:
-            models_to_try = self.config['models']
-        
+            models_to_try = self.config["models"]
+
         last_error = None
         successful_model = None
         response_content = None
         token_count = 0
-        
+
         # Show prompt details before starting
         prompt_preview = prompt[:200] + "..." if len(prompt) > 200 else prompt
         logging.info(f"📝 Prompt preview: {prompt_preview}")
@@ -141,91 +149,126 @@ class OpenRouterService:
         # Try each model in order
         for i, attempt_model in enumerate(models_to_try):
             model_start_time = time.time()
-            logging.info(f"🔄 Attempting analysis with model: {attempt_model} (attempt {i+1}/{len(models_to_try)})")
+            logging.info(
+                f"🔄 Attempting analysis with model: {attempt_model} (attempt {i + 1}/{len(models_to_try)})"
+            )
 
             try:
                 logging.info(f"📡 Sending request to {attempt_model}...")
                 result = await self._call_model(prompt, attempt_model, language)
 
-                if result and 'choices' in result and len(result['choices']) > 0:
-                    response_content = result['choices'][0]['message']['content']
-                    token_count = result.get('usage', {}).get('total_tokens', 0)
+                if result and "choices" in result and len(result["choices"]) > 0:
+                    response_content = result["choices"][0]["message"]["content"]
+                    token_count = result.get("usage", {}).get("total_tokens", 0)
                     successful_model = attempt_model
                     model_time = time.time() - model_start_time
 
                     # Show response preview
-                    response_preview = response_content[:100] + "..." if len(response_content) > 100 else response_content
-                    logging.info(f"✅ Model {attempt_model} succeeded in {model_time:.2f}s with {token_count} tokens")
+                    response_preview = (
+                        response_content[:100] + "..."
+                        if len(response_content) > 100
+                        else response_content
+                    )
+                    logging.info(
+                        f"✅ Model {attempt_model} succeeded in {model_time:.2f}s with {token_count} tokens"
+                    )
                     logging.info(f"📥 Response preview: {response_preview}")
                     break
                 else:
                     model_time = time.time() - model_start_time
-                    logging.warning(f"⚠️ Model {attempt_model} returned invalid response after {model_time:.2f}s")
+                    logging.warning(
+                        f"⚠️ Model {attempt_model} returned invalid response after {model_time:.2f}s"
+                    )
 
             except Exception as e:
                 model_time = time.time() - model_start_time
                 last_error = e
-                logging.warning(f"❌ Model {attempt_model} failed after {model_time:.2f}s: {e}")
+                logging.warning(
+                    f"❌ Model {attempt_model} failed after {model_time:.2f}s: {e}"
+                )
                 continue
-        
+
         # Calculate performance metrics
         response_time_ms = int((time.time() - start_time) * 1000)
         success = response_content is not None
-        
+
         # Log performance
-        self._log_performance(successful_model or models_to_try[-1], response_time_ms, 
-                            token_count, success, str(last_error) if last_error else None)
-        
+        self._log_performance(
+            successful_model or models_to_try[-1],
+            response_time_ms,
+            token_count,
+            success,
+            str(last_error) if last_error else None,
+        )
+
         if not success:
             raise Exception(f"All models failed. Last error: {last_error}")
-        
+
         # Parse and validate response
-        logging.info(f"🔍 Parsing AI response from {successful_model} ({len(response_content)} characters)")
+        logging.info(
+            f"🔍 Parsing AI response from {successful_model} ({len(response_content)} characters)"
+        )
         logging.info(f"📋 AI response preview: {response_content[:200]}...")
-        
+
         # Check if heatmap_analysis is mentioned in the raw response
-        has_heatmap_in_raw = 'heatmap_analysis' in response_content.lower()
+        has_heatmap_in_raw = "heatmap_analysis" in response_content.lower()
         logging.info(f"🔥 heatmap_analysis in raw response: {has_heatmap_in_raw}")
-        
+
         try:
             parsed_response = self._parse_ai_response(response_content)
-            logging.info(f"✅ Response parsed successfully - findings: {len(parsed_response.get('principal_findings', []))}")
-            
+            logging.info(
+                f"✅ Response parsed successfully - findings: {len(parsed_response.get('principal_findings', []))}"
+            )
+
             # Check if heatmap_analysis is in the parsed response
-            has_heatmap_in_parsed = 'heatmap_analysis' in parsed_response
-            heatmap_value = parsed_response.get('heatmap_analysis', 'NOT_FOUND')[:100]
-            logging.info(f"🔥 heatmap_analysis in parsed response: {has_heatmap_in_parsed}, value: {heatmap_value}...")
-            
+            has_heatmap_in_parsed = "heatmap_analysis" in parsed_response
+            heatmap_value = parsed_response.get("heatmap_analysis", "NOT_FOUND")[:100]
+            logging.info(
+                f"🔥 heatmap_analysis in parsed response: {has_heatmap_in_parsed}, value: {heatmap_value}..."
+            )
+
         except Exception as e:
             logging.error(f"❌ Failed to parse AI response: {e}")
             # Return raw response if parsing fails
             parsed_response = {
-                'principal_findings': [{
-                    'bullet_point': response_content[:200] + "..." if len(response_content) > 200 else response_content,
-                    'reasoning': "Raw AI response due to parsing error",
-                    'data_source': ["AI Analysis"],
-                    'confidence': "medium"
-                }],
-                'pca_insights': {},
-                'executive_summary': response_content[:500] + "..." if len(response_content) > 500 else response_content,
-                'heatmap_analysis': 'PARSING_FAILED'  # Add explicit default
+                "principal_findings": [
+                    {
+                        "bullet_point": response_content[:200] + "..."
+                        if len(response_content) > 200
+                        else response_content,
+                        "reasoning": "Raw AI response due to parsing error",
+                        "data_source": ["AI Analysis"],
+                        "confidence": "medium",
+                    }
+                ],
+                "pca_insights": {},
+                "executive_summary": response_content[:500] + "..."
+                if len(response_content) > 500
+                else response_content,
+                "heatmap_analysis": "PARSING_FAILED",  # Add explicit default
             }
-        
+
         # CRITICAL FIX: Ensure heatmap_analysis is always present
-        if 'heatmap_analysis' not in parsed_response:
-            logging.warning(f"⚠️ heatmap_analysis missing from parsed response, adding default")
-            parsed_response['heatmap_analysis'] = "Análisis de correlación no disponible en la respuesta de IA."
-        
+        if "heatmap_analysis" not in parsed_response:
+            logging.warning(
+                f"⚠️ heatmap_analysis missing from parsed response, adding default"
+            )
+            parsed_response["heatmap_analysis"] = (
+                "Análisis de correlación no disponible en la respuesta de IA."
+            )
+
         return {
-            'content': parsed_response,
-            'model_used': successful_model,
-            'response_time_ms': response_time_ms,
-            'token_count': token_count,
-            'success': success,
-            'language': language
+            "content": parsed_response,
+            "model_used": successful_model,
+            "response_time_ms": response_time_ms,
+            "token_count": token_count,
+            "success": success,
+            "language": language,
         }
 
-    async def _call_model(self, prompt: str, model: str, language: str) -> Dict[str, Any]:
+    async def _call_model(
+        self, prompt: str, model: str, language: str
+    ) -> Dict[str, Any]:
         """
         Call specific AI model with retry logic.
 
@@ -237,100 +280,118 @@ class OpenRouterService:
         Returns:
             Raw API response
         """
-        model_config = self.model_configs.get(model, self.model_configs[self.config['models'][0]])
-        logging.info(f"📡 Calling model {model} with timeout {model_config.timeout}s and {model_config.max_tokens} max tokens")
-        
+        model_config = self.model_configs.get(
+            model, self.model_configs[self.config["models"][0]]
+        )
+        logging.info(
+            f"📡 Calling model {model} with timeout {model_config.timeout}s and {model_config.max_tokens} max tokens"
+        )
+
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
             "HTTP-Referer": "https://management-tools-analysis.com",
-            "X-Title": "Management Tools Analysis Dashboard"
+            "X-Title": "Management Tools Analysis Dashboard",
         }
-        
+
         payload = {
             "model": model,
             "messages": [
-                {
-                    "role": "system",
-                    "content": self._get_system_prompt(language)
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
+                {"role": "system", "content": self._get_system_prompt(language)},
+                {"role": "user", "content": prompt},
             ],
             "max_tokens": model_config.max_tokens,
             "temperature": model_config.temperature,
-            "top_p": 0.9
+            "top_p": 0.9,
             # Removed frequency_penalty and presence_penalty for faster processing
         }
-        
+
         # Show request details
         logging.info(f"📤 API Request: {model} -> {self.base_url}/chat/completions")
-        logging.info(f"📊 Payload: model={payload['model']}, max_tokens={payload['max_tokens']}, temp={payload['temperature']}")
+        logging.info(
+            f"📊 Payload: model={payload['model']}, max_tokens={payload['max_tokens']}, temp={payload['temperature']}"
+        )
 
         # Optimized retry logic for faster responses
-        for attempt in range(self.config['max_retries']):
+        for attempt in range(self.config["max_retries"]):
             request_start = time.time()
             try:
                 timeout = aiohttp.ClientTimeout(total=model_config.timeout)
-                logging.info(f"⏱️ Attempt {attempt + 1}/{self.config['max_retries']} for {model} (timeout: {model_config.timeout}s)")
+                logging.info(
+                    f"⏱️ Attempt {attempt + 1}/{self.config['max_retries']} for {model} (timeout: {model_config.timeout}s)"
+                )
 
                 async with aiohttp.ClientSession(timeout=timeout) as session:
                     async with session.post(
                         f"{self.base_url}/chat/completions",
                         headers=headers,
-                        json=payload
+                        json=payload,
                     ) as response:
                         request_time = time.time() - request_start
-                        logging.info(f"🌐 HTTP {response.status} in {request_time:.2f}s for {model}")
+                        logging.info(
+                            f"🌐 HTTP {response.status} in {request_time:.2f}s for {model}"
+                        )
 
                         if response.status == 200:
                             response_start = time.time()
                             result = await response.json()
                             response_time = time.time() - response_start
-                            logging.info(f"📥 JSON parsed in {response_time:.2f}s for {model}")
+                            logging.info(
+                                f"📥 JSON parsed in {response_time:.2f}s for {model}"
+                            )
                             return result
                         elif response.status == 429:
                             # Rate limited - minimal wait and retry
-                            logging.warning(f"🚦 Rate limited for {model}, waiting {self.config['retry_delay']}s")
-                            await asyncio.sleep(self.config['retry_delay'])
+                            logging.warning(
+                                f"🚦 Rate limited for {model}, waiting {self.config['retry_delay']}s"
+                            )
+                            await asyncio.sleep(self.config["retry_delay"])
                             continue
                         else:
                             error_text = await response.text()
-                            logging.error(f"❌ API error {response.status} for {model}: {error_text}")
-                            raise Exception(f"API error {response.status}: {error_text}")
+                            logging.error(
+                                f"❌ API error {response.status} for {model}: {error_text}"
+                            )
+                            raise Exception(
+                                f"API error {response.status}: {error_text}"
+                            )
 
             except asyncio.TimeoutError:
                 request_time = time.time() - request_start
-                logging.warning(f"⏰ Timeout for model {model} after {request_time:.2f}s (attempt {attempt + 1})")
-                if attempt < self.config['max_retries'] - 1:
-                    await asyncio.sleep(self.config['retry_delay'])
+                logging.warning(
+                    f"⏰ Timeout for model {model} after {request_time:.2f}s (attempt {attempt + 1})"
+                )
+                if attempt < self.config["max_retries"] - 1:
+                    await asyncio.sleep(self.config["retry_delay"])
                     continue
                 else:
                     raise
             except Exception as e:
                 request_time = time.time() - request_start
-                logging.error(f"💥 Exception for {model} after {request_time:.2f}s (attempt {attempt + 1}): {e}")
-                if attempt < self.config['max_retries'] - 1:
-                    await asyncio.sleep(self.config['retry_delay'])
+                logging.error(
+                    f"💥 Exception for {model} after {request_time:.2f}s (attempt {attempt + 1}): {e}"
+                )
+                if attempt < self.config["max_retries"] - 1:
+                    await asyncio.sleep(self.config["retry_delay"])
                     continue
                 else:
                     raise
-        
-        raise Exception(f"Model {model} failed after {self.config['max_retries']} attempts")
+
+        raise Exception(
+            f"Model {model} failed after {self.config['max_retries']} attempts"
+        )
 
     def _get_system_prompt(self, language: str) -> str:
         """
         Get system prompt based on language.
-        
+
         Args:
             language: Analysis language ('es' or 'en')
-            
+
         Returns:
             System prompt string
         """
-        if language == 'es':
+        if language == "es":
             return """
 Eres un analista de investigación doctoral especializado en herramientas de gestión empresarial. 
 Tu tarea es analizar datos multi-fuente y generar insights de nivel ejecutivo con énfasis en 
@@ -393,22 +454,24 @@ If you respond in Spanish, the analysis will be rejected.
             cleaned_content = response_content.strip()
 
             # Remove markdown code blocks if present
-            if cleaned_content.startswith('```json'):
+            if cleaned_content.startswith("```json"):
                 cleaned_content = cleaned_content[7:]  # Remove ```json
-            if cleaned_content.startswith('```'):
+            if cleaned_content.startswith("```"):
                 cleaned_content = cleaned_content[3:]  # Remove ```
-            if cleaned_content.endswith('```'):
+            if cleaned_content.endswith("```"):
                 cleaned_content = cleaned_content[:-3]  # Remove trailing ```
 
             cleaned_content = cleaned_content.strip()
 
             # Try direct JSON parsing first
-            if cleaned_content.startswith('{') and cleaned_content.endswith('}'):
+            if cleaned_content.startswith("{") and cleaned_content.endswith("}"):
                 try:
                     parsed = json.loads(cleaned_content)
                     logging.info(f"🔍 Direct JSON parsing successful")
-                    logging.info(f"🔍 Available fields in parsed JSON: {list(parsed.keys())}")
-                    has_heatmap = 'heatmap_analysis' in parsed
+                    logging.info(
+                        f"🔍 Available fields in parsed JSON: {list(parsed.keys())}"
+                    )
+                    has_heatmap = "heatmap_analysis" in parsed
                     logging.info(f"🔥 heatmap_analysis in direct JSON: {has_heatmap}")
                     return self._normalize_parsed_response(parsed)
                 except json.JSONDecodeError as e:
@@ -424,22 +487,26 @@ If you respond in Spanish, the analysis will be rejected.
 
             # Pattern 2: Bullet point containing JSON fragment
             if self._is_bullet_with_json_pattern(cleaned_content):
-                extracted_response = self._extract_from_bullet_json_pattern(cleaned_content)
+                extracted_response = self._extract_from_bullet_json_pattern(
+                    cleaned_content
+                )
                 if extracted_response:
                     return extracted_response
 
             # If direct parsing fails, try to extract from markdown sections
             sections = self._extract_markdown_sections(response_content)
             logging.info(f"🔍 Extracted sections: {list(sections.keys())}")
-            has_heatmap_section = 'heatmap_analysis' in sections
+            has_heatmap_section = "heatmap_analysis" in sections
             logging.info(f"🔥 heatmap_analysis section found: {has_heatmap_section}")
 
             if sections:
                 # Try to combine sections into a complete response
                 combined_response = self._combine_section_responses(sections)
                 if combined_response:
-                    has_heatmap_in_combined = 'heatmap_analysis' in combined_response
-                    logging.info(f"🔥 heatmap_analysis in combined response: {has_heatmap_in_combined}")
+                    has_heatmap_in_combined = "heatmap_analysis" in combined_response
+                    logging.info(
+                        f"🔥 heatmap_analysis in combined response: {has_heatmap_in_combined}"
+                    )
                     return combined_response
 
             # Fallback: extract JSON fragments from the entire response
@@ -447,13 +514,15 @@ If you respond in Spanish, the analysis will be rejected.
             logging.info(f"🔍 Extracted {len(json_fragments)} JSON fragments")
             if json_fragments:
                 for i, fragment in enumerate(json_fragments):
-                    has_heatmap = 'heatmap_analysis' in fragment
+                    has_heatmap = "heatmap_analysis" in fragment
                     logging.info(f"🔥 Fragment {i} has heatmap_analysis: {has_heatmap}")
-                
+
                 combined = self._combine_json_fragments(json_fragments)
                 if combined:
-                    has_heatmap_in_combined = 'heatmap_analysis' in combined
-                    logging.info(f"🔥 heatmap_analysis in combined fragments: {has_heatmap_in_combined}")
+                    has_heatmap_in_combined = "heatmap_analysis" in combined
+                    logging.info(
+                        f"🔥 heatmap_analysis in combined fragments: {has_heatmap_in_combined}"
+                    )
                     return combined
 
             # Final fallback: create structured response from text
@@ -475,34 +544,37 @@ If you respond in Spanish, the analysis will be rejected.
             Normalized response dictionary
         """
         result = {
-            'executive_summary': parsed.get('executive_summary', ''),
-            'principal_findings': parsed.get('principal_findings', []),
-            'pca_insights': parsed.get('pca_insights', {}),
-            'original_structure': 'direct_json'
+            "executive_summary": parsed.get("executive_summary", ""),
+            "principal_findings": parsed.get("principal_findings", []),
+            "pca_insights": parsed.get("pca_insights", {}),
+            "original_structure": "direct_json",
         }
 
         # Handle pca_analysis field
-        if 'pca_analysis' in parsed:
-            result['pca_analysis'] = parsed['pca_analysis']
-            result['pca_insights'] = {'analysis': parsed['pca_analysis']}
+        if "pca_analysis" in parsed:
+            result["pca_analysis"] = parsed["pca_analysis"]
+            result["pca_insights"] = {"analysis": parsed["pca_analysis"]}
 
         # Handle heatmap_analysis field - CRITICAL FIX
-        if 'heatmap_analysis' in parsed:
-            result['heatmap_analysis'] = parsed['heatmap_analysis']
+        if "heatmap_analysis" in parsed:
+            result["heatmap_analysis"] = parsed["heatmap_analysis"]
             logging.info(f"✅ Extracted heatmap_analysis field from AI response")
 
         # Ensure principal_findings is in correct format
-        if isinstance(result['principal_findings'], list) and result['principal_findings']:
-            if isinstance(result['principal_findings'][0], str):
+        if (
+            isinstance(result["principal_findings"], list)
+            and result["principal_findings"]
+        ):
+            if isinstance(result["principal_findings"][0], str):
                 # Convert string array to object array
-                result['principal_findings'] = [
+                result["principal_findings"] = [
                     {
-                        'bullet_point': item,
-                        'reasoning': "Generated by AI",
-                        'data_source': ["AI Analysis"],
-                        'confidence': "medium"
+                        "bullet_point": item,
+                        "reasoning": "Generated by AI",
+                        "data_source": ["AI Analysis"],
+                        "confidence": "medium",
                     }
-                    for item in result['principal_findings']
+                    for item in result["principal_findings"]
                 ]
 
         return result
@@ -518,10 +590,10 @@ If you respond in Spanish, the analysis will be rejected.
             True if matches incomplete JSON pattern
         """
         return (
-            content.startswith('{"executive_summary":') and
-            '"principal_findings":' in content and
-            ('"•' in content or content.count('"') % 2 == 1) and
-            not content.strip().endswith('}')
+            content.startswith('{"executive_summary":')
+            and '"principal_findings":' in content
+            and ('"•' in content or content.count('"') % 2 == 1)
+            and not content.strip().endswith("}")
         )
 
     def _fix_incomplete_json_pattern(self, content: str) -> Optional[Dict[str, Any]]:
@@ -536,7 +608,9 @@ If you respond in Spanish, the analysis will be rejected.
         """
         try:
             # Extract executive summary
-            exec_summary_match = re.search(r'"executive_summary":\s*"([^"]*(?:\\.[^"]*)*)"', content)
+            exec_summary_match = re.search(
+                r'"executive_summary":\s*"([^"]*(?:\\.[^"]*)*)"', content
+            )
             if not exec_summary_match:
                 return None
 
@@ -548,7 +622,7 @@ If you respond in Spanish, the analysis will be rejected.
                 return None
 
             # Extract everything after principal_findings as a truncated finding
-            pf_content_start = content.find('[', pf_start)
+            pf_content_start = content.find("[", pf_start)
             if pf_content_start == -1:
                 return None
 
@@ -567,26 +641,32 @@ If you respond in Spanish, the analysis will be rejected.
                     finding_content = finding_content[:-1]
 
                 # Create the finding object
-                principal_findings = [{
-                    'bullet_point': finding_content.replace('\\"', '"'),
-                    'reasoning': 'Extracted from truncated AI response',
-                    'data_source': ['AI Analysis'],
-                    'confidence': 'low'
-                }]
+                principal_findings = [
+                    {
+                        "bullet_point": finding_content.replace('\\"', '"'),
+                        "reasoning": "Extracted from truncated AI response",
+                        "data_source": ["AI Analysis"],
+                        "confidence": "low",
+                    }
+                ]
             else:
                 # Fallback: use the remaining content as a finding
-                principal_findings = [{
-                    'bullet_point': remaining_content.replace('\\"', '"').strip('"'),
-                    'reasoning': 'Extracted from truncated AI response',
-                    'data_source': ['AI Analysis'],
-                    'confidence': 'low'
-                }]
+                principal_findings = [
+                    {
+                        "bullet_point": remaining_content.replace('\\"', '"').strip(
+                            '"'
+                        ),
+                        "reasoning": "Extracted from truncated AI response",
+                        "data_source": ["AI Analysis"],
+                        "confidence": "low",
+                    }
+                ]
 
             return {
-                'executive_summary': executive_summary,
-                'principal_findings': principal_findings,
-                'pca_insights': {},
-                'original_structure': 'incomplete_json_fixed'
+                "executive_summary": executive_summary,
+                "principal_findings": principal_findings,
+                "pca_insights": {},
+                "original_structure": "incomplete_json_fixed",
             }
 
         except Exception as e:
@@ -605,11 +685,13 @@ If you respond in Spanish, the analysis will be rejected.
         """
         content_str = str(content)
         return (
-            content_str.strip().startswith('•') and
-            '"executive_summary":' in content_str
+            content_str.strip().startswith("•")
+            and '"executive_summary":' in content_str
         )
 
-    def _extract_from_bullet_json_pattern(self, content: str) -> Optional[Dict[str, Any]]:
+    def _extract_from_bullet_json_pattern(
+        self, content: str
+    ) -> Optional[Dict[str, Any]]:
         """
         Extract content from bullet point containing JSON fragment.
 
@@ -630,15 +712,15 @@ If you respond in Spanish, the analysis will be rejected.
                 json_content = json_content[:-1]
 
             # Try to parse as JSON
-            if json_content.startswith('{'):
+            if json_content.startswith("{"):
                 try:
                     parsed = json.loads(json_content)
                     return self._normalize_parsed_response(parsed)
                 except json.JSONDecodeError as e:
                     logging.warning(f"JSON parsing failed for bullet content: {e}")
                     # Try to fix common JSON issues
-                    if not json_content.endswith('}'):
-                        json_content += '}'
+                    if not json_content.endswith("}"):
+                        json_content += "}"
                     if not json_content.endswith('"'):
                         json_content += '"'
 
@@ -650,20 +732,24 @@ If you respond in Spanish, the analysis will be rejected.
 
             # If JSON parsing fails, extract components manually
             # Try to find executive summary with more flexible pattern
-            exec_summary_match = re.search(r'"executive_summary":\s*"(.*?)"', json_content, re.DOTALL)
+            exec_summary_match = re.search(
+                r'"executive_summary":\s*"(.*?)"', json_content, re.DOTALL
+            )
             if exec_summary_match:
                 executive_summary = exec_summary_match.group(1).replace('\\"', '"')
 
                 return {
-                    'executive_summary': executive_summary,
-                    'principal_findings': [{
-                        'bullet_point': 'Analysis extracted from malformed response',
-                        'reasoning': 'Content extracted from bullet point with JSON fragment',
-                        'data_source': ['AI Analysis'],
-                        'confidence': 'low'
-                    }],
-                    'pca_insights': {},
-                    'original_structure': 'bullet_json_pattern'
+                    "executive_summary": executive_summary,
+                    "principal_findings": [
+                        {
+                            "bullet_point": "Analysis extracted from malformed response",
+                            "reasoning": "Content extracted from bullet point with JSON fragment",
+                            "data_source": ["AI Analysis"],
+                            "confidence": "low",
+                        }
+                    ],
+                    "pca_insights": {},
+                    "original_structure": "bullet_json_pattern",
                 }
 
             # If that doesn't work, try an even more flexible approach
@@ -675,18 +761,22 @@ If you respond in Spanish, the analysis will be rejected.
                     # Find the next quote (end of executive summary)
                     end_pos = json_content.find('"', start_pos + 1)
                     if end_pos != -1:
-                        executive_summary = json_content[start_pos + 1:end_pos].replace('\\"', '"')
+                        executive_summary = json_content[
+                            start_pos + 1 : end_pos
+                        ].replace('\\"', '"')
 
                         return {
-                            'executive_summary': executive_summary,
-                            'principal_findings': [{
-                                'bullet_point': 'Analysis extracted from malformed response',
-                                'reasoning': 'Content extracted from bullet point with JSON fragment',
-                                'data_source': ['AI Analysis'],
-                                'confidence': 'low'
-                            }],
-                            'pca_insights': {},
-                            'original_structure': 'bullet_json_pattern'
+                            "executive_summary": executive_summary,
+                            "principal_findings": [
+                                {
+                                    "bullet_point": "Analysis extracted from malformed response",
+                                    "reasoning": "Content extracted from bullet point with JSON fragment",
+                                    "data_source": ["AI Analysis"],
+                                    "confidence": "low",
+                                }
+                            ],
+                            "pca_insights": {},
+                            "original_structure": "bullet_json_pattern",
                         }
 
         except Exception as e:
@@ -708,33 +798,33 @@ If you respond in Spanish, the analysis will be rejected.
 
         # Define section patterns (Spanish and English)
         section_patterns = {
-            'executive_summary': [
-                '📋 Resumen Ejecutivo',
-                '📋 Executive Summary',
-                'Resumen Ejecutivo',
-                'Executive Summary'
+            "executive_summary": [
+                "📋 Resumen Ejecutivo",
+                "📋 Executive Summary",
+                "Resumen Ejecutivo",
+                "Executive Summary",
             ],
-            'principal_findings': [
-                '🔍 Hallazgos Principales',
-                '🔍 Principal Findings',
-                'Hallazgos Principales',
-                'Principal Findings'
+            "principal_findings": [
+                "🔍 Hallazgos Principales",
+                "🔍 Principal Findings",
+                "Hallazgos Principales",
+                "Principal Findings",
             ],
-            'pca_analysis': [
-                '📊 Análisis PCA',
-                '📊 PCA Analysis',
-                'Análisis PCA',
-                'PCA Analysis'
+            "pca_analysis": [
+                "📊 Análisis PCA",
+                "📊 PCA Analysis",
+                "Análisis PCA",
+                "PCA Analysis",
             ],
-            'heatmap_analysis': [  # CRITICAL FIX
-                '🔥 Análisis del Mapa de Calor',
-                '🔥 Heatmap Analysis',
-                'Análisis del Mapa de Calor',
-                'Heatmap Analysis'
-            ]
+            "heatmap_analysis": [  # CRITICAL FIX
+                "🔥 Análisis del Mapa de Calor",
+                "🔥 Heatmap Analysis",
+                "Análisis del Mapa de Calor",
+                "Heatmap Analysis",
+            ],
         }
 
-        lines = content.split('\n')
+        lines = content.split("\n")
         current_section = None
         section_content = []
 
@@ -747,7 +837,7 @@ If you respond in Spanish, the analysis will be rejected.
                 if any(pattern in line for pattern in patterns):
                     # Save previous section if exists
                     if current_section and section_content:
-                        sections[current_section] = '\n'.join(section_content).strip()
+                        sections[current_section] = "\n".join(section_content).strip()
                         section_content = []
 
                     current_section = section_key
@@ -761,11 +851,13 @@ If you respond in Spanish, the analysis will be rejected.
 
         # Save the last section
         if current_section and section_content:
-            sections[current_section] = '\n'.join(section_content).strip()
+            sections[current_section] = "\n".join(section_content).strip()
 
         return sections
 
-    def _combine_section_responses(self, sections: Dict[str, str]) -> Optional[Dict[str, Any]]:
+    def _combine_section_responses(
+        self, sections: Dict[str, str]
+    ) -> Optional[Dict[str, Any]]:
         """
         Combine content from different sections into a complete response, handling malformed sections.
 
@@ -778,22 +870,26 @@ If you respond in Spanish, the analysis will be rejected.
         result = {}
 
         # First pass: extract executive summary (usually the most reliable)
-        if 'executive_summary' in sections:
-            section_content = sections['executive_summary']
+        if "executive_summary" in sections:
+            section_content = sections["executive_summary"]
             json_content = self._extract_json_from_section(section_content)
-            if json_content and 'executive_summary' in json_content:
-                result['executive_summary'] = json_content['executive_summary']
+            if json_content and "executive_summary" in json_content:
+                result["executive_summary"] = json_content["executive_summary"]
             else:
                 # Try direct extraction - look for the complete summary
                 summary_start = section_content.find('"executive_summary":')
                 if summary_start != -1:
                     summary_start += len('"executive_summary":')
                     # Skip whitespace and quotes
-                    while summary_start < len(section_content) and section_content[summary_start] in [' ', '"', '\n']:
+                    while summary_start < len(section_content) and section_content[
+                        summary_start
+                    ] in [" ", '"', "\n"]:
                         summary_start += 1
 
                     # Find the end of the summary (before next field or end)
-                    summary_end = section_content.find('", "principal_findings"', summary_start)
+                    summary_end = section_content.find(
+                        '", "principal_findings"', summary_start
+                    )
                     if summary_end == -1:
                         summary_end = section_content.find('",', summary_start)
                     if summary_end == -1:
@@ -803,58 +899,64 @@ If you respond in Spanish, the analysis will be rejected.
                         summary = section_content[summary_start:summary_end].strip()
                         # Clean up escaped quotes
                         summary = summary.replace('\\"', '"')
-                        result['executive_summary'] = summary
+                        result["executive_summary"] = summary
 
         # Second pass: handle principal findings (often malformed)
-        if 'principal_findings' in sections:
-            section_content = sections['principal_findings']
+        if "principal_findings" in sections:
+            section_content = sections["principal_findings"]
             json_content = self._extract_json_from_section(section_content)
 
-            if json_content and 'principal_findings' in json_content:
-                result['principal_findings'] = json_content['principal_findings']
+            if json_content and "principal_findings" in json_content:
+                result["principal_findings"] = json_content["principal_findings"]
             else:
                 # The principal findings section is completely malformed
                 # Look for any actual bullet points that aren't JSON fragments
-                lines = section_content.split('\n')
+                lines = section_content.split("\n")
                 actual_findings = []
                 for line in lines:
                     line = line.strip()
-                    if line.startswith('•') and len(line) > 2:
+                    if line.startswith("•") and len(line) > 2:
                         bullet_content = line[1:].strip()
                         # Skip if it's just JSON fragments, markdown, or repeated executive summary
-                        if (not bullet_content.startswith('{') and
-                            not bullet_content.startswith('"executive_summary":') and
-                            not bullet_content.startswith('```') and
-                            not bullet_content == '{' and
-                            not bullet_content.startswith('"•') and  # Avoid nested bullet points
-                            len(bullet_content) > 10):  # Must be substantial content
-                            actual_findings.append({
-                                'bullet_point': bullet_content,
-                                'reasoning': 'Extracted from malformed AI response',
-                                'data_source': ['AI Analysis'],
-                                'confidence': 'low'
-                            })
+                        if (
+                            not bullet_content.startswith("{")
+                            and not bullet_content.startswith('"executive_summary":')
+                            and not bullet_content.startswith("```")
+                            and not bullet_content == "{"
+                            and not bullet_content.startswith(
+                                '"•'
+                            )  # Avoid nested bullet points
+                            and len(bullet_content) > 10
+                        ):  # Must be substantial content
+                            actual_findings.append(
+                                {
+                                    "bullet_point": bullet_content,
+                                    "reasoning": "Extracted from malformed AI response",
+                                    "data_source": ["AI Analysis"],
+                                    "confidence": "low",
+                                }
+                            )
 
                 # NEW: Also check for bullet points that contain JSON fragments
                 for line in lines:
                     line = line.strip()
-                    if line.startswith('•') and '"executive_summary":' in line:
+                    if line.startswith("•") and '"executive_summary":' in line:
                         # This is a bullet point containing JSON - extract it
                         extracted = self._extract_from_bullet_json_pattern(line)
-                        if extracted and extracted.get('principal_findings'):
-                            actual_findings.extend(extracted['principal_findings'])
+                        if extracted and extracted.get("principal_findings"):
+                            actual_findings.extend(extracted["principal_findings"])
 
                 if actual_findings:
-                    result['principal_findings'] = actual_findings
+                    result["principal_findings"] = actual_findings
 
         # Third pass: handle PCA analysis (often contains repeated executive summary)
-        if 'pca_analysis' in sections:
-            section_content = sections['pca_analysis']
+        if "pca_analysis" in sections:
+            section_content = sections["pca_analysis"]
             json_content = self._extract_json_from_section(section_content)
 
-            if json_content and 'pca_analysis' in json_content:
-                result['pca_analysis'] = json_content['pca_analysis']
-                result['pca_insights'] = {'analysis': json_content['pca_analysis']}
+            if json_content and "pca_analysis" in json_content:
+                result["pca_analysis"] = json_content["pca_analysis"]
+                result["pca_insights"] = {"analysis": json_content["pca_analysis"]}
             else:
                 # Extract PCA content, filtering out repeated executive summary
                 pca_content = self._extract_pca_content(section_content)
@@ -862,49 +964,59 @@ If you respond in Spanish, the analysis will be rejected.
                     # Remove repeated executive summary content if present
                     if '"executive_summary":' in pca_content:
                         # Try to extract only the PCA-specific content
-                        lines = pca_content.split('\n')
+                        lines = pca_content.split("\n")
                         pca_lines = []
                         in_pca_content = False
                         for line in lines:
-                            if 'Análisis adicional no disponible' in line:
+                            if "Análisis adicional no disponible" in line:
                                 break
-                            if not line.strip().startswith('"executive_summary":') and line.strip() != '{':
-                                if line.strip() and not line.strip().startswith('📈'):
+                            if (
+                                not line.strip().startswith('"executive_summary":')
+                                and line.strip() != "{"
+                            ):
+                                if line.strip() and not line.strip().startswith("📈"):
                                     pca_lines.append(line)
                         if pca_lines:
-                            pca_content = '\n'.join(pca_lines).strip()
+                            pca_content = "\n".join(pca_lines).strip()
 
-                    result['pca_analysis'] = pca_content
-                    result['pca_insights'] = {'analysis': pca_content}
+                    result["pca_analysis"] = pca_content
+                    result["pca_insights"] = {"analysis": pca_content}
 
         # Fourth pass: handle heatmap analysis - CRITICAL FIX
-        if 'heatmap_analysis' in sections:
-            section_content = sections['heatmap_analysis']
+        if "heatmap_analysis" in sections:
+            section_content = sections["heatmap_analysis"]
             json_content = self._extract_json_from_section(section_content)
-            
-            if json_content and 'heatmap_analysis' in json_content:
-                result['heatmap_analysis'] = json_content['heatmap_analysis']
+
+            if json_content and "heatmap_analysis" in json_content:
+                result["heatmap_analysis"] = json_content["heatmap_analysis"]
                 logging.info(f"✅ Extracted heatmap_analysis from section JSON")
             else:
                 # Extract heatmap content directly
                 heatmap_content = self._extract_heatmap_content(section_content)
                 if heatmap_content:
-                    result['heatmap_analysis'] = heatmap_content
+                    result["heatmap_analysis"] = heatmap_content
                     logging.info(f"✅ Extracted heatmap_analysis from section content")
 
         # Validate we have the required fields
-        if 'executive_summary' in result or 'principal_findings' in result or 'pca_analysis' in result or 'heatmap_analysis' in result:
+        if (
+            "executive_summary" in result
+            or "principal_findings" in result
+            or "pca_analysis" in result
+            or "heatmap_analysis" in result
+        ):
             # Fill in missing fields with defaults
-            result.setdefault('executive_summary', '')
-            result.setdefault('principal_findings', [])
-            result.setdefault('pca_insights', {})
-            result.setdefault('heatmap_analysis', '')  # CRITICAL FIX
-            result['original_structure'] = 'sections_combined'
+            result.setdefault("executive_summary", "")
+            result.setdefault("principal_findings", [])
+            result.setdefault("pca_insights", {})
+            result.setdefault("heatmap_analysis", "")  # CRITICAL FIX
+            result["original_structure"] = "sections_combined"
             return result
 
         return None
 
-    def _extract_json_from_section(self, section_content: str) -> Optional[Dict[str, Any]]:
+    def _extract_json_from_section(
+        self, section_content: str
+    ) -> Optional[Dict[str, Any]]:
         """
         Extract JSON object from section content, handling markdown code blocks.
 
@@ -915,14 +1027,14 @@ If you respond in Spanish, the analysis will be rejected.
             Parsed JSON dictionary or None
         """
         # First, try to extract from markdown code blocks
-        if '```json' in section_content:
+        if "```json" in section_content:
             # Find the JSON within the code block
-            start_marker = section_content.find('```json')
+            start_marker = section_content.find("```json")
             if start_marker != -1:
-                start_json = section_content.find('{', start_marker)
-                end_marker = section_content.find('```', start_marker + 7)
+                start_json = section_content.find("{", start_marker)
+                end_marker = section_content.find("```", start_marker + 7)
                 if end_marker != -1:
-                    end_json = section_content.rfind('}', start_marker, end_marker) + 1
+                    end_json = section_content.rfind("}", start_marker, end_marker) + 1
                     if start_json != -1 and end_json > start_json:
                         json_str = section_content[start_json:end_json]
                         try:
@@ -931,8 +1043,8 @@ If you respond in Spanish, the analysis will be rejected.
                             pass
 
         # Fallback: Find JSON boundaries directly
-        start_idx = section_content.find('{')
-        end_idx = section_content.rfind('}') + 1
+        start_idx = section_content.find("{")
+        end_idx = section_content.rfind("}") + 1
 
         if start_idx != -1 and end_idx > start_idx:
             json_str = section_content[start_idx:end_idx]
@@ -957,7 +1069,7 @@ If you respond in Spanish, the analysis will be rejected.
         import re
 
         # Find all JSON-like structures
-        json_pattern = r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}'
+        json_pattern = r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}"
         matches = re.findall(json_pattern, content, re.DOTALL)
 
         for match in matches:
@@ -969,7 +1081,9 @@ If you respond in Spanish, the analysis will be rejected.
 
         return fragments
 
-    def _combine_json_fragments(self, fragments: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    def _combine_json_fragments(
+        self, fragments: List[Dict[str, Any]]
+    ) -> Optional[Dict[str, Any]]:
         """
         Combine multiple JSON fragments into a single response.
 
@@ -986,16 +1100,23 @@ If you respond in Spanish, the analysis will be rejected.
 
         for fragment in fragments:
             for key, value in fragment.items():
-                if key in ['executive_summary', 'principal_findings', 'pca_analysis', 'heatmap_analysis']:
+                if key in [
+                    "executive_summary",
+                    "principal_findings",
+                    "pca_analysis",
+                    "heatmap_analysis",
+                ]:
                     combined[key] = value
 
         if combined:
             # Fill missing fields
-            combined.setdefault('executive_summary', '')
-            combined.setdefault('principal_findings', [])
-            combined.setdefault('pca_insights', {'analysis': combined.get('pca_analysis', '')})
-            combined.setdefault('heatmap_analysis', '')  # CRITICAL FIX
-            combined['original_structure'] = 'fragments_combined'
+            combined.setdefault("executive_summary", "")
+            combined.setdefault("principal_findings", [])
+            combined.setdefault(
+                "pca_insights", {"analysis": combined.get("pca_analysis", "")}
+            )
+            combined.setdefault("heatmap_analysis", "")  # CRITICAL FIX
+            combined["original_structure"] = "fragments_combined"
             return combined
 
         return None
@@ -1014,7 +1135,7 @@ If you respond in Spanish, the analysis will be rejected.
         text = text.strip()
 
         # If it starts with {, try to extract JSON content
-        if text.startswith('{'):
+        if text.startswith("{"):
             # Try to extract just the content
             start_content = text.find('"pca_analysis":') or text.find('"analysis":')
             if start_content != -1:
@@ -1022,38 +1143,38 @@ If you respond in Spanish, the analysis will be rejected.
                 if start_quote != -1:
                     end_quote = text.find('"', start_quote + 1)
                     if end_quote != -1:
-                        content = text[start_quote + 1:end_quote]
-                        return content.replace('\\n', '\n').replace('\\"', '"')
+                        content = text[start_quote + 1 : end_quote]
+                        return content.replace("\\n", "\n").replace('\\"', '"')
 
         # If it looks like raw text (contains multiple paragraphs separated by double newlines)
-        if '\n\n' in text:
-            return text.replace('\\n', '\n').strip()
+        if "\n\n" in text:
+            return text.replace("\\n", "\n").strip()
 
         # If it contains "Análisis adicional no disponible", clean it up
-        if 'Análisis adicional no disponible' in text:
+        if "Análisis adicional no disponible" in text:
             # Extract everything before this marker
-            marker_pos = text.find('Análisis adicional no disponible')
+            marker_pos = text.find("Análisis adicional no disponible")
             if marker_pos > 0:
-                return text[:marker_pos].strip().replace('\\n', '\n')
+                return text[:marker_pos].strip().replace("\\n", "\n")
 
         # Return cleaned text
-        return text.replace('\\n', '\n').strip()
+        return text.replace("\\n", "\n").strip()
 
     def _extract_heatmap_content(self, text: str) -> str:
         """
         Extract heatmap analysis content from text, handling various formats.
-        
+
         Args:
             text: Text containing heatmap analysis
-            
+
         Returns:
             Cleaned heatmap content
         """
         # Remove any leading/trailing JSON markers
         text = text.strip()
-        
+
         # If it starts with {, try to extract JSON content
-        if text.startswith('{'):
+        if text.startswith("{"):
             # Try to extract just the content
             start_content = text.find('"heatmap_analysis":')
             if start_content != -1:
@@ -1061,22 +1182,22 @@ If you respond in Spanish, the analysis will be rejected.
                 if start_quote != -1:
                     end_quote = text.find('"', start_quote + 1)
                     if end_quote != -1:
-                        content = text[start_quote + 1:end_quote]
-                        return content.replace('\\n', '\n').replace('\\"', '"')
-        
+                        content = text[start_quote + 1 : end_quote]
+                        return content.replace("\\n", "\n").replace('\\"', '"')
+
         # If it looks like raw text (contains multiple paragraphs separated by double newlines)
-        if '\n\n' in text:
-            return text.replace('\\n', '\n').strip()
-        
+        if "\n\n" in text:
+            return text.replace("\\n", "\n").strip()
+
         # If it contains "Análisis adicional no disponible", clean it up
-        if 'Análisis adicional no disponible' in text:
+        if "Análisis adicional no disponible" in text:
             # Extract everything before this marker
-            marker_pos = text.find('Análisis adicional no disponible')
+            marker_pos = text.find("Análisis adicional no disponible")
             if marker_pos > 0:
-                return text[:marker_pos].strip().replace('\\n', '\n')
-        
+                return text[:marker_pos].strip().replace("\\n", "\n")
+
         # Return cleaned text
-        return text.replace('\\n', '\n').strip()
+        return text.replace("\\n", "\n").strip()
 
     def _create_fallback_response(self, response_content: str) -> Dict[str, Any]:
         """
@@ -1089,17 +1210,31 @@ If you respond in Spanish, the analysis will be rejected.
             Fallback response dictionary
         """
         return {
-            'principal_findings': [{
-                'bullet_point': response_content[:300] + "..." if len(response_content) > 300 else response_content,
-                'reasoning': "Parsing failed, using raw response",
-                'data_source': ["AI Analysis"],
-                'confidence': "low"
-            }],
-            'pca_insights': {'analysis': response_content[:400] + "..." if len(response_content) > 400 else response_content},
-            'executive_summary': response_content[:500] + "..." if len(response_content) > 500 else response_content,
-            'pca_analysis': response_content[:400] + "..." if len(response_content) > 400 else response_content,
-            'heatmap_analysis': response_content[:400] + "..." if len(response_content) > 400 else response_content,  # CRITICAL FIX
-            'original_structure': 'fallback'
+            "principal_findings": [
+                {
+                    "bullet_point": response_content[:300] + "..."
+                    if len(response_content) > 300
+                    else response_content,
+                    "reasoning": "Parsing failed, using raw response",
+                    "data_source": ["AI Analysis"],
+                    "confidence": "low",
+                }
+            ],
+            "pca_insights": {
+                "analysis": response_content[:400] + "..."
+                if len(response_content) > 400
+                else response_content
+            },
+            "executive_summary": response_content[:500] + "..."
+            if len(response_content) > 500
+            else response_content,
+            "pca_analysis": response_content[:400] + "..."
+            if len(response_content) > 400
+            else response_content,
+            "heatmap_analysis": response_content[:400] + "..."
+            if len(response_content) > 400
+            else response_content,  # CRITICAL FIX
+            "original_structure": "fallback",
         }
 
     async def test_model_availability(self) -> Dict[str, bool]:
@@ -1112,9 +1247,9 @@ If you respond in Spanish, the analysis will be rejected.
         availability = {}
         test_prompt = "Respond with 'OK' to confirm availability."
 
-        for model in self.config['models']:
+        for model in self.config["models"]:
             try:
-                result = await self._call_model(test_prompt, model, 'en')
+                result = await self._call_model(test_prompt, model, "en")
                 availability[model] = True
                 logging.info(f"✅ Model {model} is available and working")
             except Exception as e:
@@ -1126,25 +1261,31 @@ If you respond in Spanish, the analysis will be rejected.
     def calculate_cost(self, tokens: int, model: str) -> float:
         """
         Calculate API cost for request.
-        
+
         Args:
             tokens: Number of tokens processed
             model: Model name
-            
+
         Returns:
             Estimated cost in USD
         """
         model_config = self.model_configs.get(model)
         if not model_config:
             return 0.0
-        
+
         return (tokens / 1000) * model_config.cost_per_1k_tokens
 
-    def _log_performance(self, model: str, response_time_ms: int, 
-                        token_count: int, success: bool, error_message: str = None):
+    def _log_performance(
+        self,
+        model: str,
+        response_time_ms: int,
+        token_count: int,
+        success: bool,
+        error_message: str = None,
+    ):
         """
         Log model performance for monitoring.
-        
+
         Args:
             model: Model name
             response_time_ms: Response time in milliseconds
@@ -1154,36 +1295,42 @@ If you respond in Spanish, the analysis will be rejected.
         """
         if model not in self.performance_stats:
             self.performance_stats[model] = {
-                'total_requests': 0,
-                'successful_requests': 0,
-                'failed_requests': 0,
-                'total_response_time_ms': 0,
-                'total_tokens': 0,
-                'avg_response_time_ms': 0,
-                'success_rate': 0
+                "total_requests": 0,
+                "successful_requests": 0,
+                "failed_requests": 0,
+                "total_response_time_ms": 0,
+                "total_tokens": 0,
+                "avg_response_time_ms": 0,
+                "success_rate": 0,
             }
-        
+
         stats = self.performance_stats[model]
-        stats['total_requests'] += 1
-        stats['total_response_time_ms'] += response_time_ms
-        stats['total_tokens'] += token_count
-        
+        stats["total_requests"] += 1
+        stats["total_response_time_ms"] += response_time_ms
+        stats["total_tokens"] += token_count
+
         if success:
-            stats['successful_requests'] += 1
+            stats["successful_requests"] += 1
         else:
-            stats['failed_requests'] += 1
-        
+            stats["failed_requests"] += 1
+
         # Update averages
-        stats['avg_response_time_ms'] = stats['total_response_time_ms'] / stats['total_requests']
-        stats['success_rate'] = (stats['successful_requests'] / stats['total_requests']) * 100
-        
-        logging.info(f"Model {model} performance: {response_time_ms}ms, {token_count} tokens, "
-                    f"success: {success}, success_rate: {stats['success_rate']:.1f}%")
+        stats["avg_response_time_ms"] = (
+            stats["total_response_time_ms"] / stats["total_requests"]
+        )
+        stats["success_rate"] = (
+            stats["successful_requests"] / stats["total_requests"]
+        ) * 100
+
+        logging.info(
+            f"Model {model} performance: {response_time_ms}ms, {token_count} tokens, "
+            f"success: {success}, success_rate: {stats['success_rate']:.1f}%"
+        )
 
     def get_performance_stats(self) -> Dict[str, Dict[str, Any]]:
         """
         Get performance statistics for all models.
-        
+
         Returns:
             Dictionary with performance stats for each model
         """
@@ -1193,109 +1340,117 @@ If you respond in Spanish, the analysis will be rejected.
         """Reset performance statistics."""
         self.performance_stats.clear()
 
-    async def generate_single_source_report(self, data: Dict[str, Any],
-                                          language: str = 'es') -> Dict[str, Any]:
+    async def generate_single_source_report(
+        self, data: Dict[str, Any], language: str = "es"
+    ) -> Dict[str, Any]:
         """
         Generate single source analysis report using the new prompt template.
-        
+
         Args:
             data: Single source analysis data containing metrics, statistics, and visualization attributes
             language: Analysis language ('es' or 'en')
-            
+
         Returns:
             Dictionary containing the single source analysis report
         """
         import time
+
         start_time = time.time()
         logging.info(f"🚀 Starting single source report generation in {language}")
-        
+
         try:
             # Import the prompt engineer
             from .prompt_engineer import PromptEngineer
-            
+
             # Create prompt engineer with the specified language
             prompt_engineer = PromptEngineer(language=language)
-            
-            # Generate the single source analysis prompt
-            prompt = prompt_engineer.create_single_source_prompt(data, {})
-            
+
+            # Generate the single source analysis prompt using IMPROVED prompts
+            prompt = prompt_engineer.create_analysis_prompt(data, {})
+
             # Log prompt details
             prompt_preview = prompt[:200] + "..." if len(prompt) > 200 else prompt
             logging.info(f"📝 Single source prompt preview: {prompt_preview}")
-            
+
             # Generate analysis using the existing method
             result = await self.generate_analysis(prompt, language=language)
-            
+
             # Add single source specific metadata
-            result['report_type'] = 'single_source'
-            result['source_name'] = data.get('source_name', 'Unknown Source')
-            result['tool_name'] = data.get('tool_name', 'Unknown Tool')
-            
+            result["report_type"] = "single_source"
+            result["source_name"] = data.get("source_name", "Unknown Source")
+            result["tool_name"] = data.get("tool_name", "Unknown Tool")
+
             generation_time = time.time() - start_time
             logging.info(f"✅ Single source report generated in {generation_time:.2f}s")
-            
+
             return result
-            
+
         except Exception as e:
             logging.error(f"❌ Error generating single source report: {e}")
             # Return error response
             return {
-                'content': {
-                    'executive_summary': f"Error generating report: {str(e)}",
-                    'temporal_analysis': "Analysis unavailable due to error.",
-                    'seasonal_analysis': "Analysis unavailable due to error.",
-                    'fourier_analysis': "Analysis unavailable due to error."
+                "content": {
+                    "executive_summary": f"Error generating report: {str(e)}",
+                    "temporal_analysis": "Analysis unavailable due to error.",
+                    "seasonal_analysis": "Analysis unavailable due to error.",
+                    "fourier_analysis": "Analysis unavailable due to error.",
                 },
-                'model_used': 'error',
-                'response_time_ms': int((time.time() - start_time) * 1000),
-                'token_count': 0,
-                'success': False,
-                'language': language,
-                'error': str(e)
+                "model_used": "error",
+                "response_time_ms": int((time.time() - start_time) * 1000),
+                "token_count": 0,
+                "success": False,
+                "language": language,
+                "error": str(e),
             }
+
 
 # Global service instance
 _openrouter_service = None
 
-def get_openrouter_service(api_key: str = None, config: Dict[str, Any] = None) -> OpenRouterService:
+
+def get_openrouter_service(
+    api_key: str = None, config: Dict[str, Any] = None
+) -> OpenRouterService:
     """
     Get or create global OpenRouter service instance.
-    
+
     Args:
         api_key: OpenRouter API key (optional if already set)
         config: Configuration dictionary (optional)
-        
+
     Returns:
         OpenRouter service instance
     """
     global _openrouter_service
-    
+
     if _openrouter_service is None:
         if not api_key:
-            api_key = os.getenv('OPENROUTER_API_KEY')
+            api_key = os.getenv("OPENROUTER_API_KEY")
             if not api_key:
                 raise ValueError("OpenRouter API key not provided")
-        
+
         _openrouter_service = OpenRouterService(api_key, config)
-    
+
     return _openrouter_service
+
 
 def reset_openrouter_service():
     """Reset global OpenRouter service instance."""
     global _openrouter_service
     _openrouter_service = None
 
-async def generate_single_source_report(data: Dict[str, Any],
-                                      language: str = 'es',
-                                      api_key: str = None) -> Dict[str, Any]:
+
+async def generate_single_source_report(
+    data: Dict[str, Any], language: str = "es", api_key: str = None
+) -> Dict[str, Any]:
     """
     Convenience function to generate single source analysis report.
-    
+
     Args:
         data: Single source analysis data containing metrics, statistics, and visualization attributes
         language: Analysis language ('es' or 'en')
         api_key: OpenRouter API key (optional)
-        
+
     Returns:
         Dictionary containing the single source analysis report
     """
