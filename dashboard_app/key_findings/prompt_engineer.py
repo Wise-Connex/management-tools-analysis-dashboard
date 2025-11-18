@@ -2411,6 +2411,56 @@ A integrated narrative essay of 4000+ words that interprets ACTUAL RESULTS from 
 
         return prompt
 
+    def create_analysis_prompt(
+        self, data: Dict[str, Any], context: Dict[str, Any]
+    ) -> str:
+        """
+        Create analysis prompt by intelligently choosing between single and multi-source prompts.
+        This method is called by the Key Findings service.
+
+        Args:
+            data: Aggregated analysis data
+            context: Additional context for analysis
+
+        Returns:
+            Analysis prompt string appropriate for the data
+        """
+        import time
+
+        start_time = time.time()
+
+        # Determine number of sources
+        selected_sources = data.get("selected_sources", [])
+        logging.info(f"🔍 DEBUG: selected_sources found: {selected_sources}")
+
+        # Handle single source case: if there's exactly 1 source OR source_name exists
+        is_single_source = (
+            isinstance(selected_sources, list) and len(selected_sources) == 1
+        ) or data.get("source_name")
+        logging.info(f"🔍 DEBUG: is_single_source: {is_single_source}")
+
+        # Handle different data structures
+        if is_single_source:
+            # Single source case - check if source_name exists
+            source_name = data.get("source_name")
+            if source_name:
+                logging.info(
+                    f"📝 Creating single source prompt for '{source_name}' in {self.language}"
+                )
+                return self.create_improved_single_source_prompt(data, context)
+            else:
+                # Default to single source if no sources specified
+                logging.info(
+                    f"📝 Creating default single source prompt in {self.language}"
+                )
+                return self.create_improved_single_source_prompt(data, context)
+        else:
+            # Multi-source case
+            logging.info(
+                f"📝 Creating multi-source prompt for {len(selected_sources)} sources in {self.language}"
+            )
+            return self.create_improved_multi_source_prompt(data, context)
+
     def _load_templates(self) -> Dict[str, Dict[str, str]]:
         """Load bilingual prompt templates."""
         return {
