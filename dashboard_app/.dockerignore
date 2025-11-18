@@ -1,0 +1,144 @@
+# Management Tools Analysis Dashboard - Docker Ignore
+# Phase 5: Production Deployment & Monitoring
+
+# Git and version control
+.git
+.gitignore
+.gitattributes
+
+# Python cache and compiled files
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Test files and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Documentation
+docs/
+*.md
+README*
+LICENSE*
+
+# Database files (will be mounted as volumes)
+*.db
+*.sqlite
+*.sqlite3
+
+# Log files
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Development and testing files
+test_*
+*_test.py
+tests/
+test_*.py
+*.test.py
+
+# Development scripts
+*.sh
+!docker/entrypoint.sh
+
+# Batch processing scripts
+batch_*
+real_ai_*
+execute_*
+monitor_*
+test_*.py
+*.batch
+*.processor
+
+# Configuration examples (keep .env.example)
+*.example
+!.env.example
+
+# Large data files
+*.csv
+*.json
+*.xlsx
+*.zip
+*.tar.gz
+
+# Docker files (except what's needed)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# CI/CD files
+.github/
+.gitlab-ci.yml
+.travis.yml
+Jenkinsfile
+
+# Other development files
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Monitoring and metrics
+monitoring/
+metrics/
+*.metrics

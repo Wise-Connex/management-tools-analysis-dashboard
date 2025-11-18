@@ -1,0 +1,123 @@
+/* Markdown Content Styling for Key Findings */
+.markdown-content {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.5;
+    font-size: 0.9em;
+}
+
+.markdown-content h1 {
+    font-size: 1.3em !important;
+    color: #2c3e50;
+    margin: 1.2em 0 0.8em 0;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 0.3em;
+}
+
+.markdown-content h2 {
+    font-size: 1.2em !important;
+    color: #34495e;
+    margin: 1.1em 0 0.7em 0;
+}
+
+.markdown-content h3 {
+    font-size: 1.1em !important;
+    color: #7f8c8d;
+    margin: 1.0em 0 0.6em 0;
+}
+
+.markdown-content h4, .markdown-content h5, .markdown-content h6 {
+    font-size: 1.0em !important;
+    color: #95a5a6;
+    margin: 0.9em 0 0.5em 0;
+}
+
+.markdown-content p {
+    margin-bottom: 0.8em;
+    font-size: 0.9em;
+}
+
+.markdown-content ul, .markdown-content ol {
+    margin-bottom: 1em;
+    padding-left: 1.8em;
+}
+
+.markdown-content li {
+    margin-bottom: 0.4em;
+    font-size: 0.9em;
+}
+
+/* Table Styling */
+.markdown-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+    font-size: 0.85em;
+    display: table;
+}
+
+.markdown-content th, .markdown-content td {
+    border: 1px solid #bdc3c7;
+    padding: 6px 8px;
+    text-align: left;
+    vertical-align: top;
+}
+
+.markdown-content th {
+    background-color: #ecf0f1;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.markdown-content tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+.markdown-content tr:hover {
+    background-color: #e8f4f8;
+}
+
+.markdown-content hr {
+    border: none;
+    border-top: 2px solid #3498db;
+    margin: 1.5em 0;
+}
+
+.markdown-content code {
+    background-color: #f1f2f6;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: 'Courier New', 'Consolas', monospace;
+    font-size: 0.85em;
+    color: #e74c3c;
+}
+
+.markdown-content strong {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.markdown-content em {
+    font-style: italic;
+    color: #7f8c8d;
+}
+
+/* Better spacing between sections */
+.markdown-content > * + * {
+    margin-top: 0.8em;
+}
+
+/* Table alignment fixes */
+.markdown-content table td,
+.markdown-content table th {
+    word-wrap: break-word;
+    max-width: 200px;
+}
+
+/* Correlation matrix specific styling */
+.markdown-content table:contains("GT") table:contains("GB") {
+    margin: 1em 0;
+}
+
+.markdown-content table:contains("Spearman") {
+    font-size: 0.8em;
+}
