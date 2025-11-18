@@ -12,6 +12,7 @@ import dash
 from dash import html, dcc, callback
 from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
+import json
 
 # Secret keystroke combination (Ctrl+Shift+R then Ctrl+Shift+G)
 SECRET_SEQUENCE_1 = ["Control", "Shift", "r"]  # First combo
@@ -148,8 +149,8 @@ class HiddenRegenerationMenu:
             let currentStage = 0;
             let stageTimeout = null;
             
-            const SECRET_SEQUENCE_1 = {SECRET_SEQUENCE_1};
-            const SECRET_SEQUENCE_2 = {SECRET_SEQUENCE_2};
+            const SECRET_SEQUENCE_1 = {json.dumps(SECRET_SEQUENCE_1)};
+            const SECRET_SEQUENCE_2 = {json.dumps(SECRET_SEQUENCE_2)};
             const TIMEOUT_MS = 3000; // 3 seconds between combos
             
             function arraysEqual(arr1, arr2) {{
@@ -324,53 +325,8 @@ class HiddenRegenerationMenu:
 hidden_menu = HiddenRegenerationMenu()
 
 
-# Callback for hidden regeneration button
-@callback(
-    Output("hidden-regeneration-menu", "style", allow_duplicate=True),
-    Input("hidden-regenerate-btn", "n_clicks"),
-    Input("hidden-regenerate-all-btn", "n_clicks"),
-    Input("hidden-db-status-btn", "n_clicks"),
-    Input("hidden-save-to-db-btn", "n_clicks"),
-    prevent_initial_call=True,
-)
-def handle_hidden_regeneration(
-    n_clicks_regenerate, n_clicks_regenerate_all, n_clicks_status, n_clicks_save
-):
-    """
-    Handle hidden regeneration menu button clicks.
-    """
-    import dash
-
-    ctx = dash.callback_context
-
-    if not ctx.triggered:
-        return {"display": "none"}
-
-    trigger = ctx.triggered[0]["prop_id"]
-
-    if "hidden-regenerate-btn" in trigger:
-        # Handle single regeneration
-        print("🔐 Hidden regeneration requested for current analysis")
-        # Trigger server-side regeneration
-        return {"display": "block", "animation": "fadeIn 0.3s ease-in"}
-
-    elif "hidden-regenerate-all-btn" in trigger:
-        # Handle batch regeneration
-        print("🔐 Hidden batch regeneration requested")
-        return {"display": "block", "animation": "fadeIn 0.3s ease-in"}
-
-    elif "hidden-db-status-btn" in trigger:
-        # Handle database status check
-        print("🔐 Database status check requested")
-        return {"display": "block", "animation": "fadeIn 0.3s ease-in"}
-
-    elif "hidden-save-to-db-btn" in trigger:
-        # Handle save to database
-        print("💾 Save to database requested")
-        # The actual save is handled by JavaScript
-        return {"display": "block", "animation": "fadeIn 0.3s ease-in"}
-
-    return {"display": "none"}
+# Callback for hidden regeneration button (removed for now to avoid callback errors)
+# This will be implemented when the hidden menu is properly integrated into the main app
 
 
 def create_hidden_regeneration_component():

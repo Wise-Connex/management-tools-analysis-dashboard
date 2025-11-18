@@ -1370,18 +1370,14 @@ def save_analysis_to_database():
         return json.dumps({"success": False, "error": str(e)})
 
 
-# Add hidden regeneration menu to the app
-try:
-    from key_findings.hidden_regeneration_menu import (
-        create_hidden_regeneration_component,
-    )
-
-    hidden_menu_component = create_hidden_regeneration_component()
-    # Add the hidden menu to the app layout
-    app.layout.children.append(hidden_menu_component)
-    print("🔐 Hidden regeneration menu integrated successfully")
-except Exception as e:
-    print(f"⚠️ Could not integrate hidden menu: {e}")
+# Add hidden regeneration menu to the app (temporarily disabled to fix JS errors)
+# try:
+#     from key_findings.hidden_regeneration_menu import create_hidden_regeneration_component
+#     hidden_menu_component = create_hidden_regeneration_component()
+#     app.layout.children.append(hidden_menu_component)
+#     print("🔐 Hidden regeneration menu integrated successfully")
+# except Exception as e:
+#     print(f"⚠️ Could not integrate hidden menu: {e}")
 
 
 # Add basic security headers for production
