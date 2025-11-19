@@ -6784,16 +6784,77 @@ if KEY_FINDINGS_AVAILABLE and key_findings_service:
                 prompt_preview = prompt[:300] + "..." if len(prompt) > 300 else prompt
                 print(f"📋 Prompt preview: {prompt_preview}")
 
-                # Call AI service with proper async handling
-                print("🤖 Calling AI service for analysis...")
-                ai_start = time.time()
-                ai_response = run_async_in_sync_context(
-                    key_findings_service.ai_service.generate_analysis,
-                    prompt=prompt,
-                    language=language,
+                # Use the proper KeyFindingsService method which checks cache and precomputed findings
+                print(
+                    "🔍 Using KeyFindingsService.generate_key_findings() for intelligent caching..."
                 )
-                ai_time = time.time() - ai_start
-                print(f"✅ AI analysis completed in {ai_time:.2f}s")
+                analysis_start = time.time()
+                key_findings_result = run_async_in_sync_context(
+                    key_findings_service.generate_key_findings,
+                    tool_name=selected_tool,
+                    selected_sources=selected_sources,
+                    language=language,
+                    force_refresh=False,  # Let it use cache/precomputed data when available
+                )
+                analysis_time = time.time() - analysis_start
+                print(f"✅ Key Findings generation completed in {analysis_time:.2f}s")
+
+                # Check if the result indicates it came from precomputed database
+                if key_findings_result.get("source") == "precomputed_findings":
+                    print(
+                        "🎯 SUCCESS: Analysis retrieved from precomputed findings database!"
+                    )
+                elif key_findings_result.get("cache_hit"):
+                    print("🎯 SUCCESS: Analysis retrieved from cache!")
+                else:
+                    print("🎯 SUCCESS: New analysis generated!")
+
+                # Check for success
+                if not key_findings_result.get("success", False):
+                    error_msg = key_findings_result.get("error", "Unknown error")
+                    print(f"❌ Key Findings generation failed: {error_msg}")
+                    return (
+                        True,
+                        html.Div(
+                            [
+                                html.H4("Error de Análisis", className="text-danger"),
+                                html.P(
+                                    f"Error al generar hallazgos clave: {error_msg}",
+                                    className="text-muted",
+                                ),
+                            ]
+                        ),
+                        dynamic_title,
+                        False,
+                        None,
+                    )
+
+                # Extract the report data for processing
+                report_data = key_findings_result.get("data", {})
+                if not report_data:
+                    print("❌ No report data in Key Findings result")
+                    return (
+                        True,
+                        html.Div(
+                            [
+                                html.H4("Error de Datos", className="text-danger"),
+                                html.P(
+                                    "No se pudieron obtener los datos del análisis.",
+                                    className="text-muted",
+                                ),
+                            ]
+                        ),
+                        dynamic_title,
+                        False,
+                        None,
+                    )
+
+                print(f"📊 Report data retrieved: {len(report_data)} fields")
+                response_time = key_findings_result.get("response_time_ms", 0)
+                print(f"⚡ Response time: {response_time}ms")
+
+                # Continue with existing modal processing using report_data instead of ai_response
+                ai_response = key_findings_result  # Reuse existing variable name for compatibility
 
                 # CRITICAL FIX: Add None check for ai_response
                 if ai_response is None:
