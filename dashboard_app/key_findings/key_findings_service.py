@@ -1057,7 +1057,55 @@ class KeyFindingsService:
     ):
         """Get precomputed findings from database as fallback."""
         try:
-            sources_text = ", ".join(sorted(selected_sources))
+            # Convert tool name to Spanish (database stores Spanish names)
+            from translations import get_tool_name
+            spanish_tool_name = get_tool_name(tool_name, 'es')
+
+            # Convert source IDs to display names (database stores display names, not IDs)
+            # Handle both numeric IDs and string source IDs
+            source_mapping = {
+                # String source IDs to display names
+                'google_trends': 'Google Trends',
+                'google_books': 'Google Books',
+                'bain_usability': 'Bain Usability',
+                'bain_satisfaction': 'Bain Satisfaction',
+                'crossref': 'Crossref',
+                # Numeric IDs to display names
+                1: 'Google Trends',
+                2: 'Google Books',
+                3: 'Bain Usability',
+                5: 'Bain Satisfaction',
+                4: 'Crossref'
+            }
+
+            # Convert source IDs to display names and sort by numeric ID for consistency
+            # The database stores sources in numeric ID order: 1,2,3,4,5
+            source_display_pairs = []
+            for source_id in selected_sources:
+                display_name = source_mapping.get(source_id, str(source_id))
+                # Get numeric ID for sorting (handle both int and string IDs)
+                numeric_id = source_id if isinstance(source_id, int) else {
+                    'google_trends': 1,
+                    'google_books': 2,
+                    'bain_usability': 3,
+                    'crossref': 4,
+                    'bain_satisfaction': 5
+                }.get(source_id, 999)  # Default to high number for unknown sources
+                source_display_pairs.append((numeric_id, display_name))
+
+            # Sort by numeric ID and extract display names
+            source_display_pairs.sort(key=lambda x: x[0])
+            display_sources = [pair[1] for pair in source_display_pairs]
+            sources_text = ", ".join(display_sources)
+
+            # Debug logging to see what we're querying
+            logging.info(f"🔍 DEBUG: _get_precomputed_findings query parameters:")
+            logging.info(f"🔍 DEBUG: tool_name='{tool_name}' -> spanish_tool_name='{spanish_tool_name}'")
+            logging.info(f"🔍 DEBUG: selected_sources={selected_sources}")
+            logging.info(f"🔍 DEBUG: display_sources={display_sources}")
+            logging.info(f"🔍 DEBUG: sources_text='{sources_text}'")
+            logging.info(f"🔍 DEBUG: language='{language}'")
+
             db_path = "/Users/Dimar/Documents/python-code/MTSA/tools-dashboard/data/precomputed_findings.db"
 
             conn = sqlite3.connect(db_path)
@@ -1065,20 +1113,50 @@ class KeyFindingsService:
 
             cursor.execute(
                 """
-                SELECT executive_summary, principal_findings, temporal_analysis, 
-                       seasonal_analysis, fourier_analysis, pca_analysis, 
-                       heatmap_analysis, confidence_score, model_used, 
+                SELECT executive_summary, principal_findings, temporal_analysis,
+                       seasonal_analysis, fourier_analysis, pca_analysis,
+                       heatmap_analysis, confidence_score, model_used,
                        data_points_analyzed, analysis_type
-                FROM precomputed_findings 
-                WHERE tool_name = ? AND sources_text = ? AND language = ? 
+                FROM precomputed_findings
+                WHERE tool_name = ? AND sources_text = ? AND language = ?
                 AND is_active = 1
                 LIMIT 1
             """,
-                (tool_name, sources_text, language),
+                (spanish_tool_name, sources_text, language),
             )
 
             result = cursor.fetchone()
             conn.close()
+
+            # Debug logging for query results
+            if result:
+                logging.info(f"🔍 DEBUG: Precomputed findings FOUND!")
+                logging.info(f"🔍 DEBUG: Result has {len(result)} fields")
+            else:
+                logging.info(f"🔍 DEBUG: No precomputed findings found for query")
+                # Let's check what combinations exist for this tool
+                conn_check = sqlite3.connect(db_path)
+                cursor_check = conn_check.cursor()
+                cursor_check.execute(
+                    """
+                    SELECT tool_name, sources_text, language, COUNT(*) as count
+                    FROM precomputed_findings
+                    WHERE tool_name = ? AND language = ? AND is_active = 1
+                    GROUP BY tool_name, sources_text, language
+                    ORDER BY count DESC
+                    LIMIT 5
+                """,
+                    (spanish_tool_name, language),
+                )
+                available_combinations = cursor_check.fetchall()
+                conn_check.close()
+
+                if available_combinations:
+                    logging.info(f"🔍 DEBUG: Available combinations for {spanish_tool_name} ({language}):")
+                    for combo in available_combinations:
+                        logging.info(f"🔍 DEBUG:   Sources: {combo[1]} (count: {combo[3]})")
+                else:
+                    logging.info(f"🔍 DEBUG: No combinations found for {spanish_tool_name} ({language})")
 
             if not result:
                 return None

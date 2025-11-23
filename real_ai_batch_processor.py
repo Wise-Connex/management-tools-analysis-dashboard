@@ -133,8 +133,9 @@ class RealAIBatchProcessor:
                 analysis_data=analysis_data,
             )
 
-            # Track cost (approximate)
-            tokens_used = len(prompt.split()) + len(analysis_result.split())
+            # Track cost (approximate) - use prompt and executive summary text
+            summary_text = analysis_data.get("executive_summary", "")
+            tokens_used = len(prompt.split()) + len(summary_text.split())
             cost = tokens_used * 0.003 / 1000  # $0.003 per 1K tokens
             self.cost_tracking["total_tokens"] += tokens_used
             self.cost_tracking["total_cost"] += cost
@@ -198,7 +199,6 @@ Use a professional and academic style. Provide specific insights based on availa
             # Use the unified AI service to generate analysis
             response = await self.ai_service.generate_analysis(
                 prompt=prompt,
-                analysis_type="executive_analysis",
                 language="es"
                 if any(
                     word in prompt.lower()
@@ -228,19 +228,53 @@ Análisis en modo de respaldo debido a problemas temporales del servicio de IA.
         self, response: str, combination: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Parse AI response into structured data."""
-        # For now, use the full response as executive summary
-        # In a real implementation, this would parse the structured response
+
+        # Handle different response types from the AI service
+        if isinstance(response, dict):
+            # If response is already parsed JSON, extract the content
+            executive_summary = response.get("executive_summary", "")
+
+            # Convert principal findings to readable text
+            principal_findings = ""
+            findings = response.get("principal_findings", [])
+            if isinstance(findings, list):
+                for i, finding in enumerate(findings, 1):
+                    if isinstance(finding, dict) and "bullet_point" in finding:
+                        principal_findings += f"• {finding['bullet_point']}\n"
+                    elif isinstance(finding, str):
+                        principal_findings += f"• {finding}\n"
+            elif isinstance(findings, str):
+                principal_findings = findings
+
+            # Extract other sections if available
+            temporal_analysis = response.get("temporal_analysis", "")
+            seasonal_analysis = response.get("seasonal_analysis", "")
+            fourier_analysis = response.get("fourier_analysis", "")
+            pca_analysis = response.get("pca_analysis", "")
+            heatmap_analysis = response.get("heatmap_analysis", "")
+
+        else:
+            # If response is a string, use it as the main analysis
+            executive_summary = str(response)
+            principal_findings = str(response)
+            temporal_analysis = str(response)
+            seasonal_analysis = str(response)
+            fourier_analysis = str(response)
+            heatmap_analysis = str(response)
+            pca_analysis = str(response)
 
         return {
-            "executive_summary": response,
-            "temporal_analysis": response,
-            "seasonal_analysis": response,
-            "fourier_analysis": response,
-            "heatmap_analysis": response,
+            "executive_summary": executive_summary,
+            "principal_findings": principal_findings,
+            "temporal_analysis": temporal_analysis,
+            "seasonal_analysis": seasonal_analysis,
+            "fourier_analysis": fourier_analysis,
+            "pca_analysis": pca_analysis,
+            "heatmap_analysis": heatmap_analysis,
             "tool_display_name": combination["tool_name"],
-            "data_points_analyzed": 2500,
-            "confidence_score": 0.92,
-            "model_used": "moonshotai/kimi-k2-instruct",
+            "data_points_analyzed": response.get("data_points_analyzed", 2500) if isinstance(response, dict) else 2500,
+            "confidence_score": response.get("confidence_score", 0.92) if isinstance(response, dict) else 0.92,
+            "model_used": response.get("model_used", "moonshotai/kimi-k2-instruct") if isinstance(response, dict) else "moonshotai/kimi-k2-instruct",
             "analysis_type": combination["analysis_type"],
         }
 

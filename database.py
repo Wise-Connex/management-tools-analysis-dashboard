@@ -220,7 +220,7 @@ class DatabaseManager:
         
         with self.get_connection() as conn:
             for source_id in sources:
-                table_name = source_to_table.get(source_id)
+                table_name = self.config.get_table_name(source_id)
                 if not table_name:
                     logging.warning(f"No table name for source_id={source_id}")
                     continue

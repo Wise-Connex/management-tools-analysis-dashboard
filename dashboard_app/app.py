@@ -6481,7 +6481,6 @@ if KEY_FINDINGS_AVAILABLE and key_findings_service:
                     dynamic_title,
                     False,
                     None,
-                    "idle",
                 )
 
             try:
@@ -6558,246 +6557,49 @@ if KEY_FINDINGS_AVAILABLE and key_findings_service:
                 # Return loading state immediately
                 print("🔄 Returning loading state to user")
 
-                # Force fresh AI generation by clearing any cache first
-                try:
-                    if hasattr(key_findings_service, "kf_db_manager"):
-                        # Clear cache for this specific scenario to force fresh AI generation
-                        scenario_hash = (
-                            key_findings_service.kf_db_manager.generate_scenario_hash(
-                                selected_tool, selected_sources, language=language
-                            )
-                        )
-                        key_findings_service.kf_db_manager.clear_scenario_cache(
-                            scenario_hash
-                        )
-                        print(
-                            f"🧹 Cache cleared for scenario {scenario_hash[:8]}... forcing fresh AI generation"
-                        )
-                except Exception as e:
-                    print(f"⚠️ Cache clear failed (not critical): {e}")
-
-                # Since signal doesn't work in Dash threads, use a simple time-based approach
-                print("⏰ Starting data collection with fresh AI generation...")
-                data_collection_start = time.time()
-
-                try:
-                    print("📊 Starting data collection...")
-                    print(
-                        f"🔍 DEBUG: Selected sources before mapping: {selected_sources}"
-                    )
-
-                    # Convert display names to source IDs for Key Findings
-                    selected_source_ids = map_display_names_to_source_ids(
-                        selected_sources
-                    )
-                    print(
-                        f"🔍 DEBUG: Selected sources after mapping to IDs: {selected_source_ids}"
-                    )
-
-                    # Start the data collection with source IDs and display names
-                    analysis_data = (
-                        key_findings_service.data_aggregator.collect_analysis_data(
-                            tool_name=selected_tool,
-                            selected_sources=selected_source_ids,
-                            language=language,
-                            source_display_names=selected_sources,
-                        )
-                    )
-
-                    data_collection_time = time.time() - data_collection_start
-                    print(
-                        f"✅ Data collection completed in {data_collection_time:.2f}s"
-                    )
-
-                except Exception as e:
-                    data_collection_time = time.time() - data_collection_start
-                    print(
-                        f"❌ Data collection failed after {data_collection_time:.2f}s: {e}"
-                    )
-
-                    # Check if it's a "tool not found" error
-                    if "not found in database" in str(e):
-                        print("🎯 TOOL NOT FOUND ERROR!")
-                        print(
-                            "💡 This is the root cause - tool name mapping issue between UI and Key Findings"
-                        )
-                        print(
-                            "🔍 The tool exists in the main database but Key Findings can't find it"
-                        )
-
-                        # Return specific error modal for tool mapping issue
-                        error_content = html.Div(
-                            [
-                                html.H4(
-                                    "🔍 Tool Mapping Issue", className="text-danger"
-                                ),
-                                html.P(
-                                    f"Tool '{selected_tool}' not found in Key Findings database.",
-                                    className="text-muted",
-                                ),
-                                html.P(
-                                    "The tool exists in the main database but Key Findings uses different naming.",
-                                    className="text-muted",
-                                ),
-                                html.P(
-                                    "This needs to be fixed in the tool name mapping configuration.",
-                                    className="text-muted",
-                                ),
-                            ]
-                        )
-                        print("🔄 Returning tool mapping error modal")
-                        return True, error_content, dynamic_title, False, None, "idle"
-                    # Check if it took more than 3 seconds (indicating hanging)
-                    elif data_collection_time > 3.0:
-                        print("⏰ LONG EXECUTION TIME DETECTED!")
-                        print("🎯 This suggests the data collection is hanging!")
-                        print(
-                            "💡 The database query is taking too long - likely due to tool name mapping issues"
-                        )
-
-                        # Return error modal immediately
-                        error_content = html.Div(
-                            [
-                                html.H4(
-                                    "⏰ Long Execution Detected",
-                                    className="text-warning",
-                                ),
-                                html.P(
-                                    f"Data collection took {data_collection_time:.1f} seconds.",
-                                    className="text-muted",
-                                ),
-                                html.P(
-                                    "This indicates the database query is hanging or slow.",
-                                    className="text-muted",
-                                ),
-                                html.P(
-                                    "The tool name mapping between UI and database needs to be fixed.",
-                                    className="text-muted",
-                                ),
-                            ]
-                        )
-                        print("🔄 Returning long execution error modal")
-                        return True, error_content, dynamic_title, False, None
-                    else:
-                        print(
-                            f"❌ Data collection failed quickly after {data_collection_time:.2f}s: {e}"
-                        )
-                        import traceback
-
-                        traceback.print_exc()
-                        raise
-
-                # CRITICAL FIX: Add None check for analysis_data
-                if analysis_data is None:
-                    print(
-                        f"❌ CRITICAL: analysis_data is None - data collection returned no data"
-                    )
-                    return (
-                        True,
-                        html.Div(
-                            [
-                                html.H4("Error de Datos", className="text-danger"),
-                                html.P(
-                                    "No se pudieron recopilar los datos de análisis. Intente nuevamente.",
-                                    className="text-muted",
-                                ),
-                            ]
-                        ),
-                        dynamic_title,
-                        False,
-                        None,
-                    )
-
-                if "error" in analysis_data:
-                    print(f"❌ Error collecting data: {analysis_data['error']}")
-                    return (
-                        True,
-                        html.Div(
-                            [
-                                html.H4("Error de Datos", className="text-danger"),
-                                html.P(analysis_data["error"], className="text-muted"),
-                            ]
-                        ),
-                        dynamic_title,
-                        False,
-                        None,
-                    )
-
-                # CRITICAL FIX: Add None check for analysis_data before accessing its properties
-                if analysis_data is None:
-                    print(f"❌ CRITICAL: analysis_data is None after data collection")
-                    return (
-                        True,
-                        html.Div(
-                            [
-                                html.H4("Error de Datos", className="text-danger"),
-                                html.P(
-                                    "No se pudieron recopilar los datos de análisis. Intente nuevamente.",
-                                    className="text-muted",
-                                ),
-                            ]
-                        ),
-                        dynamic_title,
-                        False,
-                        None,
-                    )
-
-                # CRITICAL FIX: Add None check for analysis_data before accessing its properties
-                if analysis_data is None:
-                    print(f"❌ CRITICAL: analysis_data is None after data collection")
-                    return (
-                        True,
-                        html.Div(
-                            [
-                                html.H4("Error de Datos", className="text-danger"),
-                                html.P(
-                                    "No se pudieron recopilar los datos de análisis. Intente nuevamente.",
-                                    className="text-muted",
-                                ),
-                            ]
-                        ),
-                        dynamic_title,
-                        False,
-                        None,
-                    )
-
-                data_points = analysis_data.get("data_points_analyzed", 0)
-                pca_variance = analysis_data.get("pca_insights", {}).get(
-                    "total_variance_explained", 0
-                )
-                print(
-                    f"✅ Collected analysis data: {data_points} points, PCA variance: {pca_variance:.1f}%"
-                )
-
-                # Generate comprehensive prompt
-                print("📝 Generating analysis prompt...")
-                prompt_start = time.time()
-                prompt = key_findings_service.prompt_engineer.create_analysis_prompt(
-                    analysis_data, {}
-                )
-                prompt_time = time.time() - prompt_start
-                print(
-                    f"✅ Prompt generated in {prompt_time:.2f}s ({len(prompt)} characters)"
-                )
-
-                # Show prompt preview
-                prompt_preview = prompt[:300] + "..." if len(prompt) > 300 else prompt
-                print(f"📋 Prompt preview: {prompt_preview}")
-
                 # Use the proper KeyFindingsService method which checks cache and precomputed findings
                 print(
                     "🔍 Using KeyFindingsService.generate_key_findings() for intelligent caching..."
                 )
+                
+                # Initialize timing variables
+                data_collection_start = time.time()
+                ai_start = time.time()
                 analysis_start = time.time()
+                
+                # Map display names to source IDs
+                # The service expects source IDs (e.g., 'google_trends') not display names (e.g., 'Google Trends')
+                selected_source_ids = map_display_names_to_source_ids(selected_sources)
+                print(f"🔍 Mapped sources: {selected_sources} -> {selected_source_ids}")
+                
                 key_findings_result = run_async_in_sync_context(
                     key_findings_service.generate_key_findings,
                     tool_name=selected_tool,
-                    selected_sources=selected_sources,
+                    selected_sources=selected_source_ids,
                     language=language,
-                    force_refresh=False,  # Let it use cache/precomputed data when available
+                    force_refresh=False,  # Use cache when available, only generate fresh if cache miss
                 )
+                
+                # Calculate timing (approximate since detailed breakdown is internal to service)
+                ai_time = time.time() - ai_start
+                data_collection_time = 0  # Internal to service
+                prompt_time = 0  # Internal to service
+                
                 analysis_time = time.time() - analysis_start
                 print(f"✅ Key Findings generation completed in {analysis_time:.2f}s")
+
+                # Extract metadata for analysis_data
+                # Try to get metadata from the result if available, otherwise use defaults
+                result_metadata = key_findings_result.get("metadata", {})
+                analysis_data = {
+                    "data_points_analyzed": result_metadata.get("data_points_analyzed", 0),
+                    "date_range_start": result_metadata.get("date_range_start", "N/A"),
+                    "date_range_end": result_metadata.get("date_range_end", "N/A"),
+                    "tool_name": selected_tool
+                }
+                
+                # If data_points_analyzed is 0, try to estimate or get from report_data later
+                data_points = analysis_data["data_points_analyzed"]
 
                 # Check if the result indicates it came from precomputed database
                 if key_findings_result.get("source") == "precomputed_findings":
@@ -6924,7 +6726,9 @@ if KEY_FINDINGS_AVAILABLE and key_findings_service:
                 )
 
                 # Parse AI response
-                ai_content = ai_response.get("content", {})
+                # ai_response is key_findings_result which has 'data' field containing the report
+                # report_data already contains the parsed content
+                ai_content = report_data
                 print(f"📄 AI response parsed:")
                 print(f"   - Available fields: {list(ai_content.keys())}")
                 print(

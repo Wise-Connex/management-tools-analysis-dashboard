@@ -111,6 +111,11 @@ def enhanced_display_names_to_ids(display_names):
     # Apply fallbacks for all names
     result_ids = []
     for name in display_names:
+        # If already a numeric ID, keep it as-is
+        if isinstance(name, int):
+            result_ids.append(name)
+            continue
+            
         if name in name_to_id_fallbacks:
             result_ids.append(name_to_id_fallbacks[name])
             if name not in ['Bain - Usabilidad', 'Bain - Satisfacción', 'Google Books Ngrams', 'Crossref.org']:

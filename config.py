@@ -184,11 +184,24 @@ class Config:
         Get the database table name for a given source key.
 
         Args:
-            source_key: The source identifier (e.g., 'google_trends', 'crossref')
+            source_key: The source identifier (e.g., 'google_trends', 'crossref', or numeric ID 1-5)
 
         Returns:
             The table name for the source
         """
+        # Map numeric IDs to string keys for backward compatibility
+        numeric_to_string = {
+            1: "google_trends",
+            2: "google_books",
+            3: "bain_usability",
+            4: "crossref",
+            5: "bain_satisfaction"
+        }
+        
+        # Convert numeric ID to string key if needed
+        if isinstance(source_key, int) and source_key in numeric_to_string:
+            source_key = numeric_to_string[source_key]
+        
         return self.database_config.get("tables", {}).get(source_key, source_key)
 
     def get_connection_config(self) -> Dict[str, Any]:

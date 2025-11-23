@@ -90,27 +90,9 @@ class DataAggregator:
         logging.info(f"📊 Querying database for tool='{tool_name}' with {len(selected_sources)} sources...")
         logging.info(f"🔍 Source list: {selected_sources}")
 
-        # First check if tool exists in database
-        try:
-            logging.info(f"🔍 Checking if tool '{tool_name}' exists in database...")
-            # Try to get a small sample first to validate the tool exists
-            test_datasets, test_sl_sc = self.db_manager.get_data_for_keyword(tool_name, selected_sources[:1] if selected_sources else [])
-            if not test_datasets:
-                logging.warning(f"⚠️ Tool '{tool_name}' not found in database or no data available")
-                available_tools = []
-                try:
-                    # Try to get a list of available tools from the database
-                    cursor = self.db_manager.connection.execute("SELECT DISTINCT keyword FROM data_table LIMIT 10")
-                    available_tools = [row[0] for row in cursor.fetchall()]
-                    logging.info(f"📋 Available tools in database: {available_tools}")
-                except Exception as e:
-                    logging.error(f"❌ Could not retrieve available tools: {e}")
-
-                raise Exception(f"Tool '{tool_name}' not found in database. Available tools: {available_tools[:5]}...")
-        except Exception as e:
-            if "not found in database" in str(e):
-                raise e
-            logging.info(f"✅ Tool exists, proceeding with full query...")
+        # Note: We removed the pre-check that only tested the first source,
+        # as it caused false "not found" errors when the first source didn't have data
+        # but other sources did. The main query below will handle validation properly.
 
         try:
             # Add timeout protection for database queries
@@ -1234,13 +1216,19 @@ class DataAggregator:
         
         logging.info(f"🔍 Key Findings - Creating dataset for tool '{tool_name}' with sources {sl_sc}")
         
-        # Map source IDs to table names and display names
+        # Map source IDs (both numeric and string) to table names and display names
         source_to_table = {
             1: ("google_trends", "Google Trends"),
             2: ("google_books", "Google Books"),
             3: ("bain_usability", "Bain Usability"),
             4: ("crossref", "Crossref"),
-            5: ("bain_satisfaction", "Bain Satisfaction")
+            5: ("bain_satisfaction", "Bain Satisfaction"),
+            # Also support string IDs directly
+            "google_trends": ("google_trends", "Google Trends"),
+            "google_books": ("google_books", "Google Books"),
+            "bain_usability": ("bain_usability", "Bain Usability"),
+            "crossref": ("crossref", "Crossref"),
+            "bain_satisfaction": ("bain_satisfaction", "Bain Satisfaction")
         }
         
         # Create combined dataset with proper source names
@@ -1265,6 +1253,7 @@ class DataAggregator:
         # Add data from each source with correct names
         sources_found = []
         for source_id in sl_sc:
+            # Check if source_id exists in datasets_norm (could be string or int)
             if source_id in datasets_norm and source_id in source_to_table:
                 table_name, display_name = source_to_table[source_id]
                 source_data = datasets_norm[source_id]

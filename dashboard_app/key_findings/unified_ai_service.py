@@ -449,9 +449,15 @@ Proporciona análisis que:
 6. Mencionen específicamente el nombre de la herramienta de gestión en el análisis
 
 Responde siempre en formato JSON estructurado con:
-- principal_findings: array de objetos con bullet_point, reasoning, data_source, confidence
-- pca_insights: objeto con análisis de componentes principales
-- executive_summary: resumen ejecutivo conciso
+- executive_summary: resumen ejecutivo conciso (400 palabras)
+- principal_findings: array de objetos con bullet_point y reasoning (omitir campos data_source y confidence, hacer que reasoning fluya como párrafo sin etiqueta "Razonamiento:")
+- heatmap_analysis: análisis detallado de mapa de calor y correlaciones (800 palabras)
+- temporal_analysis: análisis temporal multi-fuente detallado (800 palabras)
+- pca_analysis: análisis detallado de componentes principales (600 palabras) enfocándose en análisis de influencia de fuentes y alineamiento/desalineamiento entre opinión pública (Google Trends), práctica empresarial (Bain), e investigación académica (Google Books/Crossref)
+- fourier_analysis: análisis espectral y de Fourier combinado (600 palabras)
+- strategic_synthesis: síntesis estratégica multi-fuente (400 palabras)
+- conclusions: conclusiones y recomendaciones estratégicas (600 palabras)
+- pca_insights: objeto técnico con datos específicos de PCA
 """
         else:
             return """
@@ -478,9 +484,15 @@ Provide analysis that:
 6. Specifically mentions the management tool name in the analysis
 
 Always respond in structured JSON format with:
-- principal_findings: array of objects with bullet_point, reasoning, data_source, confidence
-- pca_insights: object with principal component analysis
-- executive_summary: concise executive summary
+- executive_summary: concise executive summary (400 words)
+- principal_findings: array of objects with bullet_point and reasoning (omit data_source and confidence fields, make reasoning flow as paragraph without "Reasoning:" label)
+- heatmap_analysis: detailed heatmap and correlation analysis (800 words)
+- temporal_analysis: detailed multi-source temporal analysis (800 words)
+- pca_analysis: detailed principal component analysis (600 words) focusing on source influence analysis and alignment/misalignment between public opinion (Google Trends), industry practice (Bain), and academic research (Google Books/Crossref)
+- fourier_analysis: combined spectral and Fourier analysis (600 words)
+- strategic_synthesis: multi-source strategic synthesis (400 words)
+- conclusions: conclusions and strategic recommendations (600 words)
+- pca_insights: technical object with specific PCA data
 
 ⚠️ FINAL WARNING ⚠️
 Your entire response must be in ENGLISH. No Spanish text allowed anywhere in the response.
@@ -586,6 +598,38 @@ If you respond in Spanish, the analysis will be rejected.
                 '📊 PCA Analysis',
                 'Análisis PCA',
                 'PCA Analysis'
+            ],
+            'heatmap_analysis': [
+                '🔥 Análisis de Mapa de Calor',
+                '🔥 Heatmap Analysis',
+                'Análisis de Mapa de Calor',
+                'Heatmap Analysis'
+            ],
+            'temporal_analysis': [
+                '📈 Análisis Temporal',
+                '📈 Temporal Analysis',
+                'Análisis Temporal',
+                'Temporal Analysis'
+            ],
+            'fourier_analysis': [
+                '📊 Análisis de Fourier',
+                '📊 Fourier Analysis',
+                'Análisis de Fourier',
+                'Fourier Analysis'
+            ],
+            'strategic_synthesis': [
+                '🎯 Síntesis Estratégica',
+                '🎯 Strategic Synthesis',
+                'Síntesis Estratégica',
+                'Strategic Synthesis'
+            ],
+            'conclusions': [
+                '🏁 Conclusiones',
+                '🏁 Conclusions',
+                'Conclusiones',
+                'Conclusions',
+                'CONCLUSIONES',
+                'CONCLUSIONS'
             ]
         }
 
@@ -777,6 +821,41 @@ If you respond in Spanish, the analysis will be rejected.
                     result['pca_analysis'] = pca_content
                     result['pca_insights'] = {'analysis': pca_content}
 
+        # Handle additional sections for complete multi-source analysis in correct order
+        new_sections = {
+            'temporal_analysis': '📈 Análisis Temporal',
+            'heatmap_analysis': '🔥 Análisis de Mapa de Calor',
+            'fourier_analysis': '📊 Análisis de Fourier',
+            'pca_analysis': '📊 Análisis PCA',
+            'strategic_synthesis': '🎯 Síntesis Estratégica',
+            'conclusions': '🏁 Conclusiones'
+        }
+
+        for section_key, section_emoji in new_sections.items():
+            if section_key in sections:
+                section_content = sections[section_key]
+                json_content = self._extract_json_from_section(section_content)
+
+                if json_content and section_key in json_content:
+                    result[section_key] = json_content[section_key]
+                else:
+                    # Extract content directly from section
+                    section_lines = section_content.split('\n')
+                    clean_lines = []
+                    for line in section_lines:
+                        line = line.strip()
+                        # Skip JSON fragments and repeated headers
+                        if (not line.startswith('{') and
+                            not line.startswith('}') and
+                            not line.startswith('"') and
+                            not line.startswith('```') and
+                            section_emoji not in line and
+                            len(line) > 0):
+                            clean_lines.append(line)
+
+                    if clean_lines:
+                        result[section_key] = '\n'.join(clean_lines).strip()
+
         # Validate we have the required fields
         if 'executive_summary' in result or 'principal_findings' in result or 'pca_analysis' in result:
             # Fill in missing fields with defaults
@@ -784,6 +863,10 @@ If you respond in Spanish, the analysis will be rejected.
             result.setdefault('principal_findings', [])
             result.setdefault('pca_insights', {})
             result.setdefault('heatmap_analysis', self._create_default_heatmap_analysis())
+            result.setdefault('temporal_analysis', 'Análisis temporal detallado no disponible.')
+            result.setdefault('fourier_analysis', 'Análisis de Fourier no disponible.')
+            result.setdefault('strategic_synthesis', 'Síntesis estratégica no disponible.')
+            result.setdefault('conclusions', 'Conclusiones no disponibles.')
             result['original_structure'] = 'sections_combined'
             return result
 
@@ -1214,26 +1297,51 @@ If you respond in Spanish, the analysis will be rejected.
             result['pca_analysis'] = parsed['pca_analysis']
             result['pca_insights'] = {'analysis': parsed['pca_analysis']}
 
-        # Handle heatmap_analysis field - ensure it's always included
-        if 'heatmap_analysis' in parsed:
-            result['heatmap_analysis'] = parsed['heatmap_analysis']
-        else:
-            # Create a default heatmap analysis if not provided
-            result['heatmap_analysis'] = self._create_default_heatmap_analysis()
+        # Handle new detailed sections
+        new_sections = [
+            'heatmap_analysis', 'temporal_analysis', 'fourier_analysis',
+            'strategic_synthesis', 'conclusions'
+        ]
 
-        # Ensure principal_findings is in correct format
+        for section in new_sections:
+            if section in parsed:
+                result[section] = parsed[section]
+            else:
+                # Create default content for missing sections
+                if section == 'heatmap_analysis':
+                    result[section] = self._create_default_heatmap_analysis()
+                elif section == 'temporal_analysis':
+                    result[section] = 'Análisis temporal detallado no disponible.'
+                elif section == 'fourier_analysis':
+                    result[section] = 'Análisis de Fourier no disponible.'
+                elif section == 'strategic_synthesis':
+                    result[section] = 'Síntesis estratégica no disponible.'
+                elif section == 'conclusions':
+                    result[section] = 'Conclusiones no disponibles.'
+
+        # Ensure principal_findings is in correct format (without data_source and confidence)
         if isinstance(result['principal_findings'], list) and result['principal_findings']:
             if isinstance(result['principal_findings'][0], str):
-                # Convert string array to object array
+                # Convert string array to object array with new format
                 result['principal_findings'] = [
                     {
                         'bullet_point': item,
-                        'reasoning': "Generated by AI",
-                        'data_source': ["AI Analysis"],
-                        'confidence': "medium"
+                        'reasoning': "This finding reveals important insights about the management tool's adoption patterns and strategic implications for organizations."
                     }
                     for item in result['principal_findings']
                 ]
+            elif isinstance(result['principal_findings'][0], dict):
+                # Clean existing findings to remove data_source and confidence
+                cleaned_findings = []
+                for finding in result['principal_findings']:
+                    if 'bullet_point' in finding:
+                        clean_finding = {
+                            'bullet_point': finding['bullet_point']
+                        }
+                        if 'reasoning' in finding:
+                            clean_finding['reasoning'] = finding['reasoning']
+                        cleaned_findings.append(clean_finding)
+                result['principal_findings'] = cleaned_findings
 
         return result
 

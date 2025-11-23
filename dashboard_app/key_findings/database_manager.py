@@ -206,7 +206,7 @@ class KeyFindingsDBManager:
         
         Args:
             tool_name: Selected management tool
-            selected_sources: List of selected data sources
+            selected_sources: List of selected data sources (can be IDs, names, or table names)
             date_range_start: Start date for analysis (optional)
             date_range_end: End date for analysis (optional)
             language: Analysis language
@@ -214,10 +214,49 @@ class KeyFindingsDBManager:
         Returns:
             SHA256 hash string for scenario
         """
+        # Normalize sources to canonical format for consistent hashing
+        # This mapping handles numeric IDs, display names, and table names
+        canonical_mapping = {
+            # Numeric IDs
+            1: 'google_trends',
+            2: 'google_books',
+            3: 'bain_usability',
+            4: 'crossref',
+            5: 'bain_satisfaction',
+            # Display names (English)
+            'google trends': 'google_trends',
+            'google books': 'google_books',
+            'bain usability': 'bain_usability',
+            'bain satisfaction': 'bain_satisfaction',
+            'crossref': 'crossref',
+            # Display names (Spanish)
+            'bain - usabilidad': 'bain_usability',
+            'bain usabilidad': 'bain_usability',
+            'bain - satisfacción': 'bain_satisfaction',
+            'bain satisfacción': 'bain_satisfaction',
+            # Table names
+            'google books ngrams': 'google_books',
+            'crossref.org': 'crossref',
+            # Already canonical
+            'google_trends': 'google_trends',
+            'google_books': 'google_books',
+            'bain_usability': 'bain_usability',
+            'bain_satisfaction': 'bain_satisfaction',
+        }
+        
+        normalized_sources = []
+        for s in selected_sources:
+            # Convert to string and lowercase for lookup
+            if isinstance(s, int):
+                canonical = canonical_mapping.get(s, str(s).lower())
+            else:
+                canonical = canonical_mapping.get(str(s).lower().strip(), str(s).lower().strip())
+            normalized_sources.append(canonical)
+        
         # Create normalized scenario data
         scenario_data = {
             'tool': tool_name.lower().strip(),
-            'sources': sorted([s.lower().strip() for s in selected_sources]),
+            'sources': sorted(normalized_sources),  # Already normalized, just sort
             'date_start': date_range_start or '',
             'date_end': date_range_end or '',
             'language': language.lower().strip()
