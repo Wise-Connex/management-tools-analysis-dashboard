@@ -54,6 +54,14 @@ class DataAggregator:
         """
         start_time = time.time()
         logging.info(f"🚀 Starting data collection for tool='{tool_name}', sources={selected_sources}, language={language}")
+        logging.info(f"🔍 Function parameters - selected_sources: {selected_sources} (type: {type(selected_sources)})")
+        logging.info(f"🔍 Function parameters - source_display_names: {source_display_names} (type: {type(source_display_names)})")
+
+        # Debug the parameter decision logic
+        if source_display_names:
+            logging.info(f"✅ Will use source_display_names for analysis: {source_display_names}")
+        else:
+            logging.info(f"⚠️  source_display_names is None/empty, will use selected_sources: {selected_sources}")
         
         # Handle bilingual tool name mapping - convert display name to database name
         # Import the necessary functions for tool name mapping
@@ -168,13 +176,23 @@ class DataAggregator:
         try:
             if is_single_source:
                 logging.info(f"📈 Starting single source analysis on {len(combined_dataset)} data points...")
-                single_source_insights = self.extract_single_source_insights(combined_dataset, selected_sources)
+                logging.info(f"🔍 selected_sources: {selected_sources}")
+                logging.info(f"🔍 source_display_names: {source_display_names}")
+                sources_for_analysis = source_display_names if source_display_names else selected_sources
+                logging.info(f"🔍 sources_for_analysis: {sources_for_analysis}")
+                logging.info(f"🔍 DataFrame columns: {combined_dataset.columns.tolist()}")
+                logging.info(f"🔍 Column match check: '{sources_for_analysis[0] if sources_for_analysis else None}' in {combined_dataset.columns.tolist()}")
+                single_source_insights = self.extract_single_source_insights(combined_dataset, sources_for_analysis)
                 analysis_time = time.time() - analysis_start_time
                 logging.info(f"✅ Single source analysis completed in {analysis_time:.2f}s")
                 logging.info(f"🔍 Single source insights keys: {list(single_source_insights.keys()) if single_source_insights else 'None'}")
             else:
                 logging.info(f"🧮 Starting PCA analysis on {len(combined_dataset)} data points with {len(selected_sources)} sources...")
-                pca_insights = self.extract_pca_insights(combined_dataset, selected_sources)
+                logging.info(f"🔍 selected_sources: {selected_sources}")
+                logging.info(f"🔍 source_display_names: {source_display_names}")
+                sources_for_analysis = source_display_names if source_display_names else selected_sources
+                logging.info(f"🔍 sources_for_analysis: {sources_for_analysis}")
+                pca_insights = self.extract_pca_insights(combined_dataset, sources_for_analysis)
                 analysis_time = time.time() - analysis_start_time
                 pca_variance = pca_insights.get('total_variance_explained', 0) if 'error' not in pca_insights else 0
                 logging.info(f"✅ PCA analysis completed in {analysis_time:.2f}s - variance explained: {pca_variance:.1f}%")

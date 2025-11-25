@@ -6567,17 +6567,18 @@ if KEY_FINDINGS_AVAILABLE and key_findings_service:
                 ai_start = time.time()
                 analysis_start = time.time()
                 
-                # Map display names to source IDs
-                # The service expects source IDs (e.g., 'google_trends') not display names (e.g., 'Google Trends')
+                # Map display names to source IDs for database queries
+                # The service needs both: numeric IDs for database queries AND display names for analysis
                 selected_source_ids = map_display_names_to_source_ids(selected_sources)
                 print(f"🔍 Mapped sources: {selected_sources} -> {selected_source_ids}")
-                
+
                 key_findings_result = run_async_in_sync_context(
                     key_findings_service.generate_key_findings,
                     tool_name=selected_tool,
-                    selected_sources=selected_source_ids,
+                    selected_sources=selected_source_ids,  # Numeric IDs for database queries
                     language=language,
                     force_refresh=False,  # Use cache when available, only generate fresh if cache miss
+                    source_display_names=selected_sources,  # Display names for analysis functions
                 )
                 
                 # Calculate timing (approximate since detailed breakdown is internal to service)

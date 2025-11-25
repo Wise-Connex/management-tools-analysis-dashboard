@@ -18,6 +18,7 @@ from pathlib import Path
 from .database_manager import KeyFindingsDBManager
 from .unified_ai_service import UnifiedAIService, get_unified_ai_service
 from .data_aggregator import DataAggregator
+from .single_source_fixer import SingleSourceFixer
 from .prompt_engineer import PromptEngineer
 from .modal_component import KeyFindingsModal
 
@@ -72,6 +73,9 @@ class KeyFindingsService:
         # Initialize prompt engineer
         self.prompt_engineer = PromptEngineer()
 
+        # Initialize single source fixer
+        self.single_source_fixer = SingleSourceFixer()
+
         # Initialize modal component (will be set later with app instance)
         self.modal_component = None
 
@@ -123,21 +127,30 @@ class KeyFindingsService:
         selected_sources: List[str],
         language: str = "es",
         force_refresh: bool = False,
+        source_display_names: List[str] = None,
     ) -> Dict[str, Any]:
         """
         Generate Key Findings analysis with intelligent caching.
 
         Args:
             tool_name: Selected management tool
-            selected_sources: List of selected data sources
+            selected_sources: List of selected data source IDs (for database queries)
             language: Analysis language ('es' or 'en')
             force_refresh: Force regeneration even if cached
+            source_display_names: Optional list of display names for analysis functions
 
         Returns:
             Dictionary containing analysis results and metadata
         """
         start_time = time.time()
         self.performance_metrics["total_requests"] += 1
+
+        # Debug: Log function parameters at entry
+        logging.info(f"🔍 generate_key_findings ENTRY:")
+        logging.info(f"🔍   tool_name: {tool_name}")
+        logging.info(f"🔍   selected_sources: {selected_sources} (type: {type(selected_sources)})")
+        logging.info(f"🔍   language: {language}")
+        logging.info(f"🔍   force_refresh: {force_refresh}")
 
         try:
             # Generate scenario hash for caching - use display names for consistency
@@ -200,11 +213,14 @@ class KeyFindingsService:
             # Check if this is a single source analysis
             is_single_source = len(selected_sources) == 1
             if is_single_source:
+                logging.info(f"🔍 BEFORE _generate_single_source_analysis call:")
+                logging.info(f"🔍   selected_sources: {selected_sources} (type: {type(selected_sources)})")
+                logging.info(f"🔍   selected_sources[0]: {selected_sources[0]} (type: {type(selected_sources[0])})")
                 logging.info(
                     f"🔍 Single source detected: {selected_sources[0]}. Using single source workflow."
                 )
                 return await self._generate_single_source_analysis(
-                    tool_name, selected_sources, language, scenario_hash, start_time
+                    tool_name, selected_sources, language, scenario_hash, start_time, source_display_names
                 )
 
             # Multi-source analysis path (original implementation)
@@ -225,7 +241,7 @@ class KeyFindingsService:
                 raise Exception(f"Data collection failed: {analysis_data['error']}")
 
             # Generate AI analysis
-            ai_result = await self._generate_ai_analysis(analysis_data, language)
+            ai_result = await self._generate_ai_analysis(analysis_data, language, is_single_source=False)
 
             if not ai_result["success"]:
                 raise Exception(
@@ -318,28 +334,53 @@ class KeyFindingsService:
         language: str,
         scenario_hash: str,
         start_time: float,
+        source_display_names: List[str] = None,
     ) -> Dict[str, Any]:
         """
         Generate single source analysis with temporal, seasonal, and Fourier analysis.
 
         Args:
             tool_name: Selected management tool
-            selected_sources: List containing a single data source
+            selected_sources: List containing a single data source ID (for database queries)
             language: Analysis language ('es' or 'en')
             scenario_hash: Hash for caching
             start_time: Analysis start time
+            source_display_names: Optional list of display names for analysis functions
 
         Returns:
             Dictionary containing analysis results and metadata
         """
         try:
+            # Debug: Log function parameters at entry
+            logging.info(f"🔍 _generate_single_source_analysis ENTRY:")
+            logging.info(f"🔍   tool_name: {tool_name}")
+            logging.info(f"🔍   selected_sources: {selected_sources} (type: {type(selected_sources)})")
+            logging.info(f"🔍   language: {language}")
+            logging.info(f"🔍   scenario_hash: {scenario_hash}")
+            logging.info(f"🔍   source_display_names: {source_display_names}")
+
+            # Debug: Check if single_source_fixer exists
+            logging.info(f"🔍 Checking single_source_fixer existence...")
+            logging.info(f"🔍 hasattr(self, 'single_source_fixer'): {hasattr(self, 'single_source_fixer')}")
+            if hasattr(self, 'single_source_fixer'):
+                logging.info(f"🔍 self.single_source_fixer type: {type(self.single_source_fixer)}")
+            else:
+                logging.info(f"🔍 self.single_source_fixer does not exist!")
+                logging.info(f"🔍 Available attributes: {[attr for attr in dir(self) if not attr.startswith('_')]}")
+
             # Collect analysis data for single source
             from fix_source_mapping import map_display_names_to_source_ids
 
             selected_source_ids = map_display_names_to_source_ids(selected_sources)
 
+            logging.info(f"🔍 About to call collect_analysis_data for single source with:")
+            logging.info(f"🔍   tool_name: {tool_name}")
+            logging.info(f"🔍   selected_source_ids: {selected_source_ids}")
+            logging.info(f"🔍   language: {language}")
+            logging.info(f"🔍   source_display_names: {source_display_names}")
+
             analysis_data = self.data_aggregator.collect_analysis_data(
-                tool_name, selected_source_ids, language, selected_sources
+                tool_name, selected_source_ids, language, source_display_names
             )
 
             # Update analysis data with original display names for consistency
@@ -418,7 +459,7 @@ class KeyFindingsService:
             logging.info(
                 f"🤖 Using IMPROVED narrative prompts for single source analysis"
             )
-            ai_result = await self._generate_ai_analysis(single_source_data, language)
+            ai_result = await self._generate_ai_analysis(single_source_data, language, is_single_source=True)
             logging.info(
                 f"🤖 AI service result: success={ai_result.get('success', False)}"
             )
@@ -433,6 +474,25 @@ class KeyFindingsService:
             logging.info(
                 f"📝 AI content received: {list(content.keys()) if content else 'None'}"
             )
+
+            # Apply single source structure fixer to ensure exact format
+            logging.info("🔧 Applying single source structure fixer")
+            try:
+                content = self.single_source_fixer.fix_single_source_response(content)
+                logging.info("✅ Single source structure fixed")
+            except AttributeError as e:
+                logging.warning(f"⚠️ single_source_fixer not available: {e}")
+                logging.info("🔧 Skipping single source structure fix - using original content")
+                # Use content as-is if fixer is not available
+
+            # Validate the fixed structure (or original if fixer unavailable)
+            try:
+                is_valid = self.single_source_fixer.validate_single_source_structure(content)
+            except AttributeError:
+                logging.warning("⚠️ single_source_fixer validation not available - assuming valid")
+                is_valid = True
+            if not is_valid:
+                logging.warning("⚠️ Single source structure validation failed, but continuing")
 
             # Calculate confidence score
             confidence_score = self._calculate_confidence_score_single_source(content)
@@ -532,7 +592,7 @@ class KeyFindingsService:
             }
 
     async def _generate_ai_analysis(
-        self, analysis_data: Dict[str, Any], language: str
+        self, analysis_data: Dict[str, Any], language: str, is_single_source: bool = False
     ) -> Dict[str, Any]:
         """
         Generate AI analysis using prompt engineering.
@@ -540,6 +600,7 @@ class KeyFindingsService:
         Args:
             analysis_data: Collected analysis data
             language: Analysis language
+            is_single_source: Whether this is single source analysis
 
         Returns:
             AI analysis result
@@ -554,14 +615,14 @@ class KeyFindingsService:
                 {
                     "analysis_type": "comprehensive",
                     "emphasis": "pca"
-                    if self.config["enable_pca_emphasis"]
+                    if self.config["enable_pca_emphasis"] and not is_single_source
                     else "balanced",
                 },
             )
 
-            # Generate AI analysis
+            # Generate AI analysis with single source flag
             ai_result = await self.ai_service.generate_analysis(
-                prompt, language=language
+                prompt, language=language, is_single_source=is_single_source
             )
 
             return ai_result

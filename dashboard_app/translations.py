@@ -27,12 +27,10 @@ TRANSLATIONS = {
         'regression_analysis': 'Análisis de Regresión',
         'pca_analysis': 'Análisis PCA (Cargas y Componentes)',
 
-        # Time Range Buttons
-        'all': 'Todo',
-        '20_years': '20 años',
-        '15_years': '15 años',
-        '10_years': '10 años',
-        '5_years': '5 años',
+        # Key Findings Modal Sections
+        'temporal_analysis': 'Análisis Temporal',
+        'strategic_synthesis': 'Síntesis Estratégica',
+        'conclusions': 'Conclusiones',
 
         # Date Range Labels
         'date_range': 'Rango de Fechas:',
@@ -312,6 +310,11 @@ TRANSLATIONS = {
         'correlation_heatmap': 'Correlation Heatmap',
         'regression_analysis': 'Regression Analysis',
         'pca_analysis': 'PCA Analysis (Loadings and Components)',
+
+        # Key Findings Modal Sections
+        'temporal_analysis': 'Temporal Analysis',
+        'strategic_synthesis': 'Strategic Synthesis',
+        'conclusions': 'Conclusions',
 
         # Time Range Buttons
         'all': 'All',

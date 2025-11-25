@@ -217,26 +217,71 @@ class KeyFindingsModal:
         # Extract data with proper JSON parsing if needed
         executive_summary = self._extract_text_content(report_data.get('executive_summary', ''))
         principal_findings = self._extract_text_content(report_data.get('principal_findings', ''))
+        temporal_analysis = self._extract_text_content(report_data.get('temporal_analysis', ''))
+        seasonal_analysis = self._extract_text_content(report_data.get('seasonal_analysis', ''))
+        fourier_analysis = self._extract_text_content(report_data.get('fourier_analysis', ''))
+        strategic_synthesis = self._extract_text_content(report_data.get('strategic_synthesis', ''))
+        conclusions = self._extract_text_content(report_data.get('conclusions', ''))
         heatmap_analysis = self._extract_text_content(report_data.get('heatmap_analysis', ''))
         pca_analysis = self._extract_text_content(report_data.get('pca_analysis', ''))
         metadata = self._extract_metadata(report_data)
 
-        return html.Div([
-            # Executive Summary Section
-            self._create_executive_summary_section(executive_summary, language),
+        # Handle missing strategic_synthesis and conclusions by extracting from principal_findings if needed
+        if not strategic_synthesis and principal_findings:
+            # Try to extract strategic synthesis from the end of principal findings
+            parts = principal_findings.split('\n\n')
+            if len(parts) > 2:
+                strategic_synthesis = '\n\n'.join(parts[-2:])  # Last 2 paragraphs
+                principal_findings = '\n\n'.join(parts[:-2])  # Everything except last 2 paragraphs
 
-            # Principal Findings Section (now narrative)
-            self._create_principal_findings_narrative_section(principal_findings, language),
+        if not conclusions and principal_findings:
+            # Extract conclusions from the very end of principal findings
+            parts = principal_findings.split('\n\n')
+            if len(parts) > 1:
+                conclusions = parts[-1]  # Last paragraph
+                principal_findings = '\n\n'.join(parts[:-1])  # Everything except last paragraph
 
-            # Heatmap Analysis Section (new 3-paragraph section)
-            self._create_heatmap_analysis_section(heatmap_analysis, language),
+        # Determine analysis type for section filtering
+        analysis_type = report_data.get('analysis_type', 'multi_source')  # Default to multi-source
+        is_single_source = analysis_type == 'single_source'
 
-            # PCA Analysis Section (now narrative essay)
-            self._create_pca_analysis_section(pca_analysis, language),
+        # Build sections dynamically based on analysis type
+        sections = []
 
-            # Metadata Section
-            self._create_metadata_section(metadata, language)
-        ])
+        # Always show these sections (both single and multi-source) - but check if they have content
+        if executive_summary:
+            sections.append(self._create_executive_summary_section(executive_summary, language))
+        if principal_findings:
+            sections.append(self._create_principal_findings_narrative_section(principal_findings, language))
+        if temporal_analysis:
+            sections.append(self._create_temporal_analysis_section(temporal_analysis, language))
+        if fourier_analysis:
+            sections.append(self._create_fourier_analysis_section(fourier_analysis, language))
+        if strategic_synthesis:
+            sections.append(self._create_strategic_synthesis_section(strategic_synthesis, language))
+        if conclusions:
+            sections.append(self._create_conclusions_section(conclusions, language))
+
+        # Single source specific sections
+        if is_single_source:
+            if seasonal_analysis:
+                sections.append(self._create_seasonal_analysis_section(seasonal_analysis, language))
+            # Single source should NOT show PCA analysis
+            # if pca_analysis:
+            #     sections.append(self._create_pca_analysis_section(pca_analysis, language))
+
+        # Multi-source specific sections
+        else:
+            if heatmap_analysis:
+                sections.append(self._create_heatmap_analysis_section(heatmap_analysis, language))
+            # For multi-source, pca_analysis is narrative essay
+            if pca_analysis:
+                sections.append(self._create_pca_analysis_section(pca_analysis, language))
+
+        # Always show metadata
+        sections.append(self._create_metadata_section(metadata, language))
+
+        return html.Div(sections)
 
     def create_interaction_controls(self) -> html.Div:
         """
@@ -536,6 +581,96 @@ The patterns observed in the correlations suggest that the tool's success depend
             ])
         ], className="mb-4")
 
+    def _create_temporal_analysis_section(self, temporal_text: str, language: str = 'es') -> html.Div:
+        """Create temporal analysis section."""
+        if not temporal_text:
+            return html.Div()
+
+        return html.Div([
+            html.H4([
+                html.I(className="fas fa-chart-line text-info me-2"),
+                self._get_translated_text("temporal_analysis", language)
+            ], className="mb-3"),
+            dbc.Card([
+                dbc.CardBody([
+                    html.P(temporal_text, className="text-justify temporal-analysis-text",
+                           style={"lineHeight": "1.6"})
+                ])
+            ], className="border-0 bg-light shadow-sm")
+        ], className="mb-4")
+
+    def _create_seasonal_analysis_section(self, seasonal_text: str, language: str = 'es') -> html.Div:
+        """Create seasonal analysis section."""
+        if not seasonal_text:
+            return html.Div()
+
+        return html.Div([
+            html.H4([
+                html.I(className="fas fa-calendar-alt text-warning me-2"),
+                self._get_translated_text("seasonal_analysis", language)
+            ], className="mb-3"),
+            dbc.Card([
+                dbc.CardBody([
+                    html.P(seasonal_text, className="text-justify seasonal-analysis-text",
+                           style={"lineHeight": "1.6"})
+                ])
+            ], className="border-0 bg-light shadow-sm")
+        ], className="mb-4")
+
+    def _create_fourier_analysis_section(self, fourier_text: str, language: str = 'es') -> html.Div:
+        """Create Fourier analysis section."""
+        if not fourier_text:
+            return html.Div()
+
+        return html.Div([
+            html.H4([
+                html.I(className="fas fa-wave-square text-success me-2"),
+                self._get_translated_text("fourier_analysis", language)
+            ], className="mb-3"),
+            dbc.Card([
+                dbc.CardBody([
+                    html.P(fourier_text, className="text-justify fourier-analysis-text",
+                           style={"lineHeight": "1.6"})
+                ])
+            ], className="border-0 bg-light shadow-sm")
+        ], className="mb-4")
+
+    def _create_strategic_synthesis_section(self, synthesis_text: str, language: str = 'es') -> html.Div:
+        """Create strategic synthesis section."""
+        if not synthesis_text:
+            return html.Div()
+
+        return html.Div([
+            html.H4([
+                html.I(className="fas fa-chess text-primary me-2"),
+                self._get_translated_text("strategic_synthesis", language)
+            ], className="mb-3"),
+            dbc.Card([
+                dbc.CardBody([
+                    html.P(synthesis_text, className="text-justify strategic-synthesis-text",
+                           style={"lineHeight": "1.6"})
+                ])
+            ], className="border-0 bg-light shadow-sm")
+        ], className="mb-4")
+
+    def _create_conclusions_section(self, conclusions_text: str, language: str = 'es') -> html.Div:
+        """Create conclusions section."""
+        if not conclusions_text:
+            return html.Div()
+
+        return html.Div([
+            html.H4([
+                html.I(className="fas fa-flag-checkered text-danger me-2"),
+                self._get_translated_text("conclusions", language)
+            ], className="mb-3"),
+            dbc.Card([
+                dbc.CardBody([
+                    html.P(conclusions_text, className="text-justify conclusions-text",
+                           style={"lineHeight": "1.6"})
+                ])
+            ], className="border-0 bg-light shadow-sm")
+        ], className="mb-4")
+
     def _create_pca_chart(self, dominant_patterns: List[Dict[str, Any]]) -> dcc.Graph:
         """Create PCA visualization chart (kept for compatibility but not used in new structure)."""
         # This method is kept for backward compatibility but not used in the new narrative structure
@@ -543,16 +678,87 @@ The patterns observed in the correlations suggest that the tool's success depend
 
     def _extract_metadata(self, report_data: Dict[str, Any]) -> Dict[str, Any]:
         """Extract metadata from report data."""
+        # Map database field names to expected metadata field names
+        model_used = report_data.get('model_used') or report_data.get('model') or 'unknown'
+        data_points = report_data.get('data_points_analyzed') or report_data.get('data_points') or 0
+        response_time = report_data.get('api_latency_ms') or report_data.get('response_time_ms') or 0
+
         return {
-            'model_used': report_data.get('model_used', 'N/A'),
-            'response_time_ms': report_data.get('api_latency_ms', 0),
-            'data_points_analyzed': report_data.get('data_points_analyzed', 0),
+            'model_used': model_used,
+            'response_time_ms': response_time,
+            'data_points_analyzed': data_points,
             'generation_timestamp': report_data.get('generation_timestamp', 'N/A'),
             'access_count': report_data.get('access_count', 0),
             'analysis_depth': report_data.get('analysis_depth', 'comprehensive'),
             'sources_count': report_data.get('sources_count', 0)
         }
     
+    def _convert_json_to_narrative(self, json_data: Dict[str, Any]) -> str:
+        """
+        Convert JSON analysis data to narrative text format.
+
+        Args:
+            json_data: JSON dictionary containing analysis data
+
+        Returns:
+            Narrative text representation of the JSON data
+        """
+        if not isinstance(json_data, dict):
+            return str(json_data)
+
+        # Handle PCA analysis structure
+        if 'analysis' in json_data and isinstance(json_data['analysis'], dict):
+            analysis = json_data['analysis']
+
+            # PCA analysis with dominant patterns
+            if 'dominant_patterns' in analysis:
+                patterns = analysis['dominant_patterns']
+                variance_explained = analysis.get('total_variance_explained', 'N/A')
+
+                narrative_parts = []
+                narrative_parts.append(f"El análisis de Componentes Principales revela que los {len(patterns)} componentes principales explican un {variance_explained*100:.1f}% de la varianza total en los datos.")
+
+                for i, pattern in enumerate(patterns, 1):
+                    component = pattern.get('component', i)
+                    loadings = pattern.get('loadings', {})
+
+                    if loadings:
+                        # Sort loadings by absolute value (descending)
+                        sorted_loadings = sorted(loadings.items(), key=lambda x: abs(x[1]), reverse=True)
+
+                        loading_descriptions = []
+                        for source, loading in sorted_loadings:
+                            if loading > 0.7:
+                                loading_descriptions.append(f"{source} (alta correlación: {loading:.2f})")
+                            elif loading > 0.5:
+                                loading_descriptions.append(f"{source} (correlación moderada: {loading:.2f})")
+                            else:
+                                loading_descriptions.append(f"{source} (correlación baja: {loading:.2f})")
+
+                        narrative_parts.append(f"El Componente {component} está dominado por: {', '.join(loading_descriptions)}.")
+
+                return " ".join(narrative_parts)
+
+            # Heatmap analysis structure
+            elif 'heatmap_data' in analysis:
+                heatmap_data = analysis['heatmap_data']
+                if isinstance(heatmap_data, list) and len(heatmap_data) > 0:
+                    return f"El análisis de mapa de calor revela patrones de densidad en los datos con {len(heatmap_data)} regiones identificadas."
+
+            # Generic analysis conversion
+            else:
+                narrative_parts = []
+                for key, value in analysis.items():
+                    if isinstance(value, (str, int, float)):
+                        narrative_parts.append(f"{key.replace('_', ' ').title()}: {value}")
+                    elif isinstance(value, list):
+                        narrative_parts.append(f"{key.replace('_', ' ').title()}: {len(value)} elementos")
+
+                return "; ".join(narrative_parts) if narrative_parts else str(analysis)
+
+        # Generic JSON to text conversion
+        return str(json_data)
+
     def _extract_text_content(self, content: Any) -> str:
         """
         Extract text content from various data types.
@@ -572,16 +778,24 @@ The patterns observed in the correlations suggest that the tool's success depend
                     if isinstance(json_data, dict):
                         # Look for common text fields - prioritize heatmap_analysis for new structure
                         for field in ['executive_summary', 'principal_findings', 'heatmap_analysis', 'pca_analysis', 'bullet_point', 'analysis']:
-                            if field in json_data and isinstance(json_data[field], str):
-                                return json_data[field]
+                            if field in json_data:
+                                if isinstance(json_data[field], str):
+                                    return json_data[field]
+                                elif isinstance(json_data[field], dict) and field == 'analysis':
+                                    # Convert JSON analysis to narrative text
+                                    return self._convert_json_to_narrative(json_data)
                 except:
                     pass
             return content
         elif isinstance(content, dict):
             # Extract from dictionary - prioritize heatmap_analysis for new structure
             for field in ['executive_summary', 'principal_findings', 'heatmap_analysis', 'pca_analysis', 'bullet_point', 'analysis']:
-                if field in content and isinstance(content[field], str):
-                    return content[field]
+                if field in content:
+                    if isinstance(content[field], str):
+                        return content[field]
+                    elif isinstance(content[field], dict) and field == 'analysis':
+                        # Convert JSON analysis to narrative text
+                        return self._convert_json_to_narrative(content)
         elif isinstance(content, list) and content:
             # Extract from list
             first_item = content[0]
