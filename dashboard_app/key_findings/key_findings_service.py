@@ -262,6 +262,14 @@ class KeyFindingsService:
                 if "analysis" in content["pca_insights"]:
                     pca_analysis = content["pca_insights"]["analysis"]
 
+            # OVERRIDE AI-generated values with correct system values for multi-source
+            system_model_used = ai_result["model_used"]  # Actual model from system
+            system_data_points = analysis_data.get("data_points_used", 0)  # Actual data points from analysis
+            system_response_time = ai_result["response_time_ms"]  # Actual response time
+
+            logging.info(f"🔧 Multi-source system values - Model: {system_model_used}, Data points: {system_data_points}, Response time: {system_response_time}ms")
+            logging.info(f"🔧 Multi-source AI-generated values - Model: {content.get('model_used', 'N/A')}, Data points: {content.get('data_points_analyzed', 'N/A')}")
+
             report_data = {
                 "tool_name": tool_name,
                 "selected_sources": selected_sources,
@@ -270,12 +278,14 @@ class KeyFindingsService:
                 "principal_findings": content.get("principal_findings", ""),
                 "heatmap_analysis": content.get("heatmap_analysis", ""),
                 "pca_analysis": pca_analysis,
-                "model_used": ai_result["model_used"],
-                "api_latency_ms": ai_result["response_time_ms"],
+                "model_used": system_model_used,  # ✅ Use system model, NOT AI-generated
+                "api_latency_ms": system_response_time,  # ✅ Use system response time
                 "confidence_score": self._calculate_confidence_score(content),
-                "data_points_analyzed": analysis_data.get("data_points_analyzed", 0),
+                "data_points_analyzed": system_data_points,  # ✅ Use system data points, NOT AI-generated
                 "sources_count": len(selected_sources),
                 "analysis_depth": "comprehensive",
+                "report_type": "multi_source",
+                "analysis_type": "multi_source",  # Add this for modal component compatibility
                 "json_structure": content.get("original_structure", "unknown"),
             }
 
@@ -498,21 +508,79 @@ class KeyFindingsService:
             confidence_score = self._calculate_confidence_score_single_source(content)
             logging.info(f"📊 Confidence score: {confidence_score}")
 
+            # OVERRIDE AI-generated values with correct system values
+            system_model_used = ai_result["model_used"]  # Actual model from system
+            system_data_points = analysis_data.get("data_points_used", 240)  # Actual data points from analysis
+            system_response_time = ai_result["response_time_ms"]  # Actual response time
+
+            logging.info(f"🔧 System values - Model: {system_model_used}, Data points: {system_data_points}, Response time: {system_response_time}ms")
+            logging.info(f"🔧 AI-generated values - Model: {content.get('model_used', 'N/A')}, Data points: {content.get('data_points_analyzed', 'N/A')}")
+            logging.info(f"🔧 Single-source content structure - principal_findings length: {len(principal_findings_narrative)}, pca_analysis: '{pca_analysis_content[:50]}...', heatmap_analysis: '{heatmap_analysis_content[:50]}...'")
+
+            # Build proper single-source report structure
+            # For single-source, combine all analysis into principal_findings narrative
+            principal_findings_content = []
+
+            # Add executive summary if available
+            if content.get("executive_summary"):
+                principal_findings_content.append(content.get("executive_summary"))
+
+            # Add temporal analysis if available
+            if content.get("temporal_analysis"):
+                principal_findings_content.append(f"🔍 ANÁLISIS TEMPORAL\n{content.get('temporal_analysis')}")
+
+            # Add seasonal analysis if available
+            if content.get("seasonal_analysis"):
+                principal_findings_content.append(f"📅 PATRONES ESTACIONALES\n{content.get('seasonal_analysis')}")
+
+            # Add fourier analysis if available
+            if content.get("fourier_analysis"):
+                principal_findings_content.append(f"🌊 ANÁLISIS ESPECTRAL\n{content.get('fourier_analysis')}")
+
+            # Add strategic synthesis if available
+            if content.get("strategic_synthesis"):
+                principal_findings_content.append(f"🎯 SÍNTESIS ESTRATÉGICA\n{content.get('strategic_synthesis')}")
+
+            # Add conclusions if available
+            if content.get("conclusions"):
+                principal_findings_content.append(f"📝 CONCLUSIONES\n{content.get('conclusions')}")
+
+            # Combine all sections into principal_findings narrative
+            principal_findings_narrative = "\n\n".join(principal_findings_content)
+
+            # For single-source, PCA and heatmap should be empty or contain placeholder
+            pca_analysis_content = content.get("pca_insights", "")
+            heatmap_analysis_content = content.get("heatmap_analysis", "")
+
+            # If PCA contains placeholder text, make it empty for single-source
+            if pca_analysis_content and "No PCA analysis available" in str(pca_analysis_content):
+                pca_analysis_content = ""
+
+            # If heatmap contains placeholder text, make it empty for single-source
+            if heatmap_analysis_content and "No heatmap analysis available" in str(heatmap_analysis_content):
+                heatmap_analysis_content = ""
+
             report_data = {
                 "tool_name": tool_name,
                 "selected_sources": selected_sources,
                 "language": language,
                 "executive_summary": content.get("executive_summary", ""),
-                "temporal_analysis": content.get("temporal_analysis", ""),
-                "seasonal_analysis": content.get("seasonal_analysis", ""),
-                "fourier_analysis": content.get("fourier_analysis", ""),
-                "model_used": ai_result["model_used"],
-                "api_latency_ms": ai_result["response_time_ms"],
+                "principal_findings": principal_findings_narrative,  # ✅ Combined narrative
+                "pca_analysis": pca_analysis_content,               # ✅ Empty or placeholder for single-source
+                "heatmap_analysis": heatmap_analysis_content,       # ✅ Empty or placeholder for single-source
+                "temporal_analysis": "",                            # ✅ Empty (moved to principal_findings)
+                "seasonal_analysis": "",                            # ✅ Empty (moved to principal_findings)
+                "fourier_analysis": "",                             # ✅ Empty (moved to principal_findings)
+                "strategic_synthesis": content.get("strategic_synthesis", ""),
+                "conclusions": content.get("conclusions", ""),
+                "model_used": system_model_used,  # ✅ Use system model, NOT AI-generated
+                "api_latency_ms": system_response_time,  # ✅ Use system response time
                 "confidence_score": confidence_score,
-                "data_points_analyzed": analysis_data.get("data_points_analyzed", 0),
+                "data_points_analyzed": system_data_points,  # ✅ Use system data points, NOT AI-generated
                 "sources_count": len(selected_sources),
                 "analysis_depth": "single_source",
                 "report_type": "single_source",
+                "analysis_type": "single_source",  # Add this for modal component compatibility
             }
 
             logging.info(f"📋 Report data prepared: {len(report_data)} fields")

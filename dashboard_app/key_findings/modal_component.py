@@ -222,8 +222,16 @@ class KeyFindingsModal:
         fourier_analysis = self._extract_text_content(report_data.get('fourier_analysis', ''))
         strategic_synthesis = self._extract_text_content(report_data.get('strategic_synthesis', ''))
         conclusions = self._extract_text_content(report_data.get('conclusions', ''))
-        heatmap_analysis = self._extract_text_content(report_data.get('heatmap_analysis', ''))
-        pca_analysis = self._extract_text_content(report_data.get('pca_analysis', ''))
+
+        # For single-source, don't extract heatmap/PCA content even if it exists
+        if is_single_source:
+            heatmap_analysis = ""
+            pca_analysis = ""
+            print(f"🔍 MODAL FILTERING: Single-source detected, setting heatmap/PCA to empty")
+        else:
+            heatmap_analysis = self._extract_text_content(report_data.get('heatmap_analysis', ''))
+            pca_analysis = self._extract_text_content(report_data.get('pca_analysis', ''))
+            print(f"🔍 MODAL FILTERING: Multi-source detected, extracting heatmap/PCA content")
         metadata = self._extract_metadata(report_data)
 
         # Handle missing strategic_synthesis and conclusions by extracting from principal_findings if needed
@@ -270,12 +278,12 @@ class KeyFindingsModal:
             # if pca_analysis:
             #     sections.append(self._create_pca_analysis_section(pca_analysis, language))
 
-        # Multi-source specific sections
-        else:
+        # Multi-source specific sections (only show if NOT single-source)
+        if not is_single_source:
             if heatmap_analysis:
                 sections.append(self._create_heatmap_analysis_section(heatmap_analysis, language))
             # For multi-source, pca_analysis is narrative essay
-            if pca_analysis:
+            if pca_analysis and not self._is_placeholder_pca_content(pca_analysis):
                 sections.append(self._create_pca_analysis_section(pca_analysis, language))
 
         # Always show metadata
@@ -676,12 +684,55 @@ The patterns observed in the correlations suggest that the tool's success depend
         # This method is kept for backward compatibility but not used in the new narrative structure
         return dcc.Graph()
 
+    def _is_placeholder_pca_content(self, pca_content: str) -> bool:
+        """
+        Check if PCA content is just a placeholder message.
+
+        Args:
+            pca_content: PCA analysis text
+
+        Returns:
+            True if content is a placeholder
+        """
+        if not pca_content:
+            return True
+
+        placeholder_patterns = [
+            "no pca analysis available",
+            "pca analysis not available",
+            "no pca insights",
+            "pca not applicable",
+            "n/a",
+            "not available"
+        ]
+
+        content_lower = pca_content.lower().strip()
+
+        # Check for exact placeholder phrases
+        for pattern in placeholder_patterns:
+            if pattern in content_lower:
+                return True
+
+        # Check if content is too short to be meaningful (less than 50 characters)
+        if len(content_lower) < 50:
+            return True
+
+        return False
+
     def _extract_metadata(self, report_data: Dict[str, Any]) -> Dict[str, Any]:
         """Extract metadata from report data."""
+        # DEBUG: Check what values we're receiving
+        print(f"🔍 MODAL DEBUG: report_data keys: {list(report_data.keys())}")
+        print(f"🔍 MODAL DEBUG: model_used from report_data: '{report_data.get('model_used', 'MISSING')}'")
+        print(f"🔍 MODAL DEBUG: data_points_analyzed from report_data: '{report_data.get('data_points_analyzed', 'MISSING')}'")
+        print(f"🔍 MODAL DEBUG: api_latency_ms from report_data: '{report_data.get('api_latency_ms', 'MISSING')}'")
+
         # Map database field names to expected metadata field names
         model_used = report_data.get('model_used') or report_data.get('model') or 'unknown'
         data_points = report_data.get('data_points_analyzed') or report_data.get('data_points') or 0
         response_time = report_data.get('api_latency_ms') or report_data.get('response_time_ms') or 0
+
+        print(f"🔍 MODAL DEBUG: Final extracted values - model: '{model_used}', data_points: {data_points}, response_time: {response_time}")
 
         return {
             'model_used': model_used,

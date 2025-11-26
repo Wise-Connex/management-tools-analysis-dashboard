@@ -6722,6 +6722,13 @@ if KEY_FINDINGS_AVAILABLE and key_findings_service:
                 response_time_ms = ai_response.get("response_time_ms", 0)
                 model_used = ai_response.get("model_used", "unknown")
                 token_count = ai_response.get("token_count", 0)
+
+                # DEBUG: Check what values we actually have
+                print(f"🔍 DEBUG: ai_response keys: {list(ai_response.keys())}")
+                print(f"🔍 DEBUG: model_used from response: '{model_used}'")
+                print(f"🔍 DEBUG: data_points_analyzed from response: '{ai_response.get('data_points_analyzed', 'MISSING')}'")
+                print(f"🔍 DEBUG: response_time_ms from response: '{response_time_ms}'")
+
                 print(
                     f"✅ AI analysis completed in {response_time_ms}ms using {model_used} ({token_count} tokens)"
                 )
@@ -7105,6 +7112,39 @@ if KEY_FINDINGS_AVAILABLE and key_findings_service:
                 )
                 pca_analysis_raw = clean_section_headers(pca_analysis_raw, language)
 
+                # FILTER OUT heatmap and PCA content for single-source analysis
+                if len(selected_sources) == 1:
+                    print(f"🔍 FILTERING: Single-source detected, removing heatmap/PCA content from principal findings")
+
+                    # Remove heatmap analysis content
+                    heatmap_patterns = [
+                        r"🔥.*Análisis del Mapa de Calor.*",
+                        r"🔥.*Heatmap Analysis.*",
+                        r"Análisis del Mapa de Calor.*",
+                        r"Heatmap Analysis.*"
+                    ]
+
+                    for pattern in heatmap_patterns:
+                        principal_findings_raw = re.sub(pattern, '', principal_findings_raw, flags=re.IGNORECASE)
+
+                    # Remove PCA analysis content
+                    pca_patterns = [
+                        r"📊.*Análisis PCA.*",
+                        r"📊.*PCA Analysis.*",
+                        r"Análisis PCA.*",
+                        r"PCA Analysis.*",
+                        r"No PCA a\s*n\s*alysis\s*available"  # Handle broken "No PCA analysis available"
+                    ]
+
+                    for pattern in pca_patterns:
+                        principal_findings_raw = re.sub(pattern, '', principal_findings_raw, flags=re.IGNORECASE)
+
+                    # Clean up any remaining broken PCA text
+                    principal_findings_raw = re.sub(r'No PCA\s+a\s*n\s*alysis\s+available', '', principal_findings_raw, flags=re.IGNORECASE)
+                    principal_findings_raw = re.sub(r'PCA\s+a\s*n\s*alysis\s+available', '', principal_findings_raw, flags=re.IGNORECASE)
+
+                    print(f"🔍 FILTERING: Principal findings after filtering length: {len(principal_findings_raw)}")
+
                 # Clean up section headers in the content to ensure proper English display
                 executive_summary = clean_section_headers(executive_summary, language)
                 principal_findings_raw = clean_section_headers(
@@ -7124,8 +7164,6 @@ if KEY_FINDINGS_AVAILABLE and key_findings_service:
                                 and '"executive_summary":' in bullet_point
                             ):
                                 # This is a bullet point containing JSON - extract just the finding part
-                                import re
-
                                 # Look for the actual finding text after the bullet point
                                 finding_match = re.search(r"•\s*(.+)", bullet_point)
                                 if finding_match:
@@ -7151,13 +7189,17 @@ if KEY_FINDINGS_AVAILABLE and key_findings_service:
                 # Extract PCA analysis text and split into paragraphs
                 pca_analysis_text = extract_text_content(pca_analysis_raw)
 
+                # Fix broken PCA text (like "No PCA a\nnalysis\navailable")
+                pca_analysis_text = re.sub(r'No PCA\s+a\s*n\s*alysis\s+available', 'No PCA analysis available', pca_analysis_text, flags=re.IGNORECASE)
+                pca_analysis_text = re.sub(r'PCA\s+a\s*n\s*alysis\s+available', 'PCA analysis available', pca_analysis_text, flags=re.IGNORECASE)
+
                 # Debug: Print the raw PCA analysis text to understand its structure
                 print(f"🔍 DEBUG: Raw PCA analysis text: {pca_analysis_text[:200]}...")
+                print(f"🔍 DEBUG: PCA text after fixing broken formatting: {pca_analysis_text[:200]}...")
 
                 # Clean up PCA text - remove repeated executive summary content
                 if '"executive_summary":' in pca_analysis_text:
                     # Remove JSON-like content that might be repeated from executive summary
-                    import re
 
                     # Remove any JSON object that contains executive_summary
                     pca_analysis_text = re.sub(
