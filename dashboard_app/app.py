@@ -7730,52 +7730,91 @@ Los patrones observados en las correlaciones sugieren que el éxito de {tool_nam
 
                             return formatted_elements
 
-                        # Enhanced section splitting with multiple methods
+                        # Enhanced section splitting with better AI content handling
                         # First try: Split by double newlines
                         sections = principal_findings_content.split('\n\n')
 
-                        # If we only get 1 section, try alternative splitting methods
+                        # If we only get 1 section, use a more robust pattern-based approach
                         if len(sections) <= 1:
-                            print("🔍 DEBUG: Only 1 section found with double newlines, trying emoji-based splitting")
+                            print("🔍 DEBUG: Only 1 section found, using pattern-based splitting")
 
-                            # Split by emoji prefixes (more reliable for AI content)
                             import re
-                            emoji_pattern = r'(📋|🔍|📅|🌊|🎯|📝)'
-                            sections = re.split(emoji_pattern, principal_findings_content)
 
-                            # Remove empty sections and add the emoji back
+                            # Define the exact section patterns we expect
+                            section_patterns = [
+                                (r'📋\s*RESUMEN\s+EJECUTIVO', '📋 RESUMEN EJECUTIVO'),
+                                (r'🔍\s*HALLAZGOS\s+PRINCIPALES', '🔍 HALLAZGOS PRINCIPALES'),
+                                (r'🔍\s*ANÁLISIS\s+TEMPORAL', '🔍 ANÁLISIS TEMPORAL'),
+                                (r'📅\s*PATRONES\s+ESTACIONALES', '📅 PATRONES ESTACIONALES'),
+                                (r'🌊\s*ANÁLISIS\s+ESPECTRAL', '🌊 ANÁLISIS ESPECTRAL'),
+                                (r'🎯\s*SÍNTESIS\s+ESTRATÉGICA', '🎯 SÍNTESIS ESTRATÉGICA'),
+                                (r'📝\s*CONCLUSIONES', '📝 CONCLUSIONES')
+                            ]
+
+                            # Create a combined pattern for matching
+                            combined_pattern = '|'.join([pattern for pattern, _ in section_patterns])
+                            matches = list(re.finditer(combined_pattern, principal_findings_content, re.IGNORECASE))
+
+                            # Split content based on matches
+                            split_positions = [0] + [match.start() for match in matches] + [len(principal_findings_content)]
                             filtered_sections = []
-                            for i, section in enumerate(sections):
-                                if section.strip():
-                                    # Re-add the appropriate emoji if this isn't the first section
-                                    if i > 0:
-                                        # Find the emoji that was matched
-                                        emoji_matches = re.findall(emoji_pattern, principal_findings_content)
-                                        if i-1 < len(emoji_matches):
-                                            section = emoji_matches[i-1] + section.strip()
-                                    filtered_sections.append(section.strip())
+
+                            for i in range(len(split_positions) - 1):
+                                start = split_positions[i]
+                                end = split_positions[i + 1]
+                                section_content = principal_findings_content[start:end].strip()
+
+                                # Find which pattern matched this section
+                                section_with_header = None
+                                for pattern, header in section_patterns:
+                                    if re.search(pattern, section_content, re.IGNORECASE):
+                                        # Replace the matched part with the proper header
+                                        section_with_header = re.sub(pattern, header, section_content, flags=re.IGNORECASE)
+                                        break
+
+                                if section_with_header and section_with_header.strip():
+                                    filtered_sections.append(section_with_header.strip())
+
                             sections = filtered_sections
 
-                        # If still only 1 section, try splitting by known headers
+                        # Final fallback: try a simple heuristic approach
                         if len(sections) <= 1:
-                            print("🔍 DEBUG: Still 1 section, trying text-based splitting")
+                            print("🔍 DEBUG: Pattern matching failed, using heuristic approach")
 
-                            # Split by known section headers
-                            header_pattern = r'(📋 RESUMEN EJECUTIVO|🔍 HALLAZGOS PRINCIPALES|🔍 ANÁLISIS TEMPORAL|📅 PATRONES ESTACIONALES|🌊 ANÁLISIS ESPECTRAL|🎯 SÍNTESIS ESTRATÉGICA|📝 CONCLUSIONES)'
-                            sections = re.split(header_pattern, principal_findings_content)
-
-                            # Reconstruct with headers
+                            # Split by looking for lines that start with known section indicators
+                            lines = principal_findings_content.split('\n')
                             filtered_sections = []
-                            headers = re.findall(header_pattern, principal_findings_content)
+                            current_section = ""
 
-                            for i, section in enumerate(sections):
-                                if section.strip():
-                                    if i < len(headers):
-                                        full_section = headers[i] + section.strip()
+                            section_indicators = [
+                                '📋 RESUMEN', '🔍 HALLAZGOS', '🔍 ANÁLISIS TEMPORAL',
+                                '📅 PATRONES', '🌊 ANÁLISIS ESPECTRAL',
+                                '🎯 SÍNTESIS', '📝 CONCLUSIONES'
+                            ]
+
+                            for line in lines:
+                                line = line.strip()
+                                if not line:
+                                    # Empty line - finish current section
+                                    if current_section.strip():
+                                        filtered_sections.append(current_section.strip())
+                                    current_section = ""
+                                else:
+                                    # Check if this line starts a new section
+                                    is_section_start = any(indicator in line for indicator in section_indicators)
+
+                                    if is_section_start and current_section.strip():
+                                        # Save previous section and start new one
+                                        filtered_sections.append(current_section.strip())
+                                        current_section = line
                                     else:
-                                        full_section = section.strip()
-                                    filtered_sections.append(full_section)
-                            sections = filtered_sections
+                                        # Continue current section
+                                        current_section += " " + line if current_section else line
+
+                            # Add the last section
+                            if current_section.strip():
+                                filtered_sections.append(current_section.strip())
+                                sections = filtered_sections
 
                         modal_sections = []
 
