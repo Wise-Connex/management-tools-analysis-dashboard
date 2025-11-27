@@ -7679,6 +7679,60 @@ Los patrones observados en las correlaciones sugieren que el éxito de {tool_nam
                 if len(selected_sources) == 1:
                     principal_findings_content = report_data.get("principal_findings", "")
                     if principal_findings_content:
+                        # Enhanced text formatting function
+                        def format_text_with_styling(text):
+                            """Format text with bold, italics, and better paragraph handling"""
+                            import re
+
+                            if not text.strip():
+                                return []
+
+                            formatted_elements = []
+
+                            # Split by paragraphs first
+                            paragraphs = [p.strip() for p in text.split('\n') if p.strip()]
+
+                            for paragraph in paragraphs:
+                                # Process bold text **texto**
+                                paragraph = re.sub(
+                                    r'\*\*(.*?)\*\*',
+                                    r'<strong>\1</strong>',
+                                    paragraph
+                                )
+
+                                # Process italics *texto* (but not ** already processed)
+                                paragraph = re.sub(
+                                    r'(?<!\*)\*([^*]+)\*(?!\*)',
+                                    r'<em>\1</em>',
+                                    paragraph
+                                )
+
+                                # Process bullet points (starting with • or -)
+                                if paragraph.strip().startswith(('•', '-')):
+                                    bullet_content = paragraph.strip()[1:].strip()
+                                    formatted_elements.append(
+                                        html.Li(
+                                            html.Span(bullet_content, dangerously_allow_html=True),
+                                            style={"marginLeft": "20px", "marginBottom": "8px"}
+                                        )
+                                    )
+                                else:
+                                    # Regular paragraph
+                                    formatted_elements.append(
+                                        html.P(
+                                            paragraph,
+                                            dangerously_allow_html=True,
+                                            style={
+                                                "textAlign": "justify",
+                                                "lineHeight": "1.7",
+                                                "marginBottom": "16px",
+                                                "fontSize": "14px"
+                                            }
+                                        )
+                                    )
+
+                            return formatted_elements
+
                         # Split into sections and format as HTML
                         sections = principal_findings_content.split('\n\n')
                         modal_sections = []
@@ -7694,31 +7748,51 @@ Los patrones observados en las correlaciones sugieren que el éxito de {tool_nam
                                         header = lines[0]
                                         content = '\n'.join(lines[1:]) if len(lines) > 1 else ""
 
+                                        # Enhanced section styling
                                         modal_sections.append(
                                             html.Div([
-                                                html.H5(
-                                                    header,
-                                                    className="text-info mb-2",
-                                                    style={"fontSize": "16px", "fontWeight": "bold"}
-                                                ),
-                                                html.P(
-                                                    content,
-                                                    className="mb-4",
-                                                    style={"textAlign": "justify", "lineHeight": "1.6"}
+                                                # Section header with better styling
+                                                html.Div([
+                                                    html.H4(
+                                                        header,
+                                                        className="text-primary mb-3",
+                                                        style={
+                                                            "fontSize": "18px",
+                                                            "fontWeight": "bold",
+                                                            "borderBottom": "2px solid #17a2b8",
+                                                            "paddingBottom": "8px",
+                                                            "marginTop": "32px",
+                                                            "marginBottom": "20px"
+                                                        }
+                                                    )
+                                                ]),
+                                                # Formatted content
+                                                html.Div(
+                                                    format_text_with_styling(content),
+                                                    style={
+                                                        "backgroundColor": "#f8f9fa",
+                                                        "padding": "20px",
+                                                        "borderRadius": "8px",
+                                                        "borderLeft": "4px solid #17a2b8",
+                                                        "marginLeft": "10px"
+                                                    }
                                                 )
                                             ])
                                         )
                                 else:
-                                    # Regular paragraph
-                                    modal_sections.append(
-                                        html.P(
-                                            section.strip(),
-                                            className="mb-3",
-                                            style={"textAlign": "justify", "lineHeight": "1.6"}
-                                        )
+                                    # Regular content outside sections
+                                    modal_sections.extend(
+                                        format_text_with_styling(section.strip())
                                     )
 
-                        modal_content = html.Div(modal_sections)
+                        modal_content = html.Div([
+                            # Overall container styling
+                            html.Div(modal_sections, style={
+                                "fontFamily": "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+                                "maxWidth": "100%",
+                                "overflowX": "hidden"
+                            })
+                        ])
                     else:
                         modal_content = html.P("No content available", className="text-muted")
                 else:
