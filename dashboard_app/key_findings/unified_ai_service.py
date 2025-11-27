@@ -673,7 +673,13 @@ If you respond in Spanish, the analysis will be rejected.
                 '🔍 Hallazgos Principales',
                 '🔍 Principal Findings',
                 'Hallazgos Principales',
-                'Principal Findings'
+                'Principal Findings',
+                'SECCIÓN 2: HALLAZGOS PRINCIPALES',
+                'SECCIÓN 2: HALLAZGOS',
+                'HALLAZGOS PRINCIPALES',
+                'SECTION 2: PRINCIPAL FINDINGS',
+                'SECTION 2: PRINCIPAL',
+                'PRINCIPAL FINDINGS'
             ],
             'pca_analysis': [
                 '📊 Análisis PCA',
@@ -700,27 +706,30 @@ If you respond in Spanish, the analysis will be rejected.
                 'Seasonal Pattern Analysis',
                 'Análisis Estacional',
                 'Seasonal Analysis',
-                'SECCIÓN 3: ANÁLISIS DE PATRONES ESTACIONALES',
-                'SECCIÓN 3: ANÁLISIS ESTACIONAL',
-                'SECCIÓN 3: PATRONES ESTACIONALES'
+                'SECCIÓN 4: ANÁLISIS DE PATRONES ESTACIONALES',
+                'SECCIÓN 4: ANÁLISIS ESTACIONAL',
+                'SECCIÓN 4: PATRONES ESTACIONALES',
+                'SECTION 4: SEASONAL PATTERN ANALYSIS'
             ],
             'fourier_analysis': [
                 '📊 Análisis de Fourier',
                 '📊 Fourier Analysis',
                 'Análisis de Fourier',
                 'Fourier Analysis',
-                'SECCIÓN 4: ANÁLISIS ESPECTRAL DE FOURIER',
-                'SECCIÓN 4: ANÁLISIS DE FOURIER',
-                'SECCIÓN 4: FOURIER ANALYSIS',
-                'SECCIÓN 4: ESPECTRAL DE FOURIER'
+                'SECCIÓN 5: ANÁLISIS ESPECTRAL DE FOURIER',
+                'SECCIÓN 5: ANÁLISIS DE FOURIER',
+                'SECCIÓN 5: FOURIER ANALYSIS',
+                'SECCIÓN 5: ESPECTRAL DE FOURIER',
+                'SECTION 5: FOURIER SPECTRAL ANALYSIS'
             ],
             'strategic_synthesis': [
                 '🎯 Síntesis Estratégica',
                 '🎯 Strategic Synthesis',
                 'Síntesis Estratégica',
                 'Strategic Synthesis',
-                'SECCIÓN 5: SÍNTESIS ESTRATÉGICA',
-                'SECCIÓN 5: SINTESIS ESTRATEGICA'
+                'SECCIÓN 6: SÍNTESIS ESTRATÉGICA',
+                'SECCIÓN 6: SINTESIS ESTRATEGICA',
+                'SECTION 6: STRATEGIC SYNTHESIS'
             ],
             'conclusions': [
                 '🏁 Conclusiones',
@@ -729,9 +738,11 @@ If you respond in Spanish, the analysis will be rejected.
                 'Conclusions',
                 'CONCLUSIONES',
                 'CONCLUSIONS',
-                'SECCIÓN 6: RECOMENDACIONES ESTRATÉGICAS',
-                'SECCIÓN 6: RECOMENDACIONES ESTRATEGICAS',
-                'SECCIÓN 6: CONCLUSIONES',
+                'SECCIÓN 7: CONCLUSIONES',
+                'SECCIÓN 7: RECOMENDACIONES ESTRATÉGICAS',
+                'SECCIÓN 7: RECOMENDACIONES ESTRATEGICAS',
+                'SECTION 7: CONCLUSIONS',
+                'SECTION 7: STRATEGIC RECOMMENDATIONS',
                 'SECCIÓN 6: CONCLUSION'
             ]
         }

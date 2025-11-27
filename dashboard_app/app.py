@@ -7678,6 +7678,26 @@ Los patrones observados en las correlaciones sugieren que el éxito de {tool_nam
                 # all 7 sections with proper bilingual prefixes, so display it directly
                 if len(selected_sources) == 1:
                     principal_findings_content = report_data.get("principal_findings", "")
+                    print(f"🔍 DEBUG: Single source content type: {type(principal_findings_content)}")
+                    print(f"🔍 DEBUG: Single source content length: {len(str(principal_findings_content))}")
+                    print(f"🔍 DEBUG: Content preview: {str(principal_findings_content)[:300]}...")
+
+                    # Check if we have the other JSON fields that should be combined
+                    executive_summary = report_data.get("executive_summary", "")
+                    temporal_analysis = report_data.get("temporal_analysis", "")
+                    seasonal_analysis = report_data.get("seasonal_analysis", "")
+                    fourier_analysis = report_data.get("fourier_analysis", "")
+                    strategic_synthesis = report_data.get("strategic_synthesis", "")
+                    conclusions = report_data.get("conclusions", "")
+
+                    print(f"🔍 DEBUG: Available JSON fields:")
+                    print(f"  - executive_summary: {'✅' if executive_summary else '❌'} ({len(str(executive_summary))})")
+                    print(f"  - temporal_analysis: {'✅' if temporal_analysis else '❌'} ({len(str(temporal_analysis))})")
+                    print(f"  - seasonal_analysis: {'✅' if seasonal_analysis else '❌'} ({len(str(seasonal_analysis))})")
+                    print(f"  - fourier_analysis: {'✅' if fourier_analysis else '❌'} ({len(str(fourier_analysis))})")
+                    print(f"  - strategic_synthesis: {'✅' if strategic_synthesis else '❌'} ({len(str(strategic_synthesis))})")
+                    print(f"  - conclusions: {'✅' if conclusions else '❌'} ({len(str(conclusions))})")
+
                     if principal_findings_content:
                         # Enhanced text formatting function
                         def format_text_with_styling(text):
@@ -7687,6 +7707,65 @@ Los patrones observados en las correlaciones sugieren que el éxito de {tool_nam
 
                             if not text.strip():
                                 return []
+
+                            # First, clean up any embedded JSON code blocks that interfere with formatting
+                            # This handles AI responses that include JSON like: 📋 RESUMEN EJECUTIVO ```json { "key": "value" }
+                            cleaned_text = text
+
+                            # Protect section headers first to prevent them from being damaged by JSON cleanup
+                            section_headers = [
+                                r'📋\s*RESUMEN\s+EJECUTIVO', r'🔍\s*HALLAZGOS\s+PRINCIPALES', r'🔍\s*ANÁLISIS\s+TEMPORAL',
+                                r'📅\s*PATRONES\s+ESTACIONALES', r'🌊\s*ANÁLISIS\s+ESPECTRAL', r'🎯\s*SÍNTESIS\s+ESTRATÉGICA', r'📝\s*CONCLUSIONES'
+                            ]
+
+                            # Replace section headers with temporary placeholders
+                            for i, header_pattern in enumerate(section_headers):
+                                placeholder = f"__SECTION_HEADER_{i}__"
+                                cleaned_text = re.sub(header_pattern, placeholder, cleaned_text, flags=re.IGNORECASE)
+
+                            # Handle incomplete JSON blocks FIRST (very common in AI responses)
+                            # More precise pattern that doesn't cross line boundaries aggressively
+                            incomplete_json_pattern = r'```json\s*\{[^}]*\}[^`\n]*'
+                            cleaned_text = re.sub(incomplete_json_pattern, '', cleaned_text, flags=re.DOTALL)
+
+                            # Then remove any remaining complete JSON code blocks
+                            json_code_pattern = r'```json[^`]*?```'
+                            cleaned_text = re.sub(json_code_pattern, '', cleaned_text, flags=re.DOTALL)
+
+                            # Remove orphaned "json" text that may remain
+                            cleaned_text = re.sub(r'\bjson\b', '', cleaned_text, flags=re.IGNORECASE)
+
+                            # Restore section headers
+                            section_texts = [
+                                '📋 RESUMEN EJECUTIVO', '🔍 HALLAZGOS PRINCIPALES', '🔍 ANÁLISIS TEMPORAL',
+                                '📅 PATRONES ESTACIONALES', '🌊 ANÁLISIS ESPECTRAL', '🎯 SÍNTESIS ESTRATÉGICA', '📝 CONCLUSIONES'
+                            ]
+
+                            for i, section_text in enumerate(section_texts):
+                                placeholder = f"__SECTION_HEADER_{i}__"
+                                cleaned_text = cleaned_text.replace(placeholder, section_text)
+
+                            # Clean up any remaining standalone JSON objects
+                            lines = cleaned_text.split('\n')
+                            filtered_lines = []
+                            for line in lines:
+                                line = line.strip()
+                                # Skip lines that are just JSON objects or malformed JSON fragments
+                                if re.match(r'^\s*\{[^}]*"[^"]*"\s*:\s*"[^"]*[^}]*\}\s*$', line):
+                                    continue
+                                filtered_lines.append(line)
+
+                            cleaned_text = '\n'.join(filtered_lines)
+
+                            # Clean up any double spaces or extra whitespace created by removal
+                            cleaned_text = re.sub(r'\s+', ' ', cleaned_text).strip()
+
+                            # Ensure proper spacing around emoji section headers
+                            cleaned_text = re.sub(r'(\s*🔍\s*|\s*📋\s*|\s*📅\s*|\s*🌊\s*|\s*🎯\s*|\s*📝\s*)', r' \1 ', cleaned_text)
+                            cleaned_text = re.sub(r'\s+', ' ', cleaned_text).strip()
+
+                            # Use the cleaned text for further processing
+                            text = cleaned_text
 
                             formatted_elements = []
 

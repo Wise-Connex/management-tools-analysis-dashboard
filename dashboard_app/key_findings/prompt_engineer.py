@@ -407,34 +407,41 @@ Este análisis se enfoca en la interpretación práctica y estratégica de los d
 - Insights de timing y madurez del mercado
 - Recomendaciones de adopción empresarial
 
-**SECCIÓN 2: ANÁLISIS TEMPORAL** (1000 palabras) [PRIMARIO]
+**SECCIÓN 2: HALLAZGOS PRINCIPALES** (600 palabras)
+- **Descubrimientos Clave**: Los insights más importantes del análisis
+- **Patrones Inesperados**: Hallazgos que contradicen suposiciones comunes
+- **Señales de Mercado**: Indicadores críticos para la toma de decisiones
+- **Implicaciones Inmediatas**: Qué significan estos hallazgos para las organizaciones
+- **Puntos de Acción**: Recomendaciones específicas basadas en los descubrimientos
+
+**SECCIÓN 3: ANÁLISIS TEMPORAL** (800 palabras) [PRIMARIO]
 - **Interpretación Narrativa**: Qué revelan las tendencias sobre la evolución de {tool_name}
 - **Momentum y Aceleración**: Señales de crecimiento, madurez o declive
 - **Volatilidad como Indicador**: Qué dice la estabilidad/inestabilidad sobre el mercado
 - **Puntos de Inflexión**: Momentos críticos en la trayectoria de {tool_name}
 - **Perspectiva de Ciclo de Vida**: Dónde se encuentra {tool_name} en su ciclo de adopción
 
-**SECCIÓN 3: ANÁLISIS DE PATRONES ESTACIONALES** (800 palabras) [PRIMARIO]
+**SECCIÓN 4: ANÁLISIS DE PATRONES ESTACIONALES** (800 palabras) [PRIMARIO]
 - **Interpretación de Fuerza Estacional**: Qué tan pronunciados son los patrones
 - **Periodicidad y Ciclos**: Revelación de ritmos empresariales subyacentes
 - **Picos y Valles Estacionales**: Timing óptimo para implementación
 - **Variabilidad Estacional**: Consistencia vs. caos en patrones
 - **Implicaciones de Planificación**: Cuándo actuar y cuándo esperar
 
-**SECCIÓN 4: ANÁLISIS ESPECTRAL DE FOURIER** (800 palabras) [PRIMARIO]
+**SECCIÓN 5: ANÁLISIS ESPECTRAL DE FOURIER** (800 palabras) [PRIMARIO]
 - **Frecuencias Dominantes**: Ciclos principales identificados
 - **Puntos de Poder Espectral**: Momentos de máxima energía en el ciclo
 - **Armónicos y Subciclos**: Revelación de estructuras temporales complejas
 - **Filtro de Ruido vs. Señal**: Separación de volatilidad de tendencias reales
 - **Predicción de Ciclos Futuros**: Proyección basada en patrones espectrales
 
-**SECCIÓN 5: SÍNTESIS ESTRATÉGICA** (600 palabras)
+**SECCIÓN 6: SÍNTESIS ESTRATÉGICA** (600 palabras)
 - Convergencia de hallazgos temporales, estacionales y espectrales
 - Narrativa unificada sobre el estado y trayectoria de {tool_name}
 - Validación cruzada entre diferentes tipos de análisis
 - Fortaleza de la señal y confianza en las proyecciones
 
-**SECCIÓN 6: RECOMENDACIONES ESTRATÉGICAS** (400 palabras)
+**SECCIÓN 7: CONCLUSIONES** (600 palabras)
 - Timing óptimo para adopción basado en análisis temporal
 - Factores de riesgo identificados en los patrones
 - Oportunidades de ventana temporal
@@ -499,34 +506,41 @@ This analysis focuses on practical and strategic interpretation of data, not on 
 - Insights on timing and market maturity
 - Business adoption recommendations
 
-**SECTION 2: TEMPORAL ANALYSIS** (1000 words) [PRIMARY]
+**SECTION 2: PRINCIPAL FINDINGS** (600 words)
+- **Key Discoveries**: The most important insights from the analysis
+- **Unexpected Patterns**: Findings that contradict common assumptions
+- **Market Signals**: Critical indicators for decision making
+- **Immediate Implications**: What these findings mean for organizations
+- **Action Points**: Specific recommendations based on discoveries
+
+**SECTION 3: TEMPORAL ANALYSIS** (800 words) [PRIMARY]
 - **Narrative Interpretation**: What trends reveal about {tool_name} evolution
 - **Momentum and Acceleration**: Signals of growth, maturity or decline
 - **Volatility as Indicator**: What stability/instability says about the market
 - **Inflection Points**: Critical moments in {tool_name} trajectory
 - **Lifecycle Perspective**: Where {tool_name} stands in its adoption cycle
 
-**SECTION 3: SEASONAL PATTERN ANALYSIS** (800 words) [PRIMARY]
+**SECTION 4: SEASONAL PATTERN ANALYSIS** (800 words) [PRIMARY]
 - **Seasonal Strength Interpretation**: How pronounced the patterns are
 - **Periodicity and Cycles**: Revelation of underlying business rhythms
 - **Seasonal Peaks and Valleys**: Optimal timing for implementation
 - **Seasonal Variability**: Consistency vs. chaos in patterns
 - **Planning Implications**: When to act and when to wait
 
-**SECTION 4: FOURIER SPECTRAL ANALYSIS** (800 words) [PRIMARY]
+**SECTION 5: FOURIER SPECTRAL ANALYSIS** (800 words) [PRIMARY]
 - **Dominant Frequencies**: Main cycles identified
 - **Spectral Power Points**: Moments of maximum energy in the cycle
 - **Harmonics and Subcycles**: Revelation of complex temporal structures
 - **Noise vs. Signal Filter**: Separation of volatility from real trends
 - **Future Cycle Prediction**: Projection based on spectral patterns
 
-**SECTION 5: STRATEGIC SYNTHESIS** (600 words)
+**SECTION 6: STRATEGIC SYNTHESIS** (600 words)
 - Convergence of temporal, seasonal, and spectral findings
 - Unified narrative about {tool_name} status and trajectory
 - Cross-validation between different analysis types
 - Signal strength and confidence in projections
 
-**SECTION 6: STRATEGIC RECOMMENDATIONS** (400 words)
+**SECTION 7: CONCLUSIONS** (600 words)
 - Optimal timing for adoption based on temporal analysis
 - Risk factors identified in patterns
 - Temporal window of opportunity
@@ -571,12 +585,12 @@ A 4000+ word narrative essay that interprets temporal, seasonal, and spectral pa
         )
 
         # Debug: Show key sections that should be in the prompt
-        if 'SECCIÓN 3: ANÁLISIS DE PATRONES ESTACIONALES' in prompt:
+        if 'SECCIÓN 4: ANÁLISIS DE PATRONES ESTACIONALES' in prompt:
             logging.info(f"🔍 PROMPT DEBUG: Seasonal analysis section found in prompt")
         else:
             logging.warning(f"🔍 PROMPT DEBUG: Seasonal analysis section MISSING from prompt!")
 
-        if 'SECCIÓN 4: ANÁLISIS ESPECTRAL DE FOURIER' in prompt:
+        if 'SECCIÓN 5: ANÁLISIS ESPECTRAL DE FOURIER' in prompt:
             logging.info(f"🔍 PROMPT DEBUG: Fourier analysis section found in prompt")
         else:
             logging.warning(f"🔍 PROMPT DEBUG: Fourier analysis section MISSING from prompt!")
