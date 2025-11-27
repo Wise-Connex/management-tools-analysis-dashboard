@@ -577,6 +577,32 @@ This analysis focuses on practical and strategic interpretation of data, not on 
 
 **EXPECTED RESULT:**
 A 4000+ word narrative essay that interprets temporal, seasonal, and spectral patterns into actionable strategic insights for {tool_name} adoption, focusing on optimal timing and identified risk factors.
+
+**CRITICAL REQUIREMENT: DEBE GENERAR LAS 7 SECCIONES EXACTAMENTE COMO SE INDICA:**
+
+DEBE incluir estos 7 encabezados exactos en este orden:
+1. 📋 RESUMEN EJECUTIVO
+2. 🔍 HALLAZGOS PRINCIPALES
+3. 🔍 ANÁLISIS TEMPORAL
+4. 📅 PATRONES ESTACIONALES
+5. 🌊 ANÁLISIS ESPECTRAL
+6. 🎯 SÍNTESIS ESTRATÉGICA
+7. 📝 CONCLUSIONES
+
+**NO SE ACEPTA MENOS DE 7 SECCIONES. CADA SECCIÓN DEBE TENER SU ENCABEZADO EXACTO.**
+
+**CRITICAL REQUIREMENT: MUST GENERATE ALL 7 SECTIONS EXACTLY AS SPECIFIED:**
+
+MUST include these 7 exact headers in this order:
+1. 📋 RESUMEN EJECUTIVO
+2. 🔍 HALLAZGOS PRINCIPALES
+3. 🔍 ANÁLISIS TEMPORAL
+4. 📅 PATRONES ESTACIONALES
+5. 🌊 ANÁLISIS ESPECTRAL
+6. 🎯 SÍNTESIS ESTRATÉGICA
+7. 📝 CONCLUSIONES
+
+**LESS THAN 7 SECTIONS IS NOT ACCEPTABLE. EACH SECTION MUST HAVE ITS EXACT HEADER.**
 """
 
         generation_time = time.time() - start_time
