@@ -7734,12 +7734,21 @@ Los patrones observados en las correlaciones sugieren que el éxito de {tool_nam
                         sections = principal_findings_content.split('\n\n')
                         modal_sections = []
 
-                        for section in sections:
+                        # Debug: Log all sections found
+                        print(f"🔍 DEBUG: Parsing {len(sections)} sections from content")
+                        found_headers = []
+
+                        for i, section in enumerate(sections):
                             if section.strip():
+                                section_first_line = section.strip().split('\n')[0]
+                                print(f"🔍 DEBUG: Section {i+1}: '{section_first_line[:50]}...'")
+
                                 # Check if it's a section header with emoji prefix
                                 if any(section.strip().startswith(prefix) for prefix in [
                                     '📋', '🔍', '📅', '🌊', '🎯', '📝'
                                 ]):
+                                    found_headers.append(section_first_line)
+                                    print(f"🔍 DEBUG: Found section header: {section_first_line}")
                                     lines = section.strip().split('\n')
                                     if lines:
                                         header = lines[0]
@@ -7781,6 +7790,9 @@ Los patrones observados en las correlaciones sugieren que el éxito de {tool_nam
                                     modal_sections.extend(
                                         format_text_with_styling(section.strip())
                                     )
+
+                        # Log what sections were found
+                        print(f"🔍 DEBUG: Found {len(found_headers)} section headers: {found_headers}")
 
                         modal_content = html.Div([
                             # Overall container styling
