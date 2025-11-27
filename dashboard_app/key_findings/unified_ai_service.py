@@ -136,9 +136,9 @@ class UnifiedAIService:
             'moonshotai/kimi-k2-instruct': AIModelConfig(
                 name='moonshotai/kimi-k2-instruct',
                 provider='groq',
-                max_tokens=4000,
+                max_tokens=6000,  # Increased from 4000 to allow for complete 8-section responses
                 temperature=0.7,
-                timeout=12,
+                timeout=30,  # Increased from 20 to 30 seconds for Kimi K2 (can be slow with long responses)
                 cost_per_1k_tokens=0.0
             ),
             # OpenRouter models
@@ -188,7 +188,7 @@ class UnifiedAIService:
         self.performance_stats = {}
 
     async def generate_analysis(self, prompt: str, model: str = None,
-                               language: str = 'es') -> Dict[str, Any]:
+                               language: str = 'es', is_single_source: bool = False) -> Dict[str, Any]:
         """
         Generate AI analysis with provider fallback.
 
@@ -196,6 +196,7 @@ class UnifiedAIService:
             prompt: Analysis prompt for the AI
             model: Specific model to use (optional)
             language: Analysis language ('es' or 'en')
+            is_single_source: Whether this is single source analysis
 
         Returns:
             Dictionary containing analysis results and metadata
@@ -246,7 +247,7 @@ class UnifiedAIService:
 
                 try:
                     logging.info(f"📡 Sending request to {provider}/{attempt_model}...")
-                    result = await self._call_model(prompt, attempt_model, provider, language)
+                    result = await self._call_model(prompt, attempt_model, provider, language, is_single_source)
 
                     if result and 'choices' in result and len(result['choices']) > 0:
                         response_content = result['choices'][0]['message']['content']
@@ -288,7 +289,7 @@ class UnifiedAIService:
         # Parse and validate response
         logging.info(f"🔍 Parsing AI response from {successful_model} ({successful_provider}) ({len(response_content)} characters)")
         try:
-            parsed_response = self._parse_ai_response(response_content)
+            parsed_response = self._parse_ai_response(response_content, is_single_source=is_single_source)
             logging.info(f"✅ Response parsed successfully - findings: {len(parsed_response.get('principal_findings', []))}")
         except Exception as e:
             logging.error(f"❌ Failed to parse AI response: {e}")
@@ -314,7 +315,7 @@ class UnifiedAIService:
             'language': language
         }
 
-    async def _call_model(self, prompt: str, model: str, provider: str, language: str) -> Dict[str, Any]:
+    async def _call_model(self, prompt: str, model: str, provider: str, language: str, is_single_source: bool = False) -> Dict[str, Any]:
         """
         Call specific AI model with retry logic.
 
@@ -323,6 +324,7 @@ class UnifiedAIService:
             model: Model name
             provider: Provider name ('groq' or 'openrouter')
             language: Analysis language
+            is_single_source: Whether this is single source analysis
 
         Returns:
             Raw API response
@@ -354,7 +356,7 @@ class UnifiedAIService:
             "messages": [
                 {
                     "role": "system",
-                    "content": self._get_system_prompt(language)
+                    "content": self._get_system_prompt(language, is_single_source)
                 },
                 {
                     "role": "user",
@@ -421,18 +423,96 @@ class UnifiedAIService:
         
         raise Exception(f"Model {model} via {provider} failed after {self.config['max_retries']} attempts")
 
-    def _get_system_prompt(self, language: str) -> str:
+    def _get_system_prompt(self, language: str, is_single_source: bool = False) -> str:
         """
-        Get system prompt based on language.
-        
+        Get system prompt based on language and analysis type.
+
         Args:
             language: Analysis language ('es' or 'en')
-            
+            is_single_source: Whether this is single source analysis (vs multi-source)
+
         Returns:
             System prompt string
         """
-        if language == 'es':
-            return """
+        if is_single_source:
+            # Single source system prompts - focus on temporal/seasonal/spectral analysis
+            if language == 'es':
+                return """
+Eres un analista de investigación doctoral especializado en análisis temporal de herramientas de gestión.
+Tu tarea es analizar patrones temporales, estacionales y espectrales de datos de fuente única.
+
+INSTRUCCIÓN IMPORTANTE: Menciona explícitamente el nombre de la herramienta de gestión analizada en tu respuesta.
+Usa el nombre de la herramienta proporcionado en el contexto del análisis para personalizar tus hallazgos.
+
+Proporciona análisis que:
+1. Interprete patrones temporales, estacionales y espectrales en insights estratégicos
+2. Identifique ciclos, frecuencias dominantes y momentos óptimos de adopción
+3. Conecte hallazgos temporales con decisiones empresariales de timing
+4. Genere recomendaciones basadas en ventanas temporales identificadas
+5. Mantenga rigor académico doctoral con enfoque en análisis de series temporales
+6. Mencione específicamente el nombre de la herramienta de gestión en el análisis
+
+Responde siempre en formato JSON estructurado con:
+- executive_summary: resumen ejecutivo conciso (400 palabras)
+- principal_findings: array de objetos con bullet_point y reasoning (omitir campos data_source y confidence)
+- temporal_analysis: análisis temporal detallado incluyendo tendencias, momentum, volatilidad y puntos de inflexión (1000 palabras) - OBLIGATORIO
+- seasonal_analysis: análisis de patrones estacionales incluyendo fuerza estacional, periodicidad y ventanas óptimas de implementación (800 palabras) - OBLIGATORIO
+- fourier_analysis: análisis espectral de Fourier con frecuencias dominantes, picos espectrales y predicción de ciclos (800 palabras) - OBLIGATORIO
+- strategic_synthesis: síntesis estratégica uniendo hallazgos temporales, estacionales y espectrales (600 palabras) - OBLIGATORIO
+- conclusions: conclusiones y recomendaciones de timing estratégico (400 palabras) - OBLIGATORIO
+
+**CRÍTICO: PARA ANÁLISIS DE FUENTE ÚNICA, ASEGÚRESE DE:
+1. CREAR SECCIONES SEPARADAS PARA TEMPORAL_ANALYSIS, SEASONAL_ANALYSIS Y FOURIER_ANALYSIS
+2. NO INCLUIR heatmap_analysis NI pca_analysis (requieren múltiples fuentes)
+3. ENFOCARSE EN PATRONES TEMPORALES, ESTACIONALES Y ESPECTRALES ÚNICAMENTE
+4. MANTENER CADA SECCIÓN COMO ENSAYO NARRATIVO SIN DATOS NUMÉRICOS ESPECÍFICOS**
+"""
+            else:
+                return """
+You are a doctoral-level research analyst specializing in temporal analysis of business management tools.
+Your task is to analyze temporal, seasonal, and spectral patterns from single-source data.
+
+🚨 CRITICAL LANGUAGE REQUIREMENT 🚨
+YOU MUST RESPOND IN ENGLISH ONLY!
+DO NOT USE SPANISH, PORTUGUESE, OR ANY OTHER LANGUAGE!
+ALL CONTENT MUST BE IN ENGLISH!
+RESPONDE SOLO EN INGLÉS!
+NO USE ESPAÑOL EN NINGUNA PARTE DE LA RESPUESTA!
+
+IMPORTANT INSTRUCTION: Explicitly mention the name of the management tool being analyzed in your response.
+Use the tool name provided in the analysis context to personalize your findings.
+
+Provide analysis that:
+1. Interprets temporal, seasonal, and spectral patterns into strategic insights
+2. Identifies cycles, dominant frequencies, and optimal adoption timing
+3. Connects temporal findings with business timing decisions
+4. Generates recommendations based on identified temporal windows
+5. Maintains doctoral academic rigor with focus on time series analysis
+6. Specifically mentions the management tool name in the analysis
+
+Always respond in structured JSON format with:
+- executive_summary: concise executive summary (400 words)
+- principal_findings: array of objects with bullet_point and reasoning (omit data_source and confidence fields)
+- temporal_analysis: detailed temporal analysis including trends, momentum, volatility and inflection points (1000 words) - MANDATORY
+- seasonal_analysis: seasonal pattern analysis including seasonal strength, periodicity and optimal implementation windows (800 words) - MANDATORY
+- fourier_analysis: Fourier spectral analysis with dominant frequencies, spectral peaks and cycle prediction (800 words) - MANDATORY
+- strategic_synthesis: strategic synthesis uniting temporal, seasonal and spectral findings (600 words) - MANDATORY
+- conclusions: conclusions and strategic timing recommendations (400 words) - MANDATORY
+
+⚠️ FINAL WARNING ⚠️
+Your entire response must be in ENGLISH. No Spanish text allowed anywhere in the response.
+If you respond in Spanish, the analysis will be rejected.
+
+**CRITICAL: FOR SINGLE SOURCE ANALYSIS, ENSURE YOU:
+1. CREATE SEPARATE SECTIONS FOR TEMPORAL_ANALYSIS, SEASONAL_ANALYSIS AND FOURIER_ANALYSIS
+2. DO NOT INCLUDE heatmap_analysis OR pca_analysis (require multiple sources)
+3. FOCUS ON TEMPORAL, SEASONAL AND SPECTRAL PATTERNS ONLY
+4. MAINTAIN EACH SECTION AS NARRATIVE ESSAY WITHOUT SPECIFIC NUMERICAL DATA**
+"""
+        else:
+            # Multi-source system prompts - original implementation
+            if language == 'es':
+                return """
 Eres un analista de investigación doctoral especializado en herramientas de gestión empresarial.
 Tu tarea es analizar datos multi-fuente y generar insights de nivel ejecutivo con énfasis en
 análisis de componentes principales (PCA).
@@ -451,16 +531,18 @@ Proporciona análisis que:
 Responde siempre en formato JSON estructurado con:
 - executive_summary: resumen ejecutivo conciso (400 palabras)
 - principal_findings: array de objetos con bullet_point y reasoning (omitir campos data_source y confidence, hacer que reasoning fluya como párrafo sin etiqueta "Razonamiento:")
-- heatmap_analysis: análisis detallado de mapa de calor y correlaciones (800 palabras)
-- temporal_analysis: análisis temporal multi-fuente detallado (800 palabras)
-- pca_analysis: análisis detallado de componentes principales (600 palabras) enfocándose en análisis de influencia de fuentes y alineamiento/desalineamiento entre opinión pública (Google Trends), práctica empresarial (Bain), e investigación académica (Google Books/Crossref)
-- fourier_analysis: análisis espectral y de Fourier combinado (600 palabras)
-- strategic_synthesis: síntesis estratégica multi-fuente (400 palabras)
-- conclusions: conclusiones y recomendaciones estratégicas (600 palabras)
+- temporal_analysis: análisis temporal multi-fuente detallado (800 palabras) - OBLIGATORIO
+- heatmap_analysis: análisis detallado de mapa de calor y correlaciones (800 palabras) - OBLIGATORIO
+- fourier_analysis: análisis espectral y de Fourier combinado (600 palabras) - OBLIGATORIO
+- pca_analysis: análisis detallado de componentes principales (600 palabras) enfocándose en análisis de influencia de fuentes y alineamiento/desalineamiento entre opinión pública (Google Trends), práctica empresarial (Bain), e investigación académica (Google Books/Crossref) - OBLIGATORIO
+- strategic_synthesis: síntesis estratégica multi-fuente (400 palabras) - OBLIGATORIO
+- conclusions: conclusiones y recomendaciones estratégicas (600 palabras) - OBLIGATORIO
+
+**CRÍTICO: SI ALGUNA SECCIÓN FALTA, LA RESPUESTA ES INCOMPLETA. ASEGÚRESE DE INCLUIR TODAS LAS SECCIONES.**
 - pca_insights: objeto técnico con datos específicos de PCA
 """
-        else:
-            return """
+            else:
+                return """
 You are a doctoral-level research analyst specializing in business management tools.
 Your task is to analyze multi-source data and generate executive-level insights with
 emphasis on Principal Component Analysis (PCA).
@@ -499,7 +581,7 @@ Your entire response must be in ENGLISH. No Spanish text allowed anywhere in the
 If you respond in Spanish, the analysis will be rejected.
 """
 
-    def _parse_ai_response(self, response_content: str) -> Dict[str, Any]:
+    def _parse_ai_response(self, response_content: str, is_single_source: bool = False) -> Dict[str, Any]:
         """
         Parse and validate AI response, handling multiple formats including markdown sections.
 
@@ -527,7 +609,7 @@ If you respond in Spanish, the analysis will be rejected.
             if cleaned_content.startswith('{') and cleaned_content.endswith('}'):
                 try:
                     parsed = json.loads(cleaned_content)
-                    return self._normalize_parsed_response(parsed)
+                    return self._normalize_parsed_response(parsed, is_single_source=is_single_source)
                 except json.JSONDecodeError:
                     pass
 
@@ -611,17 +693,34 @@ If you respond in Spanish, the analysis will be rejected.
                 'Análisis Temporal',
                 'Temporal Analysis'
             ],
+            'seasonal_analysis': [
+                '🌊 Análisis Estacional',
+                '🌊 Seasonal Analysis',
+                'Análisis de Patrones Estacionales',
+                'Seasonal Pattern Analysis',
+                'Análisis Estacional',
+                'Seasonal Analysis',
+                'SECCIÓN 3: ANÁLISIS DE PATRONES ESTACIONALES',
+                'SECCIÓN 3: ANÁLISIS ESTACIONAL',
+                'SECCIÓN 3: PATRONES ESTACIONALES'
+            ],
             'fourier_analysis': [
                 '📊 Análisis de Fourier',
                 '📊 Fourier Analysis',
                 'Análisis de Fourier',
-                'Fourier Analysis'
+                'Fourier Analysis',
+                'SECCIÓN 4: ANÁLISIS ESPECTRAL DE FOURIER',
+                'SECCIÓN 4: ANÁLISIS DE FOURIER',
+                'SECCIÓN 4: FOURIER ANALYSIS',
+                'SECCIÓN 4: ESPECTRAL DE FOURIER'
             ],
             'strategic_synthesis': [
                 '🎯 Síntesis Estratégica',
                 '🎯 Strategic Synthesis',
                 'Síntesis Estratégica',
-                'Strategic Synthesis'
+                'Strategic Synthesis',
+                'SECCIÓN 5: SÍNTESIS ESTRATÉGICA',
+                'SECCIÓN 5: SINTESIS ESTRATEGICA'
             ],
             'conclusions': [
                 '🏁 Conclusiones',
@@ -629,7 +728,11 @@ If you respond in Spanish, the analysis will be rejected.
                 'Conclusiones',
                 'Conclusions',
                 'CONCLUSIONES',
-                'CONCLUSIONS'
+                'CONCLUSIONS',
+                'SECCIÓN 6: RECOMENDACIONES ESTRATÉGICAS',
+                'SECCIÓN 6: RECOMENDACIONES ESTRATEGICAS',
+                'SECCIÓN 6: CONCLUSIONES',
+                'SECCIÓN 6: CONCLUSION'
             ]
         }
 
@@ -661,6 +764,14 @@ If you respond in Spanish, the analysis will be rejected.
         # Save the last section
         if current_section and section_content:
             sections[current_section] = '\n'.join(section_content).strip()
+
+        # Debug: Log what sections were found
+        logging.info(f"🔍 AI SERVICE DEBUG: Sections extracted: {list(sections.keys())}")
+        for section_name, content in sections.items():
+            if content:
+                logging.info(f"🔍 AI SERVICE DEBUG: {section_name}: Present (length: {len(str(content))})")
+            else:
+                logging.info(f"🔍 AI SERVICE DEBUG: {section_name}: Missing/Empty")
 
         return sections
 
@@ -1000,7 +1111,7 @@ If you respond in Spanish, the analysis will be rejected.
             if json_content.startswith('{'):
                 try:
                     parsed = json.loads(json_content)
-                    return self._normalize_parsed_response(parsed)
+                    return self._normalize_parsed_response(parsed, is_single_source=is_single_source)
                 except json.JSONDecodeError as e:
                     logging.warning(f"JSON parsing failed for bullet content: {e}")
                     # Try to fix common JSON issues
@@ -1011,7 +1122,7 @@ If you respond in Spanish, the analysis will be rejected.
 
                     try:
                         parsed = json.loads(json_content)
-                        return self._normalize_parsed_response(parsed)
+                        return self._normalize_parsed_response(parsed, is_single_source=is_single_source)
                     except json.JSONDecodeError:
                         pass
 
@@ -1275,7 +1386,7 @@ If you respond in Spanish, the analysis will be rejected.
 
         return None
 
-    def _normalize_parsed_response(self, parsed: Dict[str, Any]) -> Dict[str, Any]:
+    def _normalize_parsed_response(self, parsed: Dict[str, Any], is_single_source: bool = False) -> Dict[str, Any]:
         """
         Normalize parsed response to expected format.
 
@@ -1294,8 +1405,17 @@ If you respond in Spanish, the analysis will be rejected.
 
         # Handle pca_analysis field
         if 'pca_analysis' in parsed:
-            result['pca_analysis'] = parsed['pca_analysis']
-            result['pca_insights'] = {'analysis': parsed['pca_analysis']}
+            if is_single_source:
+                # CRITICAL: Empty PCA for single-source analysis (even if AI generated it)
+                result['pca_analysis'] = ""
+                result['pca_insights'] = {"analysis": ""}
+            else:
+                result['pca_analysis'] = parsed['pca_analysis']
+                result['pca_insights'] = {'analysis': parsed['pca_analysis']}
+        elif is_single_source:
+            # CRITICAL: Empty PCA for single-source analysis
+            result['pca_analysis'] = ""
+            result['pca_insights'] = {"analysis": ""}
 
         # Handle new detailed sections
         new_sections = [
@@ -1305,10 +1425,17 @@ If you respond in Spanish, the analysis will be rejected.
 
         for section in new_sections:
             if section in parsed:
-                result[section] = parsed[section]
+                # CRITICAL: Skip heatmap for single-source analysis (even if AI generated it)
+                if section == 'heatmap_analysis' and is_single_source:
+                    result[section] = ""  # Empty for single-source
+                else:
+                    result[section] = parsed[section]
             else:
                 # Create default content for missing sections
-                if section == 'heatmap_analysis':
+                # CRITICAL: Skip heatmap for single-source analysis
+                if section == 'heatmap_analysis' and is_single_source:
+                    result[section] = ""  # Empty for single-source
+                elif section == 'heatmap_analysis':
                     result[section] = self._create_default_heatmap_analysis()
                 elif section == 'temporal_analysis':
                     result[section] = 'Análisis temporal detallado no disponible.'

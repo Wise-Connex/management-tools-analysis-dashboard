@@ -251,35 +251,50 @@ class KeyFindingsModal:
 
         # Determine analysis type for section filtering
         analysis_type = report_data.get('analysis_type', 'multi_source')  # Default to multi-source
-        is_single_source = analysis_type == 'single_source'
+        # Force single-source detection more aggressively
+        sources_count = report_data.get('sources_count', 0)
+        selected_sources = report_data.get('selected_sources', [])
+
+        is_single_source = (
+            sources_count == 1 or  # Explicit count
+            report_data.get('analysis_type') == 'single_source' or  # Explicit type
+            (isinstance(selected_sources, list) and len(selected_sources) == 1) or  # Source list length
+            (isinstance(selected_sources, str) and selected_sources.count(',') == 0)  # Single source string
+        )
+
+        # Debug force
+        if sources_count == 1:
+            print(f"🔍 MODAL DEBUG: FORCING SINGLE-SOURCE based on sources_count=1")
+            is_single_source = True
+
+        print(f"🔍 MODAL DEBUG: analysis_type = '{analysis_type}', is_single_source = {is_single_source}")
+        print(f"🔍 MODAL DEBUG: sources_count = {report_data.get('sources_count', 'unknown')}")
 
         # Build sections dynamically based on analysis type
         sections = []
 
-        # Always show these sections (both single and multi-source) - but check if they have content
-        if executive_summary:
-            sections.append(self._create_executive_summary_section(executive_summary, language))
-        if principal_findings:
-            sections.append(self._create_principal_findings_narrative_section(principal_findings, language))
-        if temporal_analysis:
-            sections.append(self._create_temporal_analysis_section(temporal_analysis, language))
-        if fourier_analysis:
-            sections.append(self._create_fourier_analysis_section(fourier_analysis, language))
-        if strategic_synthesis:
-            sections.append(self._create_strategic_synthesis_section(strategic_synthesis, language))
-        if conclusions:
-            sections.append(self._create_conclusions_section(conclusions, language))
-
-        # Single source specific sections
         if is_single_source:
+            # For single-source: only show the combined principal_findings (which contains all 7 sections with prefixes)
+            if principal_findings:
+                sections.append(self._create_principal_findings_narrative_section(principal_findings, language))
+        else:
+            # For multi-source: show individual sections
+            if executive_summary:
+                sections.append(self._create_executive_summary_section(executive_summary, language))
+            if principal_findings:
+                sections.append(self._create_principal_findings_narrative_section(principal_findings, language))
+            if temporal_analysis:
+                sections.append(self._create_temporal_analysis_section(temporal_analysis, language))
             if seasonal_analysis:
                 sections.append(self._create_seasonal_analysis_section(seasonal_analysis, language))
-            # Single source should NOT show PCA analysis
-            # if pca_analysis:
-            #     sections.append(self._create_pca_analysis_section(pca_analysis, language))
+            if fourier_analysis:
+                sections.append(self._create_fourier_analysis_section(fourier_analysis, language))
+            if strategic_synthesis:
+                sections.append(self._create_strategic_synthesis_section(strategic_synthesis, language))
+            if conclusions:
+                sections.append(self._create_conclusions_section(conclusions, language))
 
-        # Multi-source specific sections (only show if NOT single-source)
-        if not is_single_source:
+            # Multi-source specific sections
             if heatmap_analysis:
                 sections.append(self._create_heatmap_analysis_section(heatmap_analysis, language))
             # For multi-source, pca_analysis is narrative essay

@@ -18,7 +18,36 @@ from pathlib import Path
 from .database_manager import KeyFindingsDBManager
 from .unified_ai_service import UnifiedAIService, get_unified_ai_service
 from .data_aggregator import DataAggregator
-from .single_source_fixer import SingleSourceFixer
+
+# Import translations
+try:
+    from ..translations import get_text
+except ImportError:
+    # Fallback for standalone usage
+    def get_text(key: str, language: str = 'es', **kwargs) -> str:
+        """Fallback translation function"""
+        translations = {
+            'es': {
+                'section_prefix_executive_summary': '📋 RESUMEN EJECUTIVO',
+                'section_prefix_principal_findings': '🔍 HALLAZGOS PRINCIPALES',
+                'section_prefix_temporal_analysis': '🔍 ANÁLISIS TEMPORAL',
+                'section_prefix_seasonal_analysis': '📅 PATRONES ESTACIONALES',
+                'section_prefix_fourier_analysis': '🌊 ANÁLISIS ESPECTRAL',
+                'section_prefix_strategic_synthesis': '🎯 SÍNTESIS ESTRATÉGICA',
+                'section_prefix_conclusions': '📝 CONCLUSIONES',
+            },
+            'en': {
+                'section_prefix_executive_summary': '📋 EXECUTIVE SUMMARY',
+                'section_prefix_principal_findings': '🔍 PRINCIPAL FINDINGS',
+                'section_prefix_temporal_analysis': '🔍 TEMPORAL ANALYSIS',
+                'section_prefix_seasonal_analysis': '📅 SEASONAL PATTERNS',
+                'section_prefix_fourier_analysis': '🌊 SPECTRAL ANALYSIS',
+                'section_prefix_strategic_synthesis': '🎯 STRATEGIC SYNTHESIS',
+                'section_prefix_conclusions': '📝 CONCLUSIONS',
+            }
+        }
+        return translations.get(language, {}).get(key, key)
+# from .single_source_fixer import SingleSourceFixer  # Disabled - fixed section extraction instead
 from .prompt_engineer import PromptEngineer
 from .modal_component import KeyFindingsModal
 
@@ -74,7 +103,7 @@ class KeyFindingsService:
         self.prompt_engineer = PromptEngineer()
 
         # Initialize single source fixer
-        self.single_source_fixer = SingleSourceFixer()
+        # self.single_source_fixer = SingleSourceFixer()  # Disabled - fixed section extraction instead
 
         # Initialize modal component (will be set later with app instance)
         self.modal_component = None
@@ -153,61 +182,30 @@ class KeyFindingsService:
         logging.info(f"🔍   force_refresh: {force_refresh}")
 
         try:
-            # Generate scenario hash for caching - use display names for consistency
-            scenario_hash = self.kf_db_manager.generate_scenario_hash(
-                tool_name, selected_sources, language=language
-            )
+            # Simplified architecture: Direct query to precomputed findings database
+            # Remove secondary cache layer - query precomputed findings directly
 
-            # Check cache first (unless force refresh)
-            if not force_refresh:
-                cached_report = self.kf_db_manager.get_cached_report(scenario_hash)
-                if cached_report:
-                    self.performance_metrics["cache_hits"] += 1
-                    response_time_ms = int((time.time() - start_time) * 1000)
-
-                    # Update cache statistics
-                    today = date.today().strftime("%Y-%m-%d")
-                    self.kf_db_manager.update_cache_statistics(
-                        today, True, response_time_ms
-                    )
-
-                    logging.info(f"Cache hit for scenario {scenario_hash[:8]}...")
-
-                    return {
-                        "success": True,
-                        "data": cached_report,
-                        "cache_hit": True,
-                        "response_time_ms": response_time_ms,
-                        "scenario_hash": scenario_hash,
-                    }
-
-            # Cache miss - check precomputed findings database
-            self.performance_metrics["cache_misses"] += 1
-            logging.info(
-                f"Cache miss for scenario {scenario_hash[:8]}... Checking precomputed findings"
-            )
-
+            # Check precomputed findings database directly (primary storage)
             precomputed_result = self._get_precomputed_findings(
                 tool_name, selected_sources, language
             )
             if precomputed_result:
-                logging.info(
-                    f"Precomputed findings found for scenario {scenario_hash[:8]}..."
-                )
                 response_time_ms = int((time.time() - start_time) * 1000)
+
+                # Log direct database hit
+                logging.info(f"Direct database hit for {tool_name} + {len(selected_sources)} sources")
 
                 return {
                     "success": True,
                     "data": precomputed_result,
                     "cache_hit": True,
                     "response_time_ms": response_time_ms,
-                    "scenario_hash": scenario_hash,
                     "source": "precomputed_findings",
                 }
 
-            # No cache or precomputed data - generate new analysis
+            # No precomputed data - generate new analysis
             logging.info(
-                f"No cached or precomputed data for scenario {scenario_hash[:8]}... Generating new analysis"
+                f"No precomputed data for {tool_name} + {len(selected_sources)} sources - generating new analysis"
             )
 
             # Check if this is a single source analysis
@@ -220,7 +218,7 @@ class KeyFindingsService:
                     f"🔍 Single source detected: {selected_sources[0]}. Using single source workflow."
                 )
                 return await self._generate_single_source_analysis(
-                    tool_name, selected_sources, language, scenario_hash, start_time, source_display_names
+                    tool_name, selected_sources, language, start_time, source_display_names
                 )
 
             # Multi-source analysis path (original implementation)
@@ -289,17 +287,8 @@ class KeyFindingsService:
                 "json_structure": content.get("original_structure", "unknown"),
             }
 
-            # Cache the report
-            report_id = self.kf_db_manager.cache_report(scenario_hash, report_data)
-
-            # Get cached report with all metadata
-            cached_report = self.kf_db_manager.get_cached_report(scenario_hash)
-
+            # Simplified architecture: Return report data directly without secondary caching
             response_time_ms = int((time.time() - start_time) * 1000)
-
-            # Update cache statistics
-            today = date.today().strftime("%Y-%m-%d")
-            self.kf_db_manager.update_cache_statistics(today, False, response_time_ms)
 
             # Log model performance
             self.kf_db_manager.log_model_performance(
@@ -312,16 +301,15 @@ class KeyFindingsService:
             )
 
             logging.info(
-                f"Generated new analysis for scenario {scenario_hash[:8]}... in {response_time_ms}ms"
+                f"Generated new analysis for {tool_name} + {len(selected_sources)} sources in {response_time_ms}ms"
             )
 
             return {
                 "success": True,
-                "data": cached_report,
+                "data": report_data,
                 "cache_hit": False,
                 "response_time_ms": response_time_ms,
-                "scenario_hash": scenario_hash,
-                "report_id": report_id,
+                "source": "fresh_generation",
             }
 
         except Exception as e:
@@ -342,7 +330,6 @@ class KeyFindingsService:
         tool_name: str,
         selected_sources: List[str],
         language: str,
-        scenario_hash: str,
         start_time: float,
         source_display_names: List[str] = None,
     ) -> Dict[str, Any]:
@@ -353,7 +340,6 @@ class KeyFindingsService:
             tool_name: Selected management tool
             selected_sources: List containing a single data source ID (for database queries)
             language: Analysis language ('es' or 'en')
-            scenario_hash: Hash for caching
             start_time: Analysis start time
             source_display_names: Optional list of display names for analysis functions
 
@@ -366,7 +352,6 @@ class KeyFindingsService:
             logging.info(f"🔍   tool_name: {tool_name}")
             logging.info(f"🔍   selected_sources: {selected_sources} (type: {type(selected_sources)})")
             logging.info(f"🔍   language: {language}")
-            logging.info(f"🔍   scenario_hash: {scenario_hash}")
             logging.info(f"🔍   source_display_names: {source_display_names}")
 
             # Debug: Check if single_source_fixer exists
@@ -486,21 +471,10 @@ class KeyFindingsService:
             )
 
             # Apply single source structure fixer to ensure exact format
-            logging.info("🔧 Applying single source structure fixer")
-            try:
-                content = self.single_source_fixer.fix_single_source_response(content)
-                logging.info("✅ Single source structure fixed")
-            except AttributeError as e:
-                logging.warning(f"⚠️ single_source_fixer not available: {e}")
-                logging.info("🔧 Skipping single source structure fix - using original content")
-                # Use content as-is if fixer is not available
-
-            # Validate the fixed structure (or original if fixer unavailable)
-            try:
-                is_valid = self.single_source_fixer.validate_single_source_structure(content)
-            except AttributeError:
-                logging.warning("⚠️ single_source_fixer validation not available - assuming valid")
-                is_valid = True
+            # DISABLED - Fixed section extraction patterns instead
+            logging.info("🔧 Single source fixer disabled - using improved section extraction")
+            content = content  # Use content as-is
+            is_valid = True
             if not is_valid:
                 logging.warning("⚠️ Single source structure validation failed, but continuing")
 
@@ -515,38 +489,85 @@ class KeyFindingsService:
 
             logging.info(f"🔧 System values - Model: {system_model_used}, Data points: {system_data_points}, Response time: {system_response_time}ms")
             logging.info(f"🔧 AI-generated values - Model: {content.get('model_used', 'N/A')}, Data points: {content.get('data_points_analyzed', 'N/A')}")
-            logging.info(f"🔧 Single-source content structure - principal_findings length: {len(principal_findings_narrative)}, pca_analysis: '{pca_analysis_content[:50]}...', heatmap_analysis: '{heatmap_analysis_content[:50]}...'")
 
             # Build proper single-source report structure
             # For single-source, combine all analysis into principal_findings narrative
             principal_findings_content = []
 
+            # Debug: Log what sections the AI generated
+            print(f"🔍 SERVICE DEBUG: AI content sections: {list(content.keys())}")
+            print(f"🔍 SERVICE DEBUG: Available sections in AI response:")
+            for key, value in content.items():
+                if value and key in ['executive_summary', 'temporal_analysis', 'seasonal_analysis', 'fourier_analysis', 'strategic_synthesis', 'conclusions']:
+                    print(f"  - {key}: Present (length: {len(str(value))})")
+                elif not value and key in ['executive_summary', 'temporal_analysis', 'seasonal_analysis', 'fourier_analysis', 'strategic_synthesis', 'conclusions']:
+                    print(f"  - {key}: Missing/Empty")
+
             # Add executive summary if available
             if content.get("executive_summary"):
-                principal_findings_content.append(content.get("executive_summary"))
+                principal_findings_content.append(f"{get_text('section_prefix_executive_summary', language)}\n{content.get('executive_summary')}")
 
             # Add temporal analysis if available
             if content.get("temporal_analysis"):
-                principal_findings_content.append(f"🔍 ANÁLISIS TEMPORAL\n{content.get('temporal_analysis')}")
+                principal_findings_content.append(f"{get_text('section_prefix_temporal_analysis', language)}\n{content.get('temporal_analysis')}")
 
             # Add seasonal analysis if available
             if content.get("seasonal_analysis"):
-                principal_findings_content.append(f"📅 PATRONES ESTACIONALES\n{content.get('seasonal_analysis')}")
+                principal_findings_content.append(f"{get_text('section_prefix_seasonal_analysis', language)}\n{content.get('seasonal_analysis')}")
+            else:
+                print(f"🔍 SERVICE DEBUG: seasonal_analysis section is missing!")
 
             # Add fourier analysis if available
             if content.get("fourier_analysis"):
-                principal_findings_content.append(f"🌊 ANÁLISIS ESPECTRAL\n{content.get('fourier_analysis')}")
+                principal_findings_content.append(f"{get_text('section_prefix_fourier_analysis', language)}\n{content.get('fourier_analysis')}")
+            else:
+                print(f"🔍 SERVICE DEBUG: fourier_analysis section is missing!")
 
             # Add strategic synthesis if available
             if content.get("strategic_synthesis"):
-                principal_findings_content.append(f"🎯 SÍNTESIS ESTRATÉGICA\n{content.get('strategic_synthesis')}")
+                principal_findings_content.append(f"{get_text('section_prefix_strategic_synthesis', language)}\n{content.get('strategic_synthesis')}")
 
             # Add conclusions if available
             if content.get("conclusions"):
-                principal_findings_content.append(f"📝 CONCLUSIONES\n{content.get('conclusions')}")
+                principal_findings_content.append(f"{get_text('section_prefix_conclusions', language)}\n{content.get('conclusions')}")
+
+            print(f"🔍 SERVICE DEBUG: Total sections combined: {len(principal_findings_content)}")
 
             # Combine all sections into principal_findings narrative
             principal_findings_narrative = "\n\n".join(principal_findings_content)
+
+            # Don't add main header since individual sections already have their own prefixes
+            # This avoids duplicate "🔍 HALLAZGOS PRINCIPALES" header
+
+            # Remove statistical summary section if present (this comes from AI-generated content)
+            lines_to_remove = [
+                "📈 Resumen Estadístico",
+                "📈 Statistical Summary",
+                "Resumen Estadístico",
+                "Statistical Summary",
+                "Datos analizados:",
+                "Data analyzed:",
+                "Puntos de Datos:",
+                "Data Points:",
+                "Rango temporal:",
+                "Time range:",
+                "TS:"
+            ]
+
+            filtered_lines = []
+            for line in principal_findings_narrative.split('\n'):
+                should_remove = False
+                for remove_pattern in lines_to_remove:
+                    if remove_pattern in line:
+                        should_remove = True
+                        break
+                if not should_remove:
+                    filtered_lines.append(line)
+
+            principal_findings_narrative = '\n'.join(filtered_lines)
+
+            # Clean up any extra blank lines
+            principal_findings_narrative = '\n'.join([line for line in principal_findings_narrative.split('\n') if line.strip()])
 
             # For single-source, PCA and heatmap should be empty or contain placeholder
             pca_analysis_content = content.get("pca_insights", "")
@@ -559,6 +580,11 @@ class KeyFindingsService:
             # If heatmap contains placeholder text, make it empty for single-source
             if heatmap_analysis_content and "No heatmap analysis available" in str(heatmap_analysis_content):
                 heatmap_analysis_content = ""
+
+            # Log the final single-source content structure
+            pca_str = str(pca_analysis_content) if pca_analysis_content else ""
+            heatmap_str = str(heatmap_analysis_content) if heatmap_analysis_content else ""
+            logging.info(f"🔧 Single-source content structure - principal_findings length: {len(principal_findings_narrative)}, pca_analysis: '{pca_str[:50]}...', heatmap_analysis: '{heatmap_str[:50]}...'")
 
             report_data = {
                 "tool_name": tool_name,
@@ -585,19 +611,8 @@ class KeyFindingsService:
 
             logging.info(f"📋 Report data prepared: {len(report_data)} fields")
 
-            # Cache the report
-            report_id = self.kf_db_manager.cache_report(scenario_hash, report_data)
-            logging.info(f"📦 Report cached with ID: {report_id}")
-
-            # Get cached report with all metadata
-            cached_report = self.kf_db_manager.get_cached_report(scenario_hash)
-            logging.info(f"📦 Retrieved cached report: {cached_report is not None}")
-
+            # Simplified architecture: Return report data directly without secondary caching
             response_time_ms = int((time.time() - start_time) * 1000)
-
-            # Update cache statistics
-            today = date.today().strftime("%Y-%m-%d")
-            self.kf_db_manager.update_cache_statistics(today, False, response_time_ms)
 
             # Log model performance
             self.kf_db_manager.log_model_performance(
@@ -610,41 +625,15 @@ class KeyFindingsService:
             )
 
             logging.info(
-                f"Generated single source analysis for scenario {scenario_hash[:8]}... in {response_time_ms}ms"
+                f"Generated single source analysis for {tool_name} + {len(selected_sources)} sources in {response_time_ms}ms"
             )
-
-            # Ensure cached_report is not None before accessing its methods
-            if cached_report is None:
-                logging.error(
-                    "❌ Cached report is None after caching - returning report_data directly"
-                )
-                # Return the report_data directly as fallback
-                cached_report = report_data
-            else:
-                # Add single source specific fields to cached report if missing
-                if "report_type" not in cached_report:
-                    cached_report["report_type"] = "single_source"
-                if "temporal_analysis" not in cached_report:
-                    cached_report["temporal_analysis"] = report_data.get(
-                        "temporal_analysis", ""
-                    )
-                if "seasonal_analysis" not in cached_report:
-                    cached_report["seasonal_analysis"] = report_data.get(
-                        "seasonal_analysis", ""
-                    )
-                if "fourier_analysis" not in cached_report:
-                    cached_report["fourier_analysis"] = report_data.get(
-                        "fourier_analysis", ""
-                    )
 
             return {
                 "success": True,
-                "data": cached_report,
+                "data": report_data,
                 "cache_hit": False,
                 "response_time_ms": response_time_ms,
-                "scenario_hash": scenario_hash,
-                "report_id": report_id,
-                "report_type": "single_source",
+                "source": "fresh_generation",
             }
 
         except Exception as e:
@@ -1357,13 +1346,15 @@ class KeyFindingsService:
         }
 
     def update_user_feedback(
-        self, scenario_hash: str, rating: int, feedback: str = None
+        self, tool_name: str, selected_sources: List[str], language: str, rating: int, feedback: str = None
     ):
         """
         Update user feedback for a report.
 
         Args:
-            scenario_hash: Report scenario hash
+            tool_name: Tool name for identification
+            selected_sources: Data sources for identification
+            language: Analysis language
             rating: User rating (1-5)
             feedback: Optional user feedback text
         """
@@ -1421,13 +1412,15 @@ class KeyFindingsService:
             return {"error": str(e)}
 
     def export_report(
-        self, scenario_hash: str, format_type: str = "json"
+        self, tool_name: str, selected_sources: List[str], language: str, format_type: str = "json"
     ) -> Dict[str, Any]:
         """
         Export a report in specified format.
 
         Args:
-            scenario_hash: Report scenario hash
+            tool_name: Tool name for identification
+            selected_sources: Data sources for identification
+            language: Analysis language
             format_type: Export format ('json', 'pdf', 'csv')
 
         Returns:

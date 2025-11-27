@@ -207,6 +207,14 @@ Este análisis integra insights de múltiples fuentes de datos para proporcionar
 - Mantenga estándares académicos pero accesible para ejecutivos
 - Conecte teoría de gestión con práctica empresarial
 - Use terminología profesional precisa
+
+**INSTRUCCIÓN ESPECIAL PARA MODELOS AVANZADOS (Kimi K2):**
+- ASEGÚRESE de generar TODAS las 8 secciones requeridas: Resumen, Hallazgos, Temporal, Heatmap, Fourier, PCA, Síntesis, Conclusiones
+- NO trunque la respuesta - proporcione análisis completos para cada sección
+- SI una sección falta, la respuesta será considerada incompleta
+- Para modelos que tienden a truncar, divida el análisis en partes manejables pero completas
+- Asegúrese de que cada sección tenga contenido sustancial (mínimo 400 palabras para secciones principales)
+- Verifique que el orden de las secciones sea exactamente: 1→2→3→4→5→6→7→8
 - Proporcione insights diferenciadores y accionables
 
 **PROHIBICIONES ABSOLUTAS:**
@@ -561,6 +569,17 @@ A 4000+ word narrative essay that interprets temporal, seasonal, and spectral pa
         logging.info(
             f"✅ Improved single source prompt generation completed in {generation_time:.2f}s - prompt length: {len(prompt)} characters"
         )
+
+        # Debug: Show key sections that should be in the prompt
+        if 'SECCIÓN 3: ANÁLISIS DE PATRONES ESTACIONALES' in prompt:
+            logging.info(f"🔍 PROMPT DEBUG: Seasonal analysis section found in prompt")
+        else:
+            logging.warning(f"🔍 PROMPT DEBUG: Seasonal analysis section MISSING from prompt!")
+
+        if 'SECCIÓN 4: ANÁLISIS ESPECTRAL DE FOURIER' in prompt:
+            logging.info(f"🔍 PROMPT DEBUG: Fourier analysis section found in prompt")
+        else:
+            logging.warning(f"🔍 PROMPT DEBUG: Fourier analysis section MISSING from prompt!")
 
         return prompt
 

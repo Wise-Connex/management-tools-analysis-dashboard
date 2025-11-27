@@ -216,6 +216,18 @@ def initialize_key_findings_service():
             traceback.print_exc()
             KEY_FINDINGS_AVAILABLE = False
 
+# Initialize KeyFindingsService modal component (after service is initialized)
+try:
+    if KEY_FINDINGS_AVAILABLE and key_findings_service:
+        from key_findings.modal_component import KeyFindingsModal
+        language_store = dcc.Store(id="language-store")
+        key_findings_service.set_modal_component(app, language_store)
+        print("✅ KeyFindingsService modal component initialized")
+except Exception as modal_error:
+    print(f"⚠️ Error initializing KeyFindingsService modal component: {modal_error}")
+    import traceback
+    traceback.print_exc()
+
 
 # Notes and DOI data is now loaded from the database
 
@@ -6755,6 +6767,12 @@ if KEY_FINDINGS_AVAILABLE and key_findings_service:
                 # Helper function to extract text content from AI response with robust parsing
                 def extract_text_content(content):
                     """Extract text content from various data types with robust malformed JSON handling."""
+                    # For single-source analysis, skip all parsing and return content as-is
+                    # This prevents the extraction of individual sections from the combined principal_findings
+                    if len(selected_sources) == 1:
+                        print(f"🔍 EXTRACT_TEXT_CONTENT: Single-source detected, returning content as-is")
+                        return content
+
                     if isinstance(content, str):
                         # First, try to parse as pure JSON
                         cleaned_content = content.strip()
@@ -7116,6 +7134,9 @@ if KEY_FINDINGS_AVAILABLE and key_findings_service:
                 if len(selected_sources) == 1:
                     print(f"🔍 FILTERING: Single-source detected, removing heatmap/PCA content from principal findings")
 
+                    # Import re module for regex operations
+                    import re
+
                     # Remove heatmap analysis content
                     heatmap_patterns = [
                         r"🔥.*Análisis del Mapa de Calor.*",
@@ -7189,9 +7210,17 @@ if KEY_FINDINGS_AVAILABLE and key_findings_service:
                 # Extract PCA analysis text and split into paragraphs
                 pca_analysis_text = extract_text_content(pca_analysis_raw)
 
-                # Fix broken PCA text (like "No PCA a\nnalysis\navailable")
-                pca_analysis_text = re.sub(r'No PCA\s+a\s*n\s*alysis\s+available', 'No PCA analysis available', pca_analysis_text, flags=re.IGNORECASE)
-                pca_analysis_text = re.sub(r'PCA\s+a\s*n\s*alysis\s+available', 'PCA analysis available', pca_analysis_text, flags=re.IGNORECASE)
+                # For single-source, PCA should be empty - skip all processing
+                if len(selected_sources) == 1:
+                    pca_analysis_text = ""
+                else:
+                    # Fix broken PCA text (like "No PCA a\nnalysis\navailable") - only for multi-source
+                    if isinstance(pca_analysis_text, str):
+                        pca_analysis_text = re.sub(r'No PCA\s+a\s*n\s*alysis\s+available', 'No PCA analysis available', pca_analysis_text, flags=re.IGNORECASE)
+                        pca_analysis_text = re.sub(r'PCA\s+a\s*n\s*alysis\s+available', 'PCA analysis available', pca_analysis_text, flags=re.IGNORECASE)
+                    else:
+                        # If pca_analysis_text is not a string (e.g., dict), convert to string
+                        pca_analysis_text = str(pca_analysis_text) if pca_analysis_text else ""
 
                 # Debug: Print the raw PCA analysis text to understand its structure
                 print(f"🔍 DEBUG: Raw PCA analysis text: {pca_analysis_text[:200]}...")
@@ -7297,14 +7326,19 @@ if KEY_FINDINGS_AVAILABLE and key_findings_service:
                                 bullet_points.append(item)
 
                         if bullet_points:
-                            heatmap_analysis_text = "\n\n".join(bullet_points)
-                            heatmap_paragraphs = [
-                                p.strip()
-                                for p in heatmap_analysis_text.split("\n\n")
-                                if p.strip()
-                            ]
+                            # For single-source, skip heatmap processing
+                            if len(selected_sources) == 1:
+                                heatmap_analysis_text = ""
+                                heatmap_paragraphs = []
+                            else:
+                                heatmap_analysis_text = "\n\n".join(bullet_points)
+                                heatmap_paragraphs = [
+                                    p.strip()
+                                    for p in heatmap_analysis_text.split("\n\n")
+                                    if p.strip()
+                                ]
                         else:
-                            heatmap_paragraphs = [
+                            heatmap_paragraphs = [] if len(selected_sources) == 1 else [
                                 "Análisis de correlación no disponible."
                             ]
                     else:
@@ -7451,8 +7485,13 @@ Los patrones observados en las correlaciones sugieren que el éxito de {tool_nam
                         "Análisis adicional de patrones de correlación no disponible."
                     )
 
-                heatmap_paragraphs = heatmap_paragraphs[:3]
-                heatmap_analysis_text = "\n\n".join(heatmap_paragraphs)
+                # For single-source, skip heatmap processing entirely
+                if len(selected_sources) == 1:
+                    heatmap_analysis_text = ""
+                    heatmap_paragraphs = []
+                else:
+                    heatmap_paragraphs = heatmap_paragraphs[:3]
+                    heatmap_analysis_text = "\n\n".join(heatmap_paragraphs)
 
                 # Create comprehensive modal content with unique identifier
                 current_timestamp = int(time.time())
@@ -7462,22 +7501,20 @@ Los patrones observados en las correlaciones sugieren que el éxito de {tool_nam
                         html.Div(
                             [
                                 html.Small(
-                                    f"{get_text('generated_by', language)}: {model_used} | {get_text('time', language)}: {ai_response.get('response_time_ms', 0) if ai_response else 0}ms | ID: {current_timestamp}",
+                                    "",  # Removed generation info line
                                     className="text-muted",
                                 )
                             ],
                             style={"marginBottom": "20px"},
                         ),
-                        # Executive Summary
-                        html.Div(
-                            [
-                                html.H5(
-                                    "📋 " + get_text("executive_summary", language),
-                                    className="text-info mb-2",
-                                ),
-                                html.P(executive_summary, className="mb-4"),
-                            ]
-                        ),
+                        # Executive Summary (ONLY show for multi-source, for single-source it's already in principal_findings)
+                        *([] if len(selected_sources) == 1 else [html.Div([
+                            html.H5(
+                                "📋 " + get_text("executive_summary", language),
+                                className="text-info mb-2",
+                            ),
+                            html.P(executive_summary, className="mb-4"),
+                        ])]),
                         # Principal Findings
                         html.Div(
                             [
@@ -7507,81 +7544,67 @@ Los patrones observados en las correlaciones sugieren que el éxito de {tool_nam
                                 ),
                             ]
                         ),
-                        # HEATMAP ANALYSIS - split into separate paragraphs
-                        html.Div(
-                            [
-                                html.H5(
-                                    "🔥 " + get_text("heatmap_analysis", language),
-                                    className="text-info mb-2",
-                                ),
-                                html.Div(
-                                    [
-                                        # Display each paragraph with proper styling
-                                        html.P(
-                                            p,
-                                            className="mb-3",
-                                            style={
-                                                "textAlign": "justify",
-                                                "lineHeight": "1.6",
-                                            },
-                                        )
-                                        for p in heatmap_paragraphs
-                                    ]
-                                ),
-                                # Add debug information to help identify the issue
-                                html.Div(
-                                    [html.Hr()],
-                                    style={
-                                        "marginTop": "10px",
-                                        "padding": "10px",
-                                        "backgroundColor": "#f8f9fa",
-                                        "borderRadius": "5px",
-                                    },
-                                ),
-                            ]
-                        ),
-                        # PCA Analysis - split into separate paragraphs
-                        html.Div(
-                            [
-                                html.H5(
-                                    "📊 " + get_text("pca_analysis", language),
-                                    className="text-info mb-2",
-                                ),
-                                html.Div(
-                                    [
-                                        # Display each paragraph with proper styling
-                                        html.P(
-                                            p,
-                                            className="mb-3",
-                                            style={
-                                                "textAlign": "justify",
-                                                "lineHeight": "1.6",
-                                            },
-                                        )
-                                        for p in pca_paragraphs
-                                    ]
-                                ),
-                            ]
-                        ),
+                        # HEATMAP ANALYSIS and PCA Analysis - ONLY show for multi-source
+                        *([] if len(selected_sources) == 1 else [
+                            # HEATMAP ANALYSIS - split into separate paragraphs
+                            html.Div(
+                                [
+                                    html.H5(
+                                        "🔥 " + get_text("heatmap_analysis", language),
+                                        className="text-info mb-2",
+                                    ),
+                                    html.Div(
+                                        [
+                                            # Display each paragraph with proper styling
+                                            html.P(
+                                                p,
+                                                className="mb-3",
+                                                style={
+                                                    "textAlign": "justify",
+                                                    "lineHeight": "1.6",
+                                                },
+                                            )
+                                            for p in heatmap_paragraphs
+                                        ]
+                                    ),
+                                    # Add debug information to help identify the issue
+                                    html.Div(
+                                        [html.Hr()],
+                                        style={
+                                            "marginTop": "10px",
+                                            "padding": "10px",
+                                            "backgroundColor": "#f8f9fa",
+                                            "borderRadius": "5px",
+                                        },
+                                    ),
+                                ]
+                            ),
+                            # PCA Analysis - split into separate paragraphs
+                            html.Div(
+                                [
+                                    html.H5(
+                                        "📊 " + get_text("pca_analysis", language),
+                                        className="text-info mb-2",
+                                    ),
+                                    html.Div(
+                                        [
+                                            # Display each paragraph with proper styling
+                                            html.P(
+                                                p,
+                                                className="mb-3",
+                                                style={
+                                                    "textAlign": "justify",
+                                                    "lineHeight": "1.6",
+                                                },
+                                            )
+                                            for p in pca_paragraphs
+                                        ]
+                                    ),
+                                ]
+                            ),
+                        ]),
                         # Statistical Summary
-                        html.Div(
-                            [
-                                html.H5(
-                                    "📈 " + get_text("statistical_summary", language),
-                                    className="text-info mb-2",
-                                ),
-                                html.Div(
-                                    [
-                                        html.Small(
-                                            f"{get_text('data_analyzed', language)}: {analysis_data.get('data_points_analyzed', 0):,} {get_text('data_points', language)} | "
-                                            f"{get_text('time_range', language)}: {analysis_data.get('date_range_start', 'N/A')} - {analysis_data.get('date_range_end', 'N/A')} | TS: {current_timestamp}",
-                                            className="text-muted",
-                                        )
-                                    ],
-                                    style={"marginBottom": "15px"},
-                                ),
-                            ]
-                        ),
+                        # Removed statistical summary section
                     ]
                 )
 
@@ -7600,20 +7623,65 @@ Los patrones observados en las correlaciones sugieren que el éxito de {tool_nam
                 print(f"🔍 DEBUG: Modal content length: {len(str(modal_content))}")
 
                 # CRITICAL: Pass the complete report data to the modal component through the data-ready store
-                report_data = {
-                    "executive_summary": executive_summary,
-                    "principal_findings": principal_findings,
-                    "heatmap_analysis": heatmap_analysis_text,
-                    "pca_analysis": "\n\n".join(pca_paragraphs),
-                    "metadata": {
-                        "model_used": model_used,
-                        "response_time_ms": response_time_ms,
-                        "data_points_analyzed": data_points,
-                        "generation_timestamp": datetime.now().isoformat(),
-                        "access_count": 0,
-                        "analysis_depth": "comprehensive",
-                    },
-                }
+                # For single-source, only pass combined principal_findings, empty content for individual sections
+                if len(selected_sources) == 1:
+                    report_data = {
+                        "executive_summary": "",  # Empty - already in principal_findings
+                        "principal_findings": principal_findings,  # Contains all 7 sections with prefixes
+                        "heatmap_analysis": "",  # Empty - not for single-source
+                        "pca_analysis": "",  # Empty - not for single-source
+                        "temporal_analysis": "",  # Empty - already in principal_findings
+                        "seasonal_analysis": "",  # Empty - already in principal_findings
+                        "fourier_analysis": "",  # Empty - already in principal_findings
+                        "strategic_synthesis": "",  # Empty - already in principal_findings
+                        "conclusions": "",  # Empty - already in principal_findings
+                        "analysis_type": "single_source",
+                        "sources_count": 1,
+                        "selected_sources": selected_sources,
+                        "metadata": {
+                            "model_used": model_used,
+                            "response_time_ms": response_time_ms,
+                            "data_points_analyzed": data_points,
+                            "generation_timestamp": datetime.now().isoformat(),
+                            "access_count": 0,
+                            "analysis_depth": "comprehensive",
+                        },
+                    }
+                else:
+                    # Multi-source: pass all sections normally
+                    report_data = {
+                        "executive_summary": executive_summary,
+                        "principal_findings": principal_findings,
+                        "heatmap_analysis": heatmap_analysis_text,
+                        "pca_analysis": "\n\n".join(pca_paragraphs),
+                        "analysis_type": "multi_source",
+                        "sources_count": len(selected_sources),
+                        "selected_sources": selected_sources,
+                        "metadata": {
+                            "model_used": model_used,
+                            "response_time_ms": response_time_ms,
+                            "data_points_analyzed": data_points,
+                            "generation_timestamp": datetime.now().isoformat(),
+                            "access_count": 0,
+                            "analysis_depth": "comprehensive",
+                        },
+                    }
+                # Use KeyFindingsService's modal component instead of hardcoded HTML
+                try:
+                    modal_component = key_findings_service.get_modal_component()
+                    if modal_component:
+                        modal_content = modal_component.create_findings_display(report_data, language)
+                    else:
+                        # Fallback to basic content if modal component not available
+                        modal_content = html.Div([
+                            html.P("Key Findings modal component not available"),
+                            html.Pre(str(report_data))
+                        ])
+                except Exception as modal_error:
+                    print(f"⚠️ Error creating modal content: {modal_error}")
+                    # Fallback to old modal_content if component creation fails
+                    pass  # modal_content already exists from old logic
+
                 return True, modal_content, dynamic_title, True, report_data
 
             except Exception as e:
