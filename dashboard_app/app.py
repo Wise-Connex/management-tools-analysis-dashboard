@@ -220,8 +220,16 @@ def initialize_key_findings_service():
 try:
     if KEY_FINDINGS_AVAILABLE and key_findings_service:
         from key_findings.modal_component import KeyFindingsModal
-        language_store = dcc.Store(id="language-store")
-        key_findings_service.set_modal_component(app, language_store)
+        from dash import dcc
+
+        # Create a simple language store reference for the modal component
+        # The component will use this to access the actual language state during callbacks
+        class LanguageStoreRef:
+            def __init__(self):
+                self.id = "language-store"
+
+        language_store_ref = LanguageStoreRef()
+        key_findings_service.set_modal_component(app, language_store_ref)
         print("✅ KeyFindingsService modal component initialized")
 except Exception as modal_error:
     print(f"⚠️ Error initializing KeyFindingsService modal component: {modal_error}")
@@ -7666,21 +7674,67 @@ Los patrones observados en las correlaciones sugieren que el éxito de {tool_nam
                             "analysis_depth": "comprehensive",
                         },
                     }
-                # Use KeyFindingsService's modal component instead of hardcoded HTML
-                try:
-                    modal_component = key_findings_service.get_modal_component()
-                    if modal_component:
-                        modal_content = modal_component.create_findings_display(report_data, language)
+                # For single-source analysis, the principal_findings already contains
+                # all 7 sections with proper bilingual prefixes, so display it directly
+                if len(selected_sources) == 1:
+                    principal_findings_content = report_data.get("principal_findings", "")
+                    if principal_findings_content:
+                        # Split into sections and format as HTML
+                        sections = principal_findings_content.split('\n\n')
+                        modal_sections = []
+
+                        for section in sections:
+                            if section.strip():
+                                # Check if it's a section header with emoji prefix
+                                if any(section.strip().startswith(prefix) for prefix in [
+                                    '📋', '🔍', '📅', '🌊', '🎯', '📝'
+                                ]):
+                                    lines = section.strip().split('\n')
+                                    if lines:
+                                        header = lines[0]
+                                        content = '\n'.join(lines[1:]) if len(lines) > 1 else ""
+
+                                        modal_sections.append(
+                                            html.Div([
+                                                html.H5(
+                                                    header,
+                                                    className="text-info mb-2",
+                                                    style={"fontSize": "16px", "fontWeight": "bold"}
+                                                ),
+                                                html.P(
+                                                    content,
+                                                    className="mb-4",
+                                                    style={"textAlign": "justify", "lineHeight": "1.6"}
+                                                )
+                                            ])
+                                        )
+                                else:
+                                    # Regular paragraph
+                                    modal_sections.append(
+                                        html.P(
+                                            section.strip(),
+                                            className="mb-3",
+                                            style={"textAlign": "justify", "lineHeight": "1.6"}
+                                        )
+                                    )
+
+                        modal_content = html.Div(modal_sections)
                     else:
-                        # Fallback to basic content if modal component not available
-                        modal_content = html.Div([
-                            html.P("Key Findings modal component not available"),
-                            html.Pre(str(report_data))
-                        ])
-                except Exception as modal_error:
-                    print(f"⚠️ Error creating modal content: {modal_error}")
-                    # Fallback to old modal_content if component creation fails
-                    pass  # modal_content already exists from old logic
+                        modal_content = html.P("No content available", className="text-muted")
+                else:
+                    # For multi-source, try to use modal component or fallback
+                    try:
+                        modal_component = key_findings_service.get_modal_component()
+                        if modal_component:
+                            modal_content = modal_component.create_findings_display(report_data, language)
+                        else:
+                            modal_content = html.Div([
+                                html.P("Key Findings modal component not available for multi-source"),
+                                html.Pre(str(report_data))
+                            ])
+                    except Exception as modal_error:
+                        print(f"⚠️ Error creating modal content: {modal_error}")
+                        pass  # modal_content already exists from old logic
 
                 return True, modal_content, dynamic_title, True, report_data
 
