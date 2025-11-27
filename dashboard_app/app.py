@@ -7683,6 +7683,7 @@ Los patrones observados en las correlaciones sugieren que el éxito de {tool_nam
                         def format_text_with_styling(text):
                             """Format text with bold, italics, and better paragraph handling"""
                             import re
+                            from dash import dcc
 
                             if not text.strip():
                                 return []
@@ -7693,42 +7694,38 @@ Los patrones observados en las correlaciones sugieren que el éxito de {tool_nam
                             paragraphs = [p.strip() for p in text.split('\n') if p.strip()]
 
                             for paragraph in paragraphs:
-                                # Process bold text **texto**
-                                paragraph = re.sub(
-                                    r'\*\*(.*?)\*\*',
-                                    r'<strong>\1</strong>',
-                                    paragraph
-                                )
-
-                                # Process italics *texto* (but not ** already processed)
-                                paragraph = re.sub(
-                                    r'(?<!\*)\*([^*]+)\*(?!\*)',
-                                    r'<em>\1</em>',
-                                    paragraph
-                                )
-
                                 # Process bullet points (starting with • or -)
                                 if paragraph.strip().startswith(('•', '-')):
                                     bullet_content = paragraph.strip()[1:].strip()
+                                    # Convert to markdown format for bullets
+                                    markdown_bullet = f"* {bullet_content}"
                                     formatted_elements.append(
-                                        html.Li(
-                                            html.Span(bullet_content, dangerously_allow_html=True),
-                                            style={"marginLeft": "20px", "marginBottom": "8px"}
-                                        )
+                                        html.Div([
+                                            dcc.Markdown(
+                                                markdown_bullet,
+                                                style={
+                                                    "marginLeft": "20px",
+                                                    "marginBottom": "8px",
+                                                    "fontSize": "14px",
+                                                    "lineHeight": "1.6"
+                                                }
+                                            )
+                                        ])
                                     )
                                 else:
-                                    # Regular paragraph
+                                    # Use dcc.Markdown for rich text formatting with **bold** and *italics*
                                     formatted_elements.append(
-                                        html.P(
-                                            paragraph,
-                                            dangerously_allow_html=True,
-                                            style={
-                                                "textAlign": "justify",
-                                                "lineHeight": "1.7",
-                                                "marginBottom": "16px",
-                                                "fontSize": "14px"
-                                            }
-                                        )
+                                        html.Div([
+                                            dcc.Markdown(
+                                                paragraph,
+                                                style={
+                                                    "textAlign": "justify",
+                                                    "lineHeight": "1.7",
+                                                    "marginBottom": "16px",
+                                                    "fontSize": "14px"
+                                                }
+                                            )
+                                        ])
                                     )
 
                             return formatted_elements
