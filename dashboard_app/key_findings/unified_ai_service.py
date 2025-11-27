@@ -946,6 +946,7 @@ If you respond in Spanish, the analysis will be rejected.
         # Handle additional sections for complete multi-source analysis in correct order
         new_sections = {
             'temporal_analysis': '📈 Análisis Temporal',
+            'seasonal_analysis': '📅 Análisis Estacional',
             'heatmap_analysis': '🔥 Análisis de Mapa de Calor',
             'fourier_analysis': '📊 Análisis de Fourier',
             'pca_analysis': '📊 Análisis PCA',

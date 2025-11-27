@@ -7687,35 +7687,6 @@ Los patrones observados en las correlaciones sugieren que el éxito de {tool_nam
                     temporal_analysis = report_data.get("temporal_analysis", "")
                     seasonal_analysis = report_data.get("seasonal_analysis", "")
                     fourier_analysis = report_data.get("fourier_analysis", "")
-
-                    # SMART CONTENT RECONSTRUCTION: If missing sections, extract from existing content
-                    if not seasonal_analysis or len(str(seasonal_analysis)) < 100:
-                        print("🔍 DEBUG: Missing seasonal_analysis - attempting reconstruction")
-                        try:
-                            from .key_findings.content_reconstructor import ContentReconstructor
-                            reconstructor = ContentReconstructor()
-
-                            # Combine all available content
-                            all_content = str(principal_findings_content) + " " + str(temporal_analysis) + " " + str(fourier_analysis)
-
-                            # Reconstruct missing sections
-                            reconstructed = reconstructor.reconstruct_missing_sections(all_content)
-
-                            if reconstructed.get('seasonal_analysis'):
-                                seasonal_analysis = reconstructed['seasonal_analysis']
-                                print("🔍 DEBUG: Successfully reconstructed seasonal_analysis")
-                                report_data['seasonal_analysis'] = seasonal_analysis
-
-                            if len(str(principal_findings_content)) < 500 or not principal_findings_content:
-                                # Also reconstruct principal_findings if too short
-                                if reconstructed.get('principal_findings'):
-                                    principal_findings_content = reconstructed['principal_findings']
-                                    report_data['principal_findings'] = principal_findings_content
-                                    print("🔍 DEBUG: Successfully reconstructed principal_findings")
-
-                        except Exception as e:
-                            print(f"🔍 DEBUG: Content reconstruction failed: {e}")
-                            print("🔍 DEBUG: Using fallback content for missing sections")
                     strategic_synthesis = report_data.get("strategic_synthesis", "")
                     conclusions = report_data.get("conclusions", "")
 
