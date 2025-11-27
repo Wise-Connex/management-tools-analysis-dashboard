@@ -7638,11 +7638,11 @@ Los patrones observados en las correlaciones sugieren que el éxito de {tool_nam
                         "principal_findings": principal_findings,  # Contains all 7 sections with prefixes
                         "heatmap_analysis": "",  # Empty - not for single-source
                         "pca_analysis": "",  # Empty - not for single-source
-                        "temporal_analysis": "",  # Empty - already in principal_findings
-                        "seasonal_analysis": "",  # Empty - already in principal_findings
-                        "fourier_analysis": "",  # Empty - already in principal_findings
-                        "strategic_synthesis": "",  # Empty - already in principal_findings
-                        "conclusions": "",  # Empty - already in principal_findings
+                        "temporal_analysis": ai_content.get("temporal_analysis", ""),  # Use AI-generated content
+                        "seasonal_analysis": ai_content.get("seasonal_analysis", ""),  # Use AI-generated content
+                        "fourier_analysis": ai_content.get("fourier_analysis", ""),  # Use AI-generated content
+                        "strategic_synthesis": ai_content.get("strategic_synthesis", ""),  # Use AI-generated content
+                        "conclusions": ai_content.get("conclusions", ""),  # Use AI-generated content
                         "analysis_type": "single_source",
                         "sources_count": 1,
                         "selected_sources": selected_sources,

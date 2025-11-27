@@ -986,6 +986,7 @@ If you respond in Spanish, the analysis will be rejected.
             result.setdefault('pca_insights', {})
             result.setdefault('heatmap_analysis', self._create_default_heatmap_analysis())
             result.setdefault('temporal_analysis', 'Análisis temporal detallado no disponible.')
+            result.setdefault('seasonal_analysis', 'Análisis estacional detallado no disponible.')
             result.setdefault('fourier_analysis', 'Análisis de Fourier no disponible.')
             result.setdefault('strategic_synthesis', 'Síntesis estratégica no disponible.')
             result.setdefault('conclusions', 'Conclusiones no disponibles.')
