@@ -7730,12 +7730,57 @@ Los patrones observados en las correlaciones sugieren que el éxito de {tool_nam
 
                             return formatted_elements
 
-                        # Split into sections and format as HTML
+                        # Enhanced section splitting with multiple methods
+                        # First try: Split by double newlines
                         sections = principal_findings_content.split('\n\n')
+
+                        # If we only get 1 section, try alternative splitting methods
+                        if len(sections) <= 1:
+                            print("🔍 DEBUG: Only 1 section found with double newlines, trying emoji-based splitting")
+
+                            # Split by emoji prefixes (more reliable for AI content)
+                            import re
+                            emoji_pattern = r'(📋|🔍|📅|🌊|🎯|📝)'
+                            sections = re.split(emoji_pattern, principal_findings_content)
+
+                            # Remove empty sections and add the emoji back
+                            filtered_sections = []
+                            for i, section in enumerate(sections):
+                                if section.strip():
+                                    # Re-add the appropriate emoji if this isn't the first section
+                                    if i > 0:
+                                        # Find the emoji that was matched
+                                        emoji_matches = re.findall(emoji_pattern, principal_findings_content)
+                                        if i-1 < len(emoji_matches):
+                                            section = emoji_matches[i-1] + section.strip()
+                                    filtered_sections.append(section.strip())
+                            sections = filtered_sections
+
+                        # If still only 1 section, try splitting by known headers
+                        if len(sections) <= 1:
+                            print("🔍 DEBUG: Still 1 section, trying text-based splitting")
+
+                            # Split by known section headers
+                            header_pattern = r'(📋 RESUMEN EJECUTIVO|🔍 HALLAZGOS PRINCIPALES|🔍 ANÁLISIS TEMPORAL|📅 PATRONES ESTACIONALES|🌊 ANÁLISIS ESPECTRAL|🎯 SÍNTESIS ESTRATÉGICA|📝 CONCLUSIONES)'
+                            sections = re.split(header_pattern, principal_findings_content)
+
+                            # Reconstruct with headers
+                            filtered_sections = []
+                            headers = re.findall(header_pattern, principal_findings_content)
+
+                            for i, section in enumerate(sections):
+                                if section.strip():
+                                    if i < len(headers):
+                                        full_section = headers[i] + section.strip()
+                                    else:
+                                        full_section = section.strip()
+                                    filtered_sections.append(full_section)
+                            sections = filtered_sections
+
                         modal_sections = []
 
                         # Debug: Log all sections found
-                        print(f"🔍 DEBUG: Parsing {len(sections)} sections from content")
+                        print(f"🔍 DEBUG: Parsing {len(sections)} sections from content (after splitting)")
                         found_headers = []
 
                         for i, section in enumerate(sections):
