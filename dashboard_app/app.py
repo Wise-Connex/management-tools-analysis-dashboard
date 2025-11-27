@@ -7743,12 +7743,29 @@ Los patrones observados en las correlaciones sugieren que el éxito de {tool_nam
                                 section_first_line = section.strip().split('\n')[0]
                                 print(f"🔍 DEBUG: Section {i+1}: '{section_first_line[:50]}...'")
 
-                                # Check if it's a section header with emoji prefix
-                                if any(section.strip().startswith(prefix) for prefix in [
-                                    '📋', '🔍', '📅', '🌊', '🎯', '📝'
-                                ]):
-                                    found_headers.append(section_first_line)
-                                    print(f"🔍 DEBUG: Found section header: {section_first_line}")
+                                # Enhanced section detection with multiple patterns
+                                section_lines = section.strip().split('\n')
+                                first_line = section_lines[0] if section_lines else ""
+
+                                # Comprehensive section detection
+                                is_section_header = (
+                                    # Emoji prefix detection
+                                    any(first_line.startswith(prefix) for prefix in ['📋', '🔍', '📅', '🌊', '🎯', '📝']) or
+                                    # Text-based detection for Spanish/English
+                                    any(pattern in first_line.upper() for pattern in [
+                                        'RESUMEN EJECUTIVO', 'EXECUTIVE SUMMARY',
+                                        'HALLAZGOS PRINCIPALES', 'PRINCIPAL FINDINGS',
+                                        'ANÁLISIS TEMPORAL', 'TEMPORAL ANALYSIS',
+                                        'PATRONES ESTACIONALES', 'SEASONAL PATTERNS',
+                                        'ANÁLISIS ESPECTRAL', 'SPECTRAL ANALYSIS',
+                                        'SÍNTESIS ESTRATÉGICA', 'STRATEGIC SYNTHESIS',
+                                        'CONCLUSIONES', 'CONCLUSIONS'
+                                    ])
+                                )
+
+                                if is_section_header:
+                                    found_headers.append(first_line)
+                                    print(f"🔍 DEBUG: Found section header: {first_line}")
                                     lines = section.strip().split('\n')
                                     if lines:
                                         header = lines[0]
@@ -7791,8 +7808,32 @@ Los patrones observados en las correlaciones sugieren que el éxito de {tool_nam
                                         format_text_with_styling(section.strip())
                                     )
 
-                        # Log what sections were found
+                        # Log what sections were found and validate we have expected sections
                         print(f"🔍 DEBUG: Found {len(found_headers)} section headers: {found_headers}")
+
+                        # Check for missing expected sections
+                        expected_sections = [
+                            'RESUMEN EJECUTIVO', 'EXECUTIVE SUMMARY',
+                            'HALLAZGOS PRINCIPALES', 'PRINCIPAL FINDINGS',
+                            'ANÁLISIS TEMPORAL', 'TEMPORAL ANALYSIS',
+                            'PATRONES ESTACIONALES', 'SEASONAL PATTERNS',
+                            'ANÁLISIS ESPECTRAL', 'SPECTRAL ANALYSIS',
+                            'SÍNTESIS ESTRATÉGICA', 'STRATEGIC SYNTHESIS',
+                            'CONCLUSIONES', 'CONCLUSIONS'
+                        ]
+
+                        missing_sections = []
+                        for expected in expected_sections:
+                            if not any(expected in header.upper() for header in found_headers):
+                                missing_sections.append(expected)
+
+                        if missing_sections:
+                            print(f"🔍 DEBUG: Missing expected sections: {missing_sections}")
+                            # Try to find missing sections in the raw content
+                            raw_content = principal_findings_content
+                            for missing in missing_sections:
+                                if missing.upper() in raw_content.upper():
+                                    print(f"🔍 DEBUG: Found '{missing}' in raw content but not parsed - investigating format issue")
 
                         modal_content = html.Div([
                             # Overall container styling
