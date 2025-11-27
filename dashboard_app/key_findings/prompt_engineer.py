@@ -407,7 +407,7 @@ Este análisis se enfoca en la interpretación práctica y estratégica de los d
 - Insights de timing y madurez del mercado
 - Recomendaciones de adopción empresarial
 
-**SECCIÓN 2: HALLAZGOS PRINCIPALES** (600 palabras)
+**SECCIÓN 2: HALLAZGOS PRINCIPALES** (600 palabras) [PRIMARIO]
 - **Descubrimientos Clave**: Los insights más importantes del análisis
 - **Patrones Inesperados**: Hallazgos que contradicen suposiciones comunes
 - **Señales de Mercado**: Indicadores críticos para la toma de decisiones
@@ -506,7 +506,7 @@ This analysis focuses on practical and strategic interpretation of data, not on 
 - Insights on timing and market maturity
 - Business adoption recommendations
 
-**SECTION 2: PRINCIPAL FINDINGS** (600 words)
+**SECTION 2: PRINCIPAL FINDINGS** (600 words) [PRIMARY]
 - **Key Discoveries**: The most important insights from the analysis
 - **Unexpected Patterns**: Findings that contradict common assumptions
 - **Market Signals**: Critical indicators for decision making
