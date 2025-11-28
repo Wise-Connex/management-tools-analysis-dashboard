@@ -671,6 +671,7 @@ If you respond in Spanish, the analysis will be rejected.
             ],
             'principal_findings': [
                 '🔍 Hallazgos Principales',
+                '🔍 HALLAZGOS PRINCIPALES',      # Added exact match for prompt-generated header
                 '🔍 Principal Findings',
                 'Hallazgos Principales',
                 'Principal Findings',
@@ -702,6 +703,8 @@ If you respond in Spanish, the analysis will be rejected.
             'seasonal_analysis': [
                 '🌊 Análisis Estacional',
                 '🌊 Seasonal Analysis',
+                '📅 PATRONES ESTACIONALES',         # Added - this matches the prompt!
+                '📅 Seasonal Patterns',
                 'Análisis de Patrones Estacionales',
                 'Seasonal Pattern Analysis',
                 'Análisis Estacional',
