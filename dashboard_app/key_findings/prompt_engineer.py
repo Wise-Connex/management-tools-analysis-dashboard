@@ -408,6 +408,9 @@ Este análisis se enfoca en la interpretación práctica y estratégica de los d
 - Recomendaciones de adopción empresarial
 
 **SECCIÓN 2: HALLAZGOS PRINCIPALES** (600 palabras) [PRIMARIO]
+ESTA SECCIÓN ES OBLIGATORIA Y DEBE APARECER EXACTAMENTE CON ESTE ENCABEZADO: 🔍 HALLAZGOS PRINCIPALES
+NO MEZCLE el contenido de esta sección con otras secciones. Presente los hallazgos principales como una lista clara de descubrimientos clave.
+
 - **Descubrimientos Clave**: Los insights más importantes del análisis
 - **Patrones Inesperados**: Hallazgos que contradicen suposiciones comunes
 - **Señales de Mercado**: Indicadores críticos para la toma de decisiones
@@ -422,6 +425,9 @@ Este análisis se enfoca en la interpretación práctica y estratégica de los d
 - **Perspectiva de Ciclo de Vida**: Dónde se encuentra {tool_name} en su ciclo de adopción
 
 **SECCIÓN 4: ANÁLISIS DE PATRONES ESTACIONALES** (800 palabras) [PRIMARIO]
+ESTA SECCIÓN ES OBLIGATORIA Y DEBE APARECER EXACTAMENTE CON ESTE ENCABEZADO: 📅 PATRONES ESTACIONALES
+NO DISTRIBUYA el contenido estacional en otras secciones. CONCENTRE todos los patrones estacionales aquí.
+
 - **Interpretación de Fuerza Estacional**: Qué tan pronunciados son los patrones
 - **Periodicidad y Ciclos**: Revelación de ritmos empresariales subyacentes
 - **Picos y Valles Estacionales**: Timing óptimo para implementación
