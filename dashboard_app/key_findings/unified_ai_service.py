@@ -952,14 +952,17 @@ If you respond in Spanish, the analysis will be rejected.
                     result['pca_insights'] = {'analysis': pca_content}
 
         # Handle additional sections for complete multi-source analysis in correct order
+        # Updated to match AI-generated headers exactly
         new_sections = {
-            'temporal_analysis': '📈 Análisis Temporal',
-            'seasonal_analysis': '📅 Análisis Estacional',
+            'executive_summary': '📋 RESUMEN EJECUTIVO',
+            'principal_findings': '🔍 HALLAZGOS PRINCIPALES',
+            'temporal_analysis': '🔍 ANÁLISIS TEMPORAL',
+            'seasonal_analysis': '📅 PATRONES ESTACIONALES',
             'heatmap_analysis': '🔥 Análisis de Mapa de Calor',
-            'fourier_analysis': '📊 Análisis de Fourier',
+            'fourier_analysis': '🌊 ANÁLISIS ESPECTRAL',
             'pca_analysis': '📊 Análisis PCA',
-            'strategic_synthesis': '🎯 Síntesis Estratégica',
-            'conclusions': '🏁 Conclusiones'
+            'strategic_synthesis': '🎯 SÍNTESIS ESTRATÉGICA',
+            'conclusions': '📝 CONCLUSIONES'
         }
 
         for section_key, section_emoji in new_sections.items():
