@@ -666,6 +666,7 @@ If you respond in Spanish, the analysis will be rejected.
             'executive_summary': [
                 '📋 Resumen Ejecutivo',
                 '📋 Executive Summary',
+                '📋 RESUMEN EJECUTIVO',            # Added exact match for prompt-generated header
                 'Resumen Ejecutivo',
                 'Executive Summary'
             ],
@@ -697,6 +698,7 @@ If you respond in Spanish, the analysis will be rejected.
             'temporal_analysis': [
                 '📈 Análisis Temporal',
                 '📈 Temporal Analysis',
+                '🔍 ANÁLISIS TEMPORAL',             # Added exact match for prompt-generated header
                 'Análisis Temporal',
                 'Temporal Analysis'
             ],
@@ -717,6 +719,7 @@ If you respond in Spanish, the analysis will be rejected.
             'fourier_analysis': [
                 '📊 Análisis de Fourier',
                 '📊 Fourier Analysis',
+                '🌊 ANÁLISIS ESPECTRAL',             # Added exact match for prompt-generated header
                 'Análisis de Fourier',
                 'Fourier Analysis',
                 'SECCIÓN 5: ANÁLISIS ESPECTRAL DE FOURIER',
@@ -728,6 +731,7 @@ If you respond in Spanish, the analysis will be rejected.
             'strategic_synthesis': [
                 '🎯 Síntesis Estratégica',
                 '🎯 Strategic Synthesis',
+                '🎯 SÍNTESIS ESTRATÉGICA',           # Added exact match for prompt-generated header
                 'Síntesis Estratégica',
                 'Strategic Synthesis',
                 'SECCIÓN 6: SÍNTESIS ESTRATÉGICA',
@@ -737,6 +741,7 @@ If you respond in Spanish, the analysis will be rejected.
             'conclusions': [
                 '🏁 Conclusiones',
                 '🏁 Conclusions',
+                '📝 CONCLUSIONES',                    # Added exact match for prompt-generated header
                 'Conclusiones',
                 'Conclusions',
                 'CONCLUSIONES',
