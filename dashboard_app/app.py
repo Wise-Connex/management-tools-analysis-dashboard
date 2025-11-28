@@ -1230,7 +1230,7 @@ app.layout = dbc.Container(
                             id="current-url-store", data=""
                         ),  # Store for current page URL
                         dcc.Store(
-                            id="copy-store", data=""
+                            id="copy-store-citation", data=""
                         ),  # Store for citation text to be copied
                         dcc.Store(
                             id="copy-success", data=False
