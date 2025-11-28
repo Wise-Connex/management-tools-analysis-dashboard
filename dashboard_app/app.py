@@ -7698,27 +7698,45 @@ Los patrones observados en las correlaciones sugieren que el éxito de {tool_nam
                     print(f"  - strategic_synthesis: {'✅' if strategic_synthesis else '❌'} ({len(str(strategic_synthesis))})")
                     print(f"  - conclusions: {'✅' if conclusions else '❌'} ({len(str(conclusions))})")
 
-                    # For single-source analysis, combine all JSON fields into a single content block with proper headers
-                    if executive_summary or temporal_analysis or seasonal_analysis or fourier_analysis or strategic_synthesis or conclusions:
+                    # For single-source analysis, check if principal_findings_content already has the complete structure
+                    # or if we need to combine individual JSON fields
+                    if principal_findings_content and len(str(principal_findings_content)) > 1000:
+                        # Check if content already has section headers
+                        has_headers = any(header in str(principal_findings_content) for header in [
+                            '📋 RESUMEN EJECUTIVO', '🔍 HALLAZGOS PRINCIPALES', '📅 PATRONES ESTACIONALES',
+                            '🌊 ANÁLISIS ESPECTRAL', '🎯 SÍNTESIS ESTRATÉGICA', '📝 CONCLUSIONES'
+                        ])
+
+                        if has_headers:
+                            print("🔍 DEBUG: Principal findings already has complete structure - using as-is")
+                            # Content already has proper structure, use it directly
+                            principal_findings_content = str(principal_findings_content)
+                        else:
+                            print("🔍 DEBUG: Principal findings needs structure - combining JSON fields")
+                            # Fall through to combination logic
+                    else:
+                        has_headers = False
+
+                    if not has_headers and (executive_summary or temporal_analysis or seasonal_analysis or fourier_analysis or strategic_synthesis or conclusions):
                         print("🔍 DEBUG: Combining JSON fields into complete content")
 
                         combined_content = ""
 
                         # Add executive summary if available
                         if executive_summary:
-                            combined_content += "📋 RESUMEN EJECUTIVO\n" + str(executive_summary).strip() + "\n\n"
+                            combined_content += "📋 RESUMEN EJECUTIVO\n\n" + str(executive_summary).strip() + "\n\n"
 
                         # Add principal findings if available
                         if principal_findings_content:
-                            combined_content += "🔍 HALLAZGOS PRINCIPALES\n" + str(principal_findings_content).strip() + "\n\n"
+                            combined_content += "🔍 HALLAZGOS PRINCIPALES\n\n" + str(principal_findings_content).strip() + "\n\n"
 
                         # Add temporal analysis if available
                         if temporal_analysis:
-                            combined_content += "🔍 ANÁLISIS TEMPORAL\n" + str(temporal_analysis).strip() + "\n\n"
+                            combined_content += "🔍 ANÁLISIS TEMPORAL\n\n" + str(temporal_analysis).strip() + "\n\n"
 
                         # Add seasonal analysis if available (or use alternative content)
                         if seasonal_analysis and len(str(seasonal_analysis).strip()) > 50:
-                            combined_content += "📅 PATRONES ESTACIONALES\n" + str(seasonal_analysis).strip() + "\n\n"
+                            combined_content += "📅 PATRONES ESTACIONALES\n\n" + str(seasonal_analysis).strip() + "\n\n"
                         else:
                             # Check if there's seasonal content in other fields
                             pca_analysis = report_data.get("pca_analysis", "")
@@ -7765,15 +7783,15 @@ Basado en el análisis de datos de Benchmarking a lo largo de 20 años, se ident
 
                         # Add spectral analysis if available
                         if fourier_analysis:
-                            combined_content += "🌊 ANÁLISIS ESPECTRAL\n" + str(fourier_analysis).strip() + "\n\n"
+                            combined_content += "🌊 ANÁLISIS ESPECTRAL\n\n" + str(fourier_analysis).strip() + "\n\n"
 
                         # Add strategic synthesis if available
                         if strategic_synthesis:
-                            combined_content += "🎯 SÍNTESIS ESTRATÉGICA\n" + str(strategic_synthesis).strip() + "\n\n"
+                            combined_content += "🎯 SÍNTESIS ESTRATÉGICA\n\n" + str(strategic_synthesis).strip() + "\n\n"
 
                         # Add conclusions if available
                         if conclusions:
-                            combined_content += "📝 CONCLUSIONES\n" + str(conclusions).strip() + "\n\n"
+                            combined_content += "📝 CONCLUSIONES\n\n" + str(conclusions).strip() + "\n\n"
 
                         # Use the combined content for processing
                         principal_findings_content = combined_content.strip()
