@@ -7698,6 +7698,51 @@ Los patrones observados en las correlaciones sugieren que el éxito de {tool_nam
                     print(f"  - strategic_synthesis: {'✅' if strategic_synthesis else '❌'} ({len(str(strategic_synthesis))})")
                     print(f"  - conclusions: {'✅' if conclusions else '❌'} ({len(str(conclusions))})")
 
+                    # For single-source analysis, combine all JSON fields into a single content block with proper headers
+                    if executive_summary or temporal_analysis or seasonal_analysis or fourier_analysis or strategic_synthesis or conclusions:
+                        print("🔍 DEBUG: Combining JSON fields into complete content")
+
+                        combined_content = ""
+
+                        # Add executive summary if available
+                        if executive_summary:
+                            combined_content += "📋 RESUMEN EJECUTIVO\n" + str(executive_summary).strip() + "\n\n"
+
+                        # Add principal findings if available
+                        if principal_findings_content:
+                            combined_content += "🔍 HALLAZGOS PRINCIPALES\n" + str(principal_findings_content).strip() + "\n\n"
+
+                        # Add temporal analysis if available
+                        if temporal_analysis:
+                            combined_content += "🔍 ANÁLISIS TEMPORAL\n" + str(temporal_analysis).strip() + "\n\n"
+
+                        # Add seasonal analysis if available (or use alternative content)
+                        if seasonal_analysis:
+                            combined_content += "📅 PATRONES ESTACIONALES\n" + str(seasonal_analysis).strip() + "\n\n"
+                        else:
+                            # Check if there's seasonal content in other fields
+                            pca_analysis = report_data.get("pca_analysis", "")
+                            if "patron" in str(pca_analysis).lower() or "estacional" in str(pca_analysis).lower():
+                                combined_content += "📅 PATRONES ESTACIONALES\n" + str(pca_analysis).strip() + "\n\n"
+                            else:
+                                combined_content += "📅 PATRONES ESTACIONALES\nAnálisis de patrones estacionales no disponible para esta fuente de datos única.\n\n"
+
+                        # Add spectral analysis if available
+                        if fourier_analysis:
+                            combined_content += "🌊 ANÁLISIS ESPECTRAL\n" + str(fourier_analysis).strip() + "\n\n"
+
+                        # Add strategic synthesis if available
+                        if strategic_synthesis:
+                            combined_content += "🎯 SÍNTESIS ESTRATÉGICA\n" + str(strategic_synthesis).strip() + "\n\n"
+
+                        # Add conclusions if available
+                        if conclusions:
+                            combined_content += "📝 CONCLUSIONES\n" + str(conclusions).strip() + "\n\n"
+
+                        # Use the combined content for processing
+                        principal_findings_content = combined_content.strip()
+                        print(f"🔍 DEBUG: Combined content length: {len(principal_findings_content)}")
+
                     if principal_findings_content:
                         # Enhanced text formatting function
                         def format_text_with_styling(text):
