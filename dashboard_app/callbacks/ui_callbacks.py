@@ -133,6 +133,12 @@ def register_ui_callbacks(app):
         if selected_sources is None:
             selected_sources = []
 
+        # Import here to avoid circular imports
+        import sys
+        import os
+        sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+        from app import source_colors_by_display
+
         sources = DISPLAY_NAMES
 
         components = []
