@@ -305,8 +305,13 @@ try:
         # Suppress some React warnings by setting environment variables
         import os
 
+        # Suppress React deprecation warnings
         os.environ["REACT_DISABLE_STRICT_MODE_WARNINGS"] = "true"
         os.environ["REACT_DISABLE_FIND_DOM_NODE_WARNINGS"] = "true"
+        # Additional React warnings suppression
+        os.environ["DASH_SUPPRESS_CALLBACK_EXCEPTIONS"] = "true"
+        # Suppress React 18 warnings
+        os.environ["NODE_ENV"] = "production"  # Reduces React warnings in production mode
 except KeyError:
     # Fallback if DEBUG key doesn't exist
     pass
