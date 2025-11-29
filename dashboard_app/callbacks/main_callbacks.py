@@ -45,7 +45,7 @@ def register_main_callbacks(app):
         Input("language-store", "data"),
         prevent_initial_call=False,
     )
-    def update_main_content(selected_sources, selected_keyword, language):
+    def update_main_content(selected_keyword, selected_sources, language):
         if selected_sources is None:
             selected_sources = []
 

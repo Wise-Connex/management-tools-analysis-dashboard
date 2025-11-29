@@ -505,34 +505,24 @@ def register_ui_callbacks(app):
 
     # Callback to update header content
     @app.callback(
-        Output("dashboard-header", "children"),
-        Output("dashboard-title", "children"),
-        Output("dashboard-subtitle", "children"),
+        Output("header-subtitle", "children"),
+        Output("header-title", "children"),
+        Output("header-credits", "children"),
         Input("language-store", "data"),
     )
     def update_header_content(language):
         """Update dashboard header content based on language"""
 
         if language == "es":
-            header = html.Div([
-                html.H1("Dashboard de Análisis de Herramientas de Gestión",
-                       className="text-center mb-4", style={"color": "#2c3e50", "fontWeight": "bold"}),
-                html.P("Análisis integral de tendencias en herramientas de gestión mediante múltiples fuentes de datos",
-                      className="text-center text-muted mb-4")
-            ])
-            title = "Dashboard de Análisis de Herramientas de Gestión"
-            subtitle = "Análisis integral de tendencias en herramientas de gestión mediante múltiples fuentes de datos"
+            subtitle = "Base analítica para la Investigación Doctoral"
+            title = "Herramientas gerenciales: Tendencias, Usabilidad y Satisfacción"
+            credits = "Investigador Principal: Diego Armando Maradona - Universidad Nacional de La Pampa"
         else:
-            header = html.Div([
-                html.H1("Management Tools Analysis Dashboard",
-                       className="text-center mb-4", style={"color": "#2c3e50", "fontWeight": "bold"}),
-                html.P("Comprehensive analysis of management tools trends through multiple data sources",
-                      className="text-center text-muted mb-4")
-            ])
-            title = "Management Tools Analysis Dashboard"
-            subtitle = "Comprehensive analysis of management tools trends through multiple data sources"
+            subtitle = "Analytical Base for Doctoral Research"
+            title = "Management Tools: Trends, Usability and Satisfaction"
+            credits = "Principal Investigator: Diego Armando Maradona - National University of La Pampa"
 
-        return header, title, subtitle
+        return subtitle, title, credits
 
     # Callback to toggle notes modal
     @app.callback(
