@@ -427,6 +427,8 @@ def register_ui_callbacks(app):
         from utils import get_current_date_for_citation
 
         current_date = get_current_date_for_citation()
+        # Extract APA format date for display
+        display_date = current_date.get("apa", "")
 
         if language == "es":
             credits_content = html.Div([
@@ -451,7 +453,7 @@ def register_ui_callbacks(app):
                 ], className="mb-2"),
                 html.P([
                     html.Strong("Fecha de acceso: "),
-                    current_date
+                    display_date
                 ], className="mb-2"),
                 html.Hr(),
                 html.H6("Tecnologías Utilizadas", className="mt-3 mb-2"),
@@ -483,7 +485,7 @@ def register_ui_callbacks(app):
                 ], className="mb-2"),
                 html.P([
                     html.Strong("Access date: "),
-                    current_date
+                    display_date
                 ], className="mb-2"),
                 html.Hr(),
                 html.H6("Technologies Used", className="mt-3 mb-2"),
@@ -594,11 +596,13 @@ def register_ui_callbacks(app):
         from translations import get_text
 
         current_date = get_current_date_for_citation()
+        # Extract APA format date for citation
+        citation_date = current_date.get("apa", "")
 
         if language == "es":
-            citation = f"""Maradona, D. A. ({current_date}). *Dashboard de Análisis de Herramientas de Gestión*. Programa de Doctorado en Administración y Dirección de Empresas, Universidad Nacional de La Pampa. Recuperado de {dash.get_relative_path('/')}"""
+            citation = f"""Maradona, D. A. ({citation_date}). *Dashboard de Análisis de Herramientas de Gestión*. Programa de Doctorado en Administración y Dirección de Empresas, Universidad Nacional de La Pampa. Recuperado de {dash.get_relative_path('/')}"""
         else:
-            citation = f"""Maradona, D. A. ({current_date}). *Management Tools Analysis Dashboard*. PhD Program in Business Administration and Management, National University of La Pampa. Retrieved from {dash.get_relative_path('/')}"""
+            citation = f"""Maradona, D. A. ({citation_date}). *Management Tools Analysis Dashboard*. PhD Program in Business Administration and Management, National University of La Pampa. Retrieved from {dash.get_relative_path('/')}"""
 
         return citation
 
@@ -619,12 +623,14 @@ def register_ui_callbacks(app):
         from utils import get_current_date_for_citation
 
         current_date = get_current_date_for_citation()
+        # Extract year part from APA format date for RIS
+        citation_year = current_date.get("apa", "").split()[-1]
 
         # Generate RIS format citation
         ris_content = f"""TY  - COMP
 T1  - {'Dashboard de Análisis de Herramientas de Gestión' if language == 'es' else 'Management Tools Analysis Dashboard'}
 AU  - Maradona, Diego Armando
-PY  - {current_date}
+PY  - {citation_year}
 PB  - {'Programa de Doctorado en Administración y Dirección de Empresas, Universidad Nacional de La Pampa' if language == 'es' else 'PhD Program in Business Administration and Management, National University of La Pampa'}
 UR  - {dash.get_relative_path('/')}
 ER  - """
