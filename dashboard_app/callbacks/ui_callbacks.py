@@ -31,11 +31,11 @@ def register_ui_callbacks(app):
     @app.callback(
         Output("language-store", "data"),
         Input("language-selector", "value"),
-        prevent_initial_call=True,
     )
     def update_language_store(selected_language):
         """Update language store when language selector changes"""
-        return selected_language
+        # Return selected language or default to Spanish if None
+        return selected_language if selected_language else "es"
 
     # Callback to reset source selections when keyword changes
     @app.callback(

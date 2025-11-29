@@ -302,10 +302,11 @@ try:
         import logging
 
         logging.getLogger("werkzeug").setLevel(logging.WARNING)
-        # Suppress some React warnings by setting environment variable
+        # Suppress some React warnings by setting environment variables
         import os
 
         os.environ["REACT_DISABLE_STRICT_MODE_WARNINGS"] = "true"
+        os.environ["REACT_DISABLE_FIND_DOM_NODE_WARNINGS"] = "true"
 except KeyError:
     # Fallback if DEBUG key doesn't exist
     pass
@@ -798,7 +799,6 @@ app.clientside_callback(
     }
     """,
     Output("current-url-store", "data"),
-    Input("language-selector", "value"),
     prevent_initial_call=True,
 )
 
