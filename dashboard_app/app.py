@@ -809,6 +809,44 @@ app.clientside_callback(
     prevent_initial_call=False,
 )
 
+# Clientside callback to suppress React findDOMNode warnings
+app.clientside_callback(
+    """
+    function suppressReactWarnings() {
+        // Suppress findDOMNode warnings in browser console
+        if (typeof console !== 'undefined' && console.warn) {
+            const originalWarn = console.warn;
+            console.warn = function(...args) {
+                const message = args[0];
+                if (typeof message === 'string' &&
+                    (message.includes('findDOMNode is deprecated') ||
+                     message.includes('StrictMode'))) {
+                    return; // Suppress these specific warnings
+                }
+                return originalWarn.apply(console, args);
+            };
+        }
+
+        // Also suppress console.error for findDOMNode warnings
+        if (typeof console !== 'undefined' && console.error) {
+            const originalError = console.error;
+            console.error = function(...args) {
+                const message = args[0];
+                if (typeof message === 'string' &&
+                    message.includes('findDOMNode is deprecated')) {
+                    return; // Suppress findDOMNode error warnings
+                }
+                return originalError.apply(console, args);
+            };
+        }
+
+        return true;
+    }
+    """,
+    Output("react-warning-suppression", "data"),
+    prevent_initial_call=False,
+)
+
 # Clientside callback to copy citation text to clipboard
 app.clientside_callback(
     """

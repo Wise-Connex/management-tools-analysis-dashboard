@@ -517,6 +517,9 @@ def create_layout():
                                 id="current-url-store", data=""
                             ),  # Store for current page URL
                             dcc.Store(
+                                id="react-warning-suppression", data=False
+                            ),  # Store for React warning suppression
+                            dcc.Store(
                                 id="copy-store-citation", data=""
                             ),  # Store for citation text to be copied
                             dcc.Store(
