@@ -25,19 +25,42 @@ The project has a modular architecture with the following key components:
 3.  **Analysis and Visualization**: The application generates various interactive plots and statistical analyses based on the user's selection.
 4.  **AI-Powered Insights**: The "Key Findings" feature generates an in-depth analysis of the selected data. It first checks for a precomputed result in the database. If not found, it calls an AI service (Groq or OpenRouter) to generate the analysis and then stores the result in the database for future use.
 
-## `app.py` Detailed Analysis
+## Application Architecture
 
-The `dashboard_app/app.py` file is the core of the application. It defines the layout and the callbacks that handle all user interactions.
+The dashboard follows a modular architecture with the application logic distributed across multiple focused modules. The core functionality has been refactored from a monolithic structure to a maintainable, modular design.
 
-### Code Structure
+### Project Structure
 
-*   **Imports**: The file begins with numerous imports from libraries like `dash`, `plotly`, `pandas`, and `scikit-learn`, as well as local modules.
-*   **Initialization**: It initializes the Dash application, the database manager (`db_manager`), and the `KeyFindingsService`.
-*   **Layout**: The application layout is defined using `dash_bootstrap_components` and is divided into a `sidebar` and a `main-content` area.
-    *   **Sidebar**: Contains user controls like the `keyword-dropdown` (for selecting a management tool) and the `data-sources-container` (for selecting data sources). It also includes the "Key Findings" button and a dynamic navigation menu.
-    *   **Main Content**: This area is responsible for displaying the various analyses and visualizations. It has a `dcc.Loading` component to show a spinner while content is being generated.
-*   **Helper Functions**: A collection of functions responsible for creating the different plots and analyses, such as `create_temporal_2d_figure`, `create_mean_analysis_figure`, `create_3d_plot`, and more.
-*   **Callbacks**: The majority of the file is dedicated to Dash callbacks. These functions are decorated with `@app.callback` and are responsible for updating the application's state and UI in response to user actions.
+```
+dashboard_app/
+├── app.py (4,407 lines) - Main application setup and orchestration
+├── layout.py - UI layout components (sidebar, header, modals)
+├── utils.py - Helper functions and utilities (caching, data processing)
+├── database.py - Database management and connections
+├── translations.py - Bilingual support system
+├── tools.py - Tool definitions and management
+└── callbacks/
+    ├── __init__.py
+    ├── ui_callbacks.py (633 lines) - UI state management and language switching
+    ├── main_callbacks.py (827 lines) - Primary content generation and processing
+    ├── graph_callbacks.py (1,276 lines) - Visualizations and statistical analysis
+    └── kf_callbacks.py (1,036 lines) - Key Findings and AI-powered insights
+```
+
+### Code Organization
+
+*   **app.py**: Main application entry point that initializes the Dash app, registers all callback modules, and sets up the layout. Now serves as orchestration layer rather than containing all functionality.
+*   **layout.py**: Contains all UI layout components including sidebar, header, modals, and main layout structure using `dash_bootstrap_components`.
+*   **utils.py**: Helper functions for data processing, caching, text parsing, dataset creation, and visualization utilities.
+*   **callbacks/**: Organized callback modules:
+    *   **ui_callbacks.py**: Manages UI state, language switching, button updates, and modal interactions
+    *   **main_callbacks.py**: Handles the main content generation callback that processes data and creates primary dashboard content
+    *   **graph_callbacks.py**: Creates all visualizations including temporal analysis, 3D plots, seasonal analysis, Fourier analysis, and regression
+    *   **kf_callbacks.py**: Manages Key Findings modal and AI-powered analysis functionality
+
+### Modular Callback Registration
+
+Each callback module exports a `register_*_callbacks(app)` function that the main app.py calls to register callbacks with the Dash application, ensuring clean separation of concerns and maintainable code organization.
 
 ### Application Workflows
 

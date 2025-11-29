@@ -79,6 +79,32 @@ python3 database_implementation/test_database.py
 - User input validation in all Dash callbacks
 - Comprehensive logging with appropriate levels
 
+## File Organization
+
+### Modular Architecture (Post-Refactoring)
+The application has been refactored from a monolithic structure to a modular architecture for improved maintainability:
+
+```
+dashboard_app/
+├── app.py (4,407 lines) - Main orchestration and setup
+├── layout.py - UI layout components
+├── utils.py - Helper functions and utilities
+├── database.py - Database management
+├── translations.py - Bilingual support
+├── tools.py - Tool definitions
+└── callbacks/
+    ├── ui_callbacks.py (633 lines) - UI state management
+    ├── main_callbacks.py (827 lines) - Primary content generation
+    ├── graph_callbacks.py (1,276 lines) - Visualizations
+    └── kf_callbacks.py (1,036 lines) - Key Findings functionality
+```
+
+### Module Organization
+- **Separation of Concerns**: Each module has a focused responsibility
+- **Callback Registration**: Each callback module exports `register_*_callbacks(app)` functions
+- **Utility Functions**: Shared helper functions centralized in utils.py
+- **Layout Components**: UI structure isolated in layout.py for easier maintenance
+
 ## Development Guidelines
 
 ### Code Style (from AGENTS.md)
