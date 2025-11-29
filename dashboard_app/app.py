@@ -1107,51 +1107,7 @@ app.clientside_callback(
 # Callback to update data sources container moved to callbacks/ui_callbacks.py
 
 
-# Callback to update DOI display
-@app.callback(
-    Output("doi-display", "children"),
-    Input("keyword-dropdown", "value"),
-    Input("language-store", "data"),
-)
-def update_doi_display(selected_tool, language):
-    if not selected_tool:
-        return html.Div()
-
-    # Get the IC report DOI from the IC source (Complementary Report)
-    tool_notes = db_manager.get_tool_notes_and_doi(selected_tool, "IC")
-
-    if tool_notes and len(tool_notes) > 0:
-        doi = tool_notes[0].get("doi", "")
-        if doi:
-            return html.Div(
-                [
-                    html.Strong(
-                        get_text("ic_report_doi", language) + ": ",
-                        style={"fontSize": "12px"},
-                    ),
-                    html.A(
-                        doi,
-                        href=f"https://doi.org/{doi}",
-                        target="_blank",
-                        style={
-                            "color": "#007bff",
-                            "fontSize": "12px",
-                            "textDecoration": "none",
-                        },
-                    ),
-                ],
-                style={
-                    "padding": "8px",
-                    "backgroundColor": "#f8f9fa",
-                    "borderRadius": "4px",
-                    "border": "1px solid #dee2e6",
-                },
-            )
-
-        return html.Div(
-            get_text("no_doi_available", language),
-            style={"fontSize": "11px", "color": "#6c757d", "fontStyle": "italic"},
-        )
+# Duplicate DOI display callback removed - now handled in ui_callbacks.py
 
 
 # Callback to update selected sources store
