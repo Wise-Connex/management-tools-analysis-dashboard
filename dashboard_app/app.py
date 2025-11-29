@@ -67,6 +67,9 @@ from translations import (
 # Import layout components
 from layout import create_layout
 
+# Import UI callbacks
+from callbacks import register_ui_callbacks
+
 # Import utility functions extracted for better organization
 from utils import (
     parse_text_with_links,
@@ -623,6 +626,9 @@ color_map = {
 # Create and set the main layout using the layout module
 app.layout = create_layout()
 
+# Register UI callbacks
+register_ui_callbacks(app)
+
 # Initialize Key Findings service after app is created
 initialize_key_findings_service()
 
@@ -767,15 +773,7 @@ def run_async_in_sync_context(async_func, *args, **kwargs):
 # Callbacks
 
 
-# Language management callback
-@app.callback(
-    Output("language-store", "data"),
-    Input("language-selector", "value"),
-    prevent_initial_call=True,
-)
-def update_language_store(selected_language):
-    """Update language store when language selector changes"""
-    return selected_language
+# Language management callback moved to callbacks/ui_callbacks.py
 
 
 # Current URL management callback - Dynamic URL detection (clientside only)
@@ -1083,181 +1081,19 @@ app.clientside_callback(
 # Dynamic URL detection will use server-side fallback for now
 
 
-# Callback to reset source selections when keyword changes
-@app.callback(
-    Output("data-sources-store-v2", "data", allow_duplicate=True),
-    Input("keyword-dropdown", "value"),
-    prevent_initial_call=True,
-)
-def reset_sources_on_keyword_change(selected_tool):
-    """Reset source selections when a new keyword is selected"""
-    return []
+# Callback to reset source selections when keyword changes moved to callbacks/ui_callbacks.py
 
 
-# Callback to initialize select all button text
-@app.callback(
-    Output("select-all-button", "children", allow_duplicate=True),
-    Input("keyword-dropdown", "value"),
-    Input("language-store", "data"),
-    prevent_initial_call=True,
-)
-def initialize_select_all_button_text(selected_tool, language):
-    """Initialize the select all button text when a tool is selected"""
-    return get_text("select_all", language)
+# Callback to initialize select all button text moved to callbacks/ui_callbacks.py
 
 
-# Callback to update keyword dropdown options based on language
-@app.callback(
-    Output("keyword-dropdown", "options"),
-    Output("keyword-dropdown", "placeholder"),
-    Input("language-store", "data"),
-)
-def update_keyword_dropdown_options(language):
-    """Update keyword dropdown options and placeholder based on language"""
-    options = get_tool_options(language)
-    placeholder = get_text("select_management_tool", language)
-    return options, placeholder
+# Callback to update keyword dropdown options based on language moved to callbacks/ui_callbacks.py
 
 
-# Callback to update sidebar labels and affiliations based on language
-@app.callback(
-    Output("tool-label", "children"),
-    Output("sources-label", "children"),
-    Output("sidebar-affiliations", "children"),
-    Input("language-store", "data"),
-)
-def update_sidebar_labels(language):
-    """Update sidebar labels and affiliations based on language"""
-    tool_label = get_text("select_tool", language)
-    sources_label = get_text("select_sources", language)
-
-    affiliations = html.Div(
-        [
-            html.P(
-                get_text("university", language),
-                style={
-                    "margin": "2px 0",
-                    "fontSize": "12px",
-                    "fontWeight": "normal",
-                    "textAlign": "center",
-                },
-            ),
-            html.P(
-                get_text("postgraduate_coordination", language),
-                style={
-                    "margin": "2px 0",
-                    "fontSize": "11px",
-                    "fontWeight": "normal",
-                    "textAlign": "center",
-                },
-            ),
-            html.P(
-                get_text("doctoral_program", language),
-                style={
-                    "margin": "2px 0",
-                    "fontSize": "13px",
-                    "fontWeight": "bold",
-                    "textAlign": "center",
-                },
-            ),
-        ],
-        style={"marginBottom": "15px"},
-    )
-
-    return tool_label, sources_label, affiliations
+# Callback to update sidebar labels and affiliations based on language moved to callbacks/ui_callbacks.py
 
 
-# Callback to update data sources container
-@app.callback(
-    Output("data-sources-container", "children"),
-    Input("keyword-dropdown", "value"),
-    Input("data-sources-store-v2", "data"),
-    Input("language-store", "data"),
-)
-def update_data_sources_container(selected_tool, selected_sources, language):
-    if not selected_tool:
-        return html.Div(get_text("no_sources_selected", language))
-
-    if selected_sources is None:
-        selected_sources = []
-
-    sources = DISPLAY_NAMES
-
-    components = []
-
-    # Map display names to the correct source names for buttons
-    display_to_source = {
-        "Google Trends": "Google Trends",
-        "Google Books": "Google Books",
-        "Bain Usability": "Bain Usability",
-        "Bain Satisfaction": "Bain Satisfaction",
-        "Crossref": "Crossref",
-    }
-
-    for source in sources:
-        # Use display name for button text
-        display_name = source
-        if source in display_to_source:
-            display_name = display_to_source[source]
-
-        # Determine button style based on selection state
-        base_color = source_colors_by_display.get(source, "#6c757d")
-
-        # IMPORTANT: Check if source is in the CURRENT selected_sources list
-        is_selected = source in selected_sources
-
-        if is_selected:
-            # Selected style - brighter/darker
-            button_style = {
-                "backgroundColor": base_color,
-                "borderColor": base_color,
-                "color": "white",
-                "fontSize": "12px",
-                "minWidth": "120px",
-                "boxShadow": "0 0 0 2px rgba(0,123,255,0.5)",
-                "fontWeight": "bold",
-            }
-        else:
-            # Unselected style - outline
-            button_style = {
-                "backgroundColor": "transparent",
-                "borderColor": base_color,
-                "color": base_color,
-                "fontSize": "12px",
-                "minWidth": "120px",
-                "fontWeight": "normal",
-            }
-
-        # Create button with appropriate style
-        button = dbc.Button(
-            display_name,
-            id={"type": "data-source-button", "index": display_name},
-            color="outline-primary",
-            size="sm",
-            className="me-2 mb-2",
-            style=button_style,
-        )
-
-        # Info icon beside the button
-        icon = html.I(
-            className="fas fa-info-circle",
-            id={"type": "info-icon", "index": source},
-            style={
-                "cursor": "pointer",
-                "marginLeft": "10px",
-                "color": "#007bff",
-                "fontSize": "16px",
-                "verticalAlign": "middle",
-            },
-        )
-
-        row = html.Div(
-            [button, icon],
-            style={"display": "flex", "alignItems": "center", "marginBottom": "5px"},
-        )
-        components.append(row)
-
-    return components
+# Callback to update data sources container moved to callbacks/ui_callbacks.py
 
 
 # Callback to update DOI display
