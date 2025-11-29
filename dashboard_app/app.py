@@ -1691,4 +1691,11 @@ ER  -"""
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=8050)
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Management Tools Analysis Dashboard")
+    parser.add_argument("--port", type=int, default=8050, help="Port to run the dashboard on")
+    parser.add_argument("--debug", action="store_true", default=True, help="Enable debug mode")
+    args = parser.parse_args()
+
+    app.run(debug=args.debug, host="0.0.0.0", port=args.port)
