@@ -1279,7 +1279,15 @@ class KeyFindingsService:
             if not result:
                 return None
 
-            return {
+            # Debug the actual content lengths
+            logging.info(f"🔍 DEBUG: Database result field lengths:")
+            logging.info(f"  result[0] (executive_summary): {len(str(result[0] or ''))}")
+            logging.info(f"  result[1] (principal_findings): {len(str(result[1] or ''))}")
+            logging.info(f"  result[2] (temporal_analysis): {len(str(result[2] or ''))}")
+            logging.info(f"  result[3] (seasonal_analysis): {len(str(result[3] or ''))}")
+            logging.info(f"  result[4] (fourier_analysis): {len(str(result[4] or ''))}")
+
+            response_dict = {
                 "tool_name": tool_name,
                 "selected_sources": selected_sources,
                 "language": language,
@@ -1299,6 +1307,16 @@ class KeyFindingsService:
                 "is_precomputed": True,
                 "sources_text": sources_text,
             }
+
+            # Debug the response dictionary
+            logging.info(f"🔍 DEBUG: Response dictionary field lengths:")
+            logging.info(f"  executive_summary: {len(str(response_dict['executive_summary']))}")
+            logging.info(f"  principal_findings: {len(str(response_dict['principal_findings']))}")
+            logging.info(f"  temporal_analysis: {len(str(response_dict['temporal_analysis']))}")
+            logging.info(f"  seasonal_analysis: {len(str(response_dict['seasonal_analysis']))}")
+            logging.info(f"  fourier_analysis: {len(str(response_dict['fourier_analysis']))}")
+
+            return response_dict
 
         except Exception as e:
             logging.error(f"Failed to get precomputed findings: {e}")

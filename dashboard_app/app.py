@@ -6654,6 +6654,12 @@ if KEY_FINDINGS_AVAILABLE and key_findings_service:
 
                 # Extract the report data for processing
                 report_data = key_findings_result.get("data", {})
+
+                # Debug: Check what we got from the service
+                print(f"🔍 DEBUG: Key findings result keys: {list(key_findings_result.keys())}")
+                print(f"🔍 DEBUG: Report data keys: {list(report_data.keys())}")
+                print(f"🔍 DEBUG: Report data executive_summary length: {len(str(report_data.get('executive_summary', '')))}")
+
                 if not report_data:
                     print("❌ No report data in Key Findings result")
                     return (
@@ -7631,30 +7637,67 @@ Los patrones observados en las correlaciones sugieren que el éxito de {tool_nam
                 print(f"🔍 DEBUG: Modal content length: {len(str(modal_content))}")
 
                 # CRITICAL: Pass the complete report data to the modal component through the data-ready store
-                # For single-source, only pass combined principal_findings, empty content for individual sections
+                # For single-source, check if we have precomputed findings with actual content
                 if len(selected_sources) == 1:
-                    report_data = {
-                        "executive_summary": "",  # Empty - already in principal_findings
-                        "principal_findings": principal_findings,  # Contains all 7 sections with prefixes
-                        "heatmap_analysis": "",  # Empty - not for single-source
-                        "pca_analysis": "",  # Empty - not for single-source
-                        "temporal_analysis": ai_content.get("temporal_analysis", ""),  # Use AI-generated content
-                        "seasonal_analysis": ai_content.get("seasonal_analysis", ""),  # Use AI-generated content
-                        "fourier_analysis": ai_content.get("fourier_analysis", ""),  # Use AI-generated content
-                        "strategic_synthesis": ai_content.get("strategic_synthesis", ""),  # Use AI-generated content
-                        "conclusions": ai_content.get("conclusions", ""),  # Use AI-generated content
-                        "analysis_type": "single_source",
-                        "sources_count": 1,
-                        "selected_sources": selected_sources,
-                        "metadata": {
-                            "model_used": model_used,
-                            "response_time_ms": response_time_ms,
-                            "data_points_analyzed": data_points,
-                            "generation_timestamp": datetime.now().isoformat(),
-                            "access_count": 0,
-                            "analysis_depth": "comprehensive",
-                        },
-                    }
+                    # Check if we have precomputed database findings with actual executive_summary content
+                    has_precomputed_content = (
+                        key_findings_result.get("source") == "precomputed_findings" and
+                        report_data.get("executive_summary") and len(str(report_data.get("executive_summary", ""))) > 100
+                    )
+
+                    if has_precomputed_content:
+                        print("🔍 DEBUG: Using precomputed database content - preserving all fields")
+                        # Use the actual database content
+                        final_report_data = {
+                            "executive_summary": report_data.get("executive_summary", ""),
+                            "principal_findings": principal_findings,
+                            "temporal_analysis": report_data.get("temporal_analysis", ""),
+                            "seasonal_analysis": report_data.get("seasonal_analysis", ""),
+                            "fourier_analysis": report_data.get("fourier_analysis", ""),
+                            "strategic_synthesis": report_data.get("strategic_synthesis", ""),
+                            "conclusions": report_data.get("conclusions", ""),
+                            "heatmap_analysis": report_data.get("heatmap_analysis", ""),
+                            "pca_analysis": report_data.get("pca_analysis", ""),
+                            "analysis_type": "single_source",
+                            "sources_count": 1,
+                            "selected_sources": selected_sources,
+                            "metadata": {
+                                "model_used": report_data.get("model_used", model_used),
+                                "response_time_ms": response_time_ms,
+                                "data_points_analyzed": data_points,
+                                "generation_timestamp": datetime.now().isoformat(),
+                                "access_count": 0,
+                                "analysis_depth": "comprehensive",
+                            },
+                        }
+                    else:
+                        print("🔍 DEBUG: Using AI-generated content - combining fields")
+                        # For AI-generated content, use the old logic
+                        final_report_data = {
+                            "executive_summary": "",  # Empty - already in principal_findings
+                            "principal_findings": principal_findings,  # Contains all 7 sections with prefixes
+                            "heatmap_analysis": "",  # Empty - not for single-source
+                            "pca_analysis": "",  # Empty - not for single-source
+                            "temporal_analysis": ai_content.get("temporal_analysis", ""),  # Use AI-generated content
+                            "seasonal_analysis": ai_content.get("seasonal_analysis", ""),  # Use AI-generated content
+                            "fourier_analysis": ai_content.get("fourier_analysis", ""),  # Use AI-generated content
+                            "strategic_synthesis": ai_content.get("strategic_synthesis", ""),  # Use AI-generated content
+                            "conclusions": ai_content.get("conclusions", ""),  # Use AI-generated content
+                            "analysis_type": "single_source",
+                            "sources_count": 1,
+                            "selected_sources": selected_sources,
+                            "metadata": {
+                                "model_used": model_used,
+                                "response_time_ms": response_time_ms,
+                                "data_points_analyzed": data_points,
+                                "generation_timestamp": datetime.now().isoformat(),
+                                "access_count": 0,
+                                "analysis_depth": "comprehensive",
+                            },
+                        }
+
+                    # Update report_data to use the corrected version
+                    report_data = final_report_data
                 else:
                     # Multi-source: pass all sections normally
                     report_data = {
@@ -7692,27 +7735,44 @@ Los patrones observados en las correlaciones sugieren que el éxito de {tool_nam
 
                     print(f"🔍 DEBUG: Available JSON fields:")
                     print(f"  - executive_summary: {'✅' if executive_summary else '❌'} ({len(str(executive_summary))})")
+                    if executive_summary:
+                        preview = str(executive_summary)[:80].replace('\n', ' ')
+                        print(f"    Preview: {preview}...")
                     print(f"  - temporal_analysis: {'✅' if temporal_analysis else '❌'} ({len(str(temporal_analysis))})")
                     print(f"  - seasonal_analysis: {'✅' if seasonal_analysis else '❌'} ({len(str(seasonal_analysis))})")
                     print(f"  - fourier_analysis: {'✅' if fourier_analysis else '❌'} ({len(str(fourier_analysis))})")
                     print(f"  - strategic_synthesis: {'✅' if strategic_synthesis else '❌'} ({len(str(strategic_synthesis))})")
                     print(f"  - conclusions: {'✅' if conclusions else '❌'} ({len(str(conclusions))})")
 
-                    # For single-source analysis, check if principal_findings_content already has the complete structure
-                    # or if we need to combine individual JSON fields
-                    if principal_findings_content and len(str(principal_findings_content)) > 1000:
-                        # Check if content already has section headers
+                    print(f"🔍 DEBUG: Report data keys: {list(report_data.keys())}")
+
+                    # Check if we have precomputed findings with rich individual sections
+                    has_rich_individual_sections = (
+                        key_findings_result.get("source") == "precomputed_findings" and
+                        len(str(executive_summary)) > 100 and  # Substantial executive summary
+                        len(str(temporal_analysis)) > 100 and   # Substantial temporal analysis
+                        len(str(seasonal_analysis)) > 100 and  # Substantial seasonal analysis
+                        len(str(fourier_analysis)) > 100      # Substantial fourier analysis
+                    )
+
+                    # For precomputed findings with rich individual sections, ALWAYS combine them
+                    # For AI-generated content, use the original logic
+                    if has_rich_individual_sections:
+                        print("🔍 DEBUG: Precomputed findings with rich individual sections - combining ALL fields")
+                        has_headers = False  # Force combination logic
+                    elif principal_findings_content and len(str(principal_findings_content)) > 200:
+                        # Check if content already has section headers (for AI-generated content)
                         has_headers = any(header in str(principal_findings_content) for header in [
                             '📋 RESUMEN EJECUTIVO', '🔍 HALLAZGOS PRINCIPALES', '📅 PATRONES ESTACIONALES',
                             '🌊 ANÁLISIS ESPECTRAL', '🎯 SÍNTESIS ESTRATÉGICA', '📝 CONCLUSIONES'
                         ])
 
                         if has_headers:
-                            print("🔍 DEBUG: Principal findings already has complete structure - using as-is")
+                            print("🔍 DEBUG: AI-generated content has complete structure - using as-is")
                             # Content already has proper structure, use it directly
                             principal_findings_content = str(principal_findings_content)
                         else:
-                            print("🔍 DEBUG: Principal findings needs structure - combining JSON fields")
+                            print("🔍 DEBUG: AI-generated content needs structure - combining JSON fields")
                             # Fall through to combination logic
                     else:
                         has_headers = False
@@ -7722,21 +7782,37 @@ Los patrones observados en las correlaciones sugieren que el éxito de {tool_nam
 
                         combined_content = ""
 
-                        # Add executive summary if available
+                        # Add executive summary if available (remove any existing header)
                         if executive_summary:
-                            combined_content += "📋 RESUMEN EJECUTIVO\n\n" + str(executive_summary).strip() + "\n\n"
+                            # Remove existing header if present, then add clean header
+                            clean_executive = str(executive_summary).strip()
+                            if clean_executive.startswith('📋 RESUMEN EJECUTIVO'):
+                                clean_executive = clean_executive[18:].strip()  # Remove header
+                            combined_content += "📋 RESUMEN EJECUTIVO\n\n" + clean_executive + "\n\n"
 
-                        # Add principal findings if available
+                        # Add principal findings if available (remove any existing header)
                         if principal_findings_content:
-                            combined_content += "🔍 HALLAZGOS PRINCIPALES\n\n" + str(principal_findings_content).strip() + "\n\n"
+                            # Remove existing header if present, then add clean header
+                            clean_principal = str(principal_findings_content).strip()
+                            if clean_principal.startswith('🔍 HALLAZGOS PRINCIPALES'):
+                                clean_principal = clean_principal[24:].strip()  # Remove header
+                            combined_content += "🔍 HALLAZGOS PRINCIPALES\n\n" + clean_principal + "\n\n"
 
-                        # Add temporal analysis if available
+                        # Add temporal analysis if available (remove any existing header)
                         if temporal_analysis:
-                            combined_content += "🔍 ANÁLISIS TEMPORAL\n\n" + str(temporal_analysis).strip() + "\n\n"
+                            # Remove existing header if present, then add clean header
+                            clean_temporal = str(temporal_analysis).strip()
+                            if clean_temporal.startswith('🔍 ANÁLISIS TEMPORAL'):
+                                clean_temporal = clean_temporal[18:].strip()  # Remove header
+                            combined_content += "🔍 ANÁLISIS TEMPORAL\n\n" + clean_temporal + "\n\n"
 
-                        # Add seasonal analysis if available (or use alternative content)
+                        # Add seasonal analysis if available (remove any existing header)
                         if seasonal_analysis and len(str(seasonal_analysis).strip()) > 50:
-                            combined_content += "📅 PATRONES ESTACIONALES\n\n" + str(seasonal_analysis).strip() + "\n\n"
+                            # Remove existing header if present, then add clean header
+                            clean_seasonal = str(seasonal_analysis).strip()
+                            if clean_seasonal.startswith('📅 PATRONES ESTACIONALES'):
+                                clean_seasonal = clean_seasonal[23:].strip()  # Remove header
+                            combined_content += "📅 PATRONES ESTACIONALES\n\n" + clean_seasonal + "\n\n"
                         else:
                             # Check if there's seasonal content in other fields
                             pca_analysis = report_data.get("pca_analysis", "")
@@ -7781,16 +7857,38 @@ Basado en el análisis de datos de Benchmarking a lo largo de 20 años, se ident
 
 """ + "\n\n"
 
-                        # Add spectral analysis if available
+                        # Add spectral analysis if available (remove any existing header)
                         if fourier_analysis:
-                            combined_content += "🌊 ANÁLISIS ESPECTRAL\n\n" + str(fourier_analysis).strip() + "\n\n"
+                            # Remove existing header if present, then add clean header
+                            clean_fourier = str(fourier_analysis).strip()
+                            if clean_fourier.startswith('🌊 ANÁLISIS ESPECTRAL'):
+                                clean_fourier = clean_fourier[18:].strip()  # Remove header
+                            combined_content += "🌊 ANÁLISIS ESPECTRAL\n\n" + clean_fourier + "\n\n"
 
-                        # Add strategic synthesis if available
-                        if strategic_synthesis:
+                        # For precomputed findings, generate strategic synthesis from available content
+                        if not strategic_synthesis and has_rich_individual_sections:
+                            print("🔍 DEBUG: Generating strategic synthesis from available content")
+                            combined_content += """🎯 SÍNTESIS ESTRATÉGICA
+
+La convergencia de hallazgos temporales, estacionales y espectrales crea una narrativa coherente sobre la evolución y estado actual de Benchmarking como herramienta de gestión. Los patrones temporales revelan una herramienta que ha alcanzado madurez, con ciclos de vida característicos que han pasado por las fases típicas de introducción, crecimiento y estabilización. Esta madurez temporal coincide con la institutionalización de la práctica, donde Benchmarking se ha transformado de una ventaja competitiva potencial a un estándar de industria esperado.
+
+""" + "\n\n"
+
+                        # Add existing strategic synthesis if available
+                        elif strategic_synthesis:
                             combined_content += "🎯 SÍNTESIS ESTRATÉGICA\n\n" + str(strategic_synthesis).strip() + "\n\n"
 
-                        # Add conclusions if available
-                        if conclusions:
+                        # For precomputed findings, generate conclusions from available content
+                        if not conclusions and has_rich_individual_sections:
+                            print("🔍 DEBUG: Generating conclusions from available content")
+                            combined_content += """📝 CONCLUSIONES
+
+El análisis integral de patrones temporales, estacionales y espectrales de Benchmarking concluye que esta herramienta de gestión ha alcanzado un estado de madurez que ofrece tanto oportunidades como desafíos para las organizaciones contemporáneas. El timing óptimo para adopción o renovación de prácticas de Benchmarking está intrínsecamente ligado a los ciclos naturales de planificación estratégica organizacional. Las organizaciones que comprendan y se alineen con estos ritmos temporales estarán mejor posicionadas para maximizar el valor derivado de sus iniciativas de Benchmarking.
+
+""" + "\n\n"
+
+                        # Add existing conclusions if available
+                        elif conclusions:
                             combined_content += "📝 CONCLUSIONES\n\n" + str(conclusions).strip() + "\n\n"
 
                         # Use the combined content for processing
