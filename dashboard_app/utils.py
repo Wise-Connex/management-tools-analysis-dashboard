@@ -497,3 +497,68 @@ def create_correlation_heatmap(data, sources, language="es", tool_name=None):
     print("Warning: create_correlation_heatmap called with placeholder implementation")
 
     return fig
+
+def create_translation_mapping(selected_source_ids, language):
+    """
+    Create translation mapping for selected source IDs.
+
+    Args:
+        selected_source_ids (list): List of source IDs to map
+        language (str): Target language code
+
+    Returns:
+        dict: Translation mapping
+    """
+    from translations import translate_source_name
+
+    # Import from main app context
+    import sys
+    import os
+    sys.path.insert(0, os.path.dirname(__file__))
+    from fix_source_mapping import dbase_options
+
+    translation_mapping = {}
+    for src_id in selected_source_ids:
+        original_name = dbase_options.get(src_id, "NOT FOUND")
+        translated_name = translate_source_name(original_name, language)
+        translation_mapping[translated_name] = original_name
+        translated_name_simple = translated_name.replace(" - ", " ")
+        translation_mapping[translated_name_simple] = original_name
+    return translation_mapping
+
+
+def get_original_column_name(display_name, translation_mapping):
+    """
+    Get original column name from display name.
+
+    Args:
+        display_name (str): Display name to convert
+        translation_mapping (dict): Translation mapping
+
+    Returns:
+        str: Original column name
+    """
+    return translation_mapping.get(display_name, display_name)
+
+
+def safe_dataframe_column_access(data, translated_name, translation_mapping):
+    """
+    Safely access dataframe column by translated name.
+
+    Args:
+        data (pd.DataFrame): Dataframe to access
+        translated_name (str): Translated column name
+        translation_mapping (dict): Translation mapping
+
+    Returns:
+        pd.Series: Column data or None if not found
+    """
+    original_name = get_original_column_name(translated_name, translation_mapping)
+    if original_name in data.columns:
+        return data[original_name]
+    elif translated_name in data.columns:
+        return data[translated_name]
+    else:
+        print(
+            f"WARNING: Column '{translated_name}' (original: '{original_name}') not found in DataFrame"
+        )
