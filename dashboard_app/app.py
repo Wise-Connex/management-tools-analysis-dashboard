@@ -793,13 +793,13 @@ def run_async_in_sync_context(async_func, *args, **kwargs):
 # Clientside callback for dynamic URL detection (JavaScript)
 app.clientside_callback(
     """
-    function getCurrentURL(mainContentReady, language) {
+    function getCurrentURL(loadingMainContent, language) {
         // Use the dedicated function to get current URL
         return getCurrentUrl();
     }
     """,
     Output("current-url-store", "data"),
-    Input("main-content-ready", "data"),
+    Input("loading-main-content", "children"),
     Input("language-store", "data"),
     prevent_initial_call=False,
 )

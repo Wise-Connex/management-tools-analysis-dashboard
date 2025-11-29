@@ -370,13 +370,12 @@ def register_ui_callbacks(app):
         Output("key-findings-button-state", "data", allow_duplicate=True),
         Input("language-store", "data"),
         Input("generate-key-findings-btn", "n_clicks"),
-        Input("key-findings-reset-trigger", "data"),
         State("keyword-dropdown", "value"),
         State("data-sources-store-v2", "data"),
         prevent_initial_call=True,
     )
     def update_key_findings_button_text_and_state(
-        language, n_clicks, reset_trigger, selected_tool, selected_sources
+        language, n_clicks, selected_tool, selected_sources
     ):
         """Update key findings button text and manage state based on language and interactions"""
         ctx = dash.callback_context
@@ -386,10 +385,6 @@ def register_ui_callbacks(app):
             return get_text("key_findings", language), {"enabled": True, "text": get_text("key_findings", language)}
 
         trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
-
-        # Handle reset trigger
-        if trigger_id == "key-findings-reset-trigger" and reset_trigger:
-            return get_text("key_findings", language), {"enabled": True, "text": get_text("key_findings", language)}
 
         # Handle language change
         if trigger_id == "language-store" or (trigger_id == "generate-key-findings-btn" and n_clicks is None):
