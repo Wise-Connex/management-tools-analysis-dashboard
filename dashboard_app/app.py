@@ -66,6 +66,30 @@ from translations import (
 
 # Import layout components
 from layout import create_layout
+
+# Import utility functions extracted for better organization
+from utils import (
+    parse_text_with_links,
+    get_cache_key,
+    get_cached_processed_data,
+    cache_processed_data,
+    get_all_keywords,
+    _generate_pca_insights,
+    get_cache_stats,
+    create_combined_dataset,
+    create_combined_dataset2,
+    get_current_date_for_citation,
+    run_async_in_sync_context,
+    create_temporal_2d_figure,
+    create_mean_analysis_figure,
+    perform_comprehensive_pca_analysis,
+    create_pca_figure,
+    create_correlation_heatmap,
+    # Import cache variables as well
+    _processed_data_cache,
+    _cache_max_size,
+)
+
 try:
     from key_findings import KeyFindingsService, KeyFindingsModal
 
@@ -241,266 +265,18 @@ except Exception as modal_error:
 # Notes and DOI data is now loaded from the database
 
 
-def parse_text_with_links(text):
-    """Parse text and return formatted components with basic markdown support"""
-    if not text:
-        return [html.Div("No hay notas disponibles", style={"fontSize": "12px"})]
-
-    # Remove source link information that starts with "Fuente:" or similar patterns
-    # Look for patterns like "Fuente: http" or "Source: http" and remove everything from there
-    import re
-
-    # Pattern to match "Fuente:" or "Source:" followed by URL-like content
-    link_pattern = r"\s*(?:Fuente|Source)\s*:\s*https?://[^\s]+.*$"
-
-    # Remove the link information from the end of the text
-    cleaned_text = re.sub(link_pattern, "", text, flags=re.IGNORECASE | re.MULTILINE)
-
-    # Also remove any remaining "Fuente:" or "Source:" at the end if not followed by URL
-    cleaned_text = re.sub(
-        r"\s*(?:Fuente|Source)\s*:\s*$", "", cleaned_text, flags=re.IGNORECASE
-    )
-
-    # Clean up any trailing whitespace or punctuation
-    cleaned_text = cleaned_text.rstrip(".,;:- \t\n")
-
-    # Split text by newlines and create separate components for each line
-    lines = cleaned_text.split("\n")
-
-    # Create a list of components for each line
-    components = []
-
-    for line in lines:
-        if not line.strip():  # Skip empty lines
-            continue
-
-        # Process each line for markdown formatting
-        # Use regex to find and replace bold text (**text**)
-        parts = []
-        last_end = 0
-
-        # Find all bold patterns in the line
-        for match in re.finditer(r"\*\*(.*?)\*\*", line):
-            # Add text before the bold part
-            if match.start() > last_end:
-                parts.append(
-                    html.Span(
-                        line[last_end : match.start()], style={"fontSize": "12px"}
-                    )
-                )
-
-            # Add the bold part
-            parts.append(html.Strong(match.group(1), style={"fontSize": "12px"}))
-            last_end = match.end()
-
-        # Add any remaining text after the last bold part
-        if last_end < len(line):
-            parts.append(html.Span(line[last_end:], style={"fontSize": "12px"}))
-
-        # If no bold text was found, just use the whole line
-        if not parts:
-            parts = [html.Span(line, style={"fontSize": "12px"})]
-
-        # Create a div for this line with all its parts
-        components.append(
-            html.Div(parts, style={"fontSize": "12px", "marginBottom": "5px"})
-        )
-
-    # If no lines were added, return a default message
-    if not components:
-        components = [html.Div("No hay notas disponibles", style={"fontSize": "12px"})]
-
-    return components
 
 
-# Global cache for processed datasets
-_processed_data_cache = {}
-_cache_max_size = 10
 
 
-def get_cache_key(keyword, sources):
-    """Generate cache key for processed data"""
-    return f"{keyword}_{'_'.join(map(str, sorted(sources)))}"
 
 
-def get_cached_processed_data(keyword, selected_sources):
-    """Get cached processed data or None if not cached"""
-    cache_key = get_cache_key(keyword, selected_sources)
-    return _processed_data_cache.get(cache_key)
 
 
-def cache_processed_data(keyword, selected_sources, data):
-    """Cache processed data with LRU eviction"""
-    global _processed_data_cache
-
-    cache_key = get_cache_key(keyword, selected_sources)
-    _processed_data_cache[cache_key] = data
-
-    # Evict oldest if cache is full
-    if len(_processed_data_cache) > _cache_max_size:
-        oldest_key = next(iter(_processed_data_cache))
-        del _processed_data_cache[oldest_key]
 
 
-def get_all_keywords():
-    """Extract all keywords from tool_file_dic"""
-    all_keywords = []
-    for tool_list in tool_file_dic.values():
-        for keyword in tool_list[1]:
-            if keyword not in all_keywords:
-                all_keywords.append(keyword)
-    return all_keywords
 
 
-def _generate_pca_insights(pattern: Dict[str, Any]) -> List[str]:
-    """Generate specific insights from PCA pattern analysis."""
-    insights = []
-
-    # Pattern type insights
-    pattern_type = pattern.get("pattern_type", "")
-    if pattern_type == "contrast_pattern":
-        pos_sources = [
-            contrib["source"]
-            for contrib in pattern.get("source_contributions", [])
-            if contrib.get("direction") == "positive"
-            and contrib.get("abs_loading", 0) > 0.3
-        ]
-        neg_sources = [
-            contrib["source"]
-            for contrib in pattern.get("source_contributions", [])
-            if contrib.get("direction") == "negative"
-            and contrib.get("abs_loading", 0) > 0.3
-        ]
-
-        if pos_sources and neg_sources:
-            insights.append(
-                f"Contraste entre {', '.join(pos_sources)} (positivas) vs {', '.join(neg_sources)} (negativas)"
-            )
-
-    elif pattern_type == "alignment_pattern":
-        dom_sources = [
-            contrib["source"]
-            for contrib in pattern.get("source_contributions", [])
-            if contrib.get("contribution_level") == "high"
-        ]
-        if dom_sources:
-            insights.append(
-                f"Sinergia entre {', '.join(dom_sources[:2])} define este patrón"
-            )
-
-    # Loadings-based insights
-    high_contributors = [
-        contrib
-        for contrib in pattern.get("source_contributions", [])
-        if contrib.get("contribution_level") == "high"
-    ]
-    if high_contributors:
-        main_source = high_contributors[0]
-        insights.append(
-            f"Fuente dominante: {main_source.get('source', '')} con carga {main_source.get('loading', 0):.3f}"
-        )
-
-    # Direction insights
-    positive_count = len(
-        [
-            contrib
-            for contrib in pattern.get("source_contributions", [])
-            if contrib.get("direction") == "positive"
-        ]
-    )
-    negative_count = len(
-        [
-            contrib
-            for contrib in pattern.get("source_contributions", [])
-            if contrib.get("direction") == "negative"
-        ]
-    )
-
-    if positive_count > negative_count:
-        insights.append("Patrón predominantemente positivo entre fuentes")
-    elif negative_count > positive_count:
-        insights.append("Relaciones inversas dominan este componente")
-
-    return (
-        insights
-        if insights
-        else ["Análisis detallado de cargas revela patrones únicos entre fuentes"]
-    )
-
-
-def get_cache_stats():
-    """Get database and cache statistics for performance monitoring"""
-    try:
-        table_stats = db_manager.get_table_stats()
-        total_records = sum(
-            stats.get("row_count", 0)
-            for stats in table_stats.values()
-            if "error" not in stats
-        )
-        total_keywords = sum(
-            stats.get("keyword_count", 0)
-            for stats in table_stats.values()
-            if "error" not in stats
-        )
-
-        return {
-            "processed_data_cache": len(_processed_data_cache),
-            "cache_max_size": _cache_max_size,
-            "database_records": total_records,
-            "database_keywords": total_keywords,
-            "database_size_mb": round(db_manager.get_database_size() / 1024 / 1024, 2),
-            "cache_hit_rate": 0,  # Could be tracked with more complex caching
-        }
-    except Exception as e:
-        print(f"Error getting cache stats: {e}")
-        return {
-            "processed_data_cache": 0,
-            "cache_max_size": _cache_max_size,
-            "database_records": 0,
-            "database_keywords": 0,
-            "database_size_mb": 0,
-            "cache_hit_rate": 0,
-        }
-
-
-def create_combined_dataset(datasets_norm, selected_sources, dbase_options):
-    """Create combined dataset with common date range"""
-    combined_data = pd.DataFrame()
-
-    for source in selected_sources:
-        if source in datasets_norm:
-            df = datasets_norm[source]
-            column_name = dbase_options[source]
-            combined_data[column_name] = df.iloc[:, 0]  # Use first column
-
-    return combined_data
-
-
-def create_combined_dataset2(datasets_norm, selected_sources, dbase_options):
-    """Create combined dataset with all dates from all sources"""
-    combined_dataset2 = pd.DataFrame()
-
-    # Get all unique dates from all datasets
-    all_dates = set()
-    for source in selected_sources:
-        if source in datasets_norm and not datasets_norm[source].empty:
-            all_dates.update(datasets_norm[source].index)
-
-    # Sort dates
-    all_dates = sorted(list(all_dates))
-
-    # Create DataFrame with all dates
-    combined_dataset2 = pd.DataFrame(index=all_dates)
-
-    # Add data from each source - use source name directly as column name
-    for source in selected_sources:
-        if source in datasets_norm and not datasets_norm[source].empty:
-            source_name = dbase_options.get(source, source)
-            source_data = datasets_norm[source].reindex(all_dates)
-            # Use just the source name as the column name (not source_name_col)
-            combined_dataset2[source_name] = source_data.iloc[:, 0]
-
-    return combined_dataset2
 
 
 # Initialize the Dash app
@@ -3057,7 +2833,7 @@ def update_main_content(selected_sources, selected_keyword, language):
                 max_date = max(all_dates).strftime("%Y")
                 current_query_date_range = f"{min_date} - {max_date}"
 
-        db_stats = get_cache_stats()
+        db_stats = get_cache_stats(db_manager)
         content.append(
             html.Div(
                 [
