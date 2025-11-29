@@ -793,13 +793,15 @@ def run_async_in_sync_context(async_func, *args, **kwargs):
 # Clientside callback for dynamic URL detection (JavaScript)
 app.clientside_callback(
     """
-    function getCurrentURL(value) {
+    function getCurrentURL(mainContentReady, language) {
         // Use the dedicated function to get current URL
         return getCurrentUrl();
     }
     """,
     Output("current-url-store", "data"),
-    prevent_initial_call=True,
+    Input("main-content-ready", "data"),
+    Input("language-store", "data"),
+    prevent_initial_call=False,
 )
 
 # Clientside callback to copy citation text to clipboard
