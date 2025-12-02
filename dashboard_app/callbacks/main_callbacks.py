@@ -299,7 +299,7 @@ def register_main_callbacks(app):
                     else None
                 )
                 mean_fig = create_mean_analysis_figure(
-                    datasets_norm, selected_source_ids, language, tool_display_name
+                    combined_dataset, selected_source_names, language, tool_display_name
                 )
                 content.append(
                     html.Div(
@@ -335,12 +335,12 @@ def register_main_callbacks(app):
                 try:
                     print("DEBUG: Running comprehensive PCA analysis")
                     pca_results = perform_comprehensive_pca_analysis(
-                        combined_dataset, selected_sources, language
+                        combined_dataset, selected_source_names, language
                     )
                     if pca_results.get("success"):
                         # Create visualization using the DataFrame
                         pca_fig = create_pca_figure(
-                            combined_dataset, selected_sources, language
+                            combined_dataset, selected_source_names, language
                         )
 
                         content.append(
@@ -410,7 +410,7 @@ def register_main_callbacks(app):
                 try:
                     print("DEBUG: Creating correlation heatmap")
                     heatmap_fig = create_correlation_heatmap(
-                        combined_dataset, selected_sources, language
+                        combined_dataset, selected_source_names, language
                     )
                     content.append(
                         html.Div(
@@ -848,14 +848,20 @@ def register_main_callbacks(app):
                                             html.Div(
                                                 [
                                                     html.H5(
-                                                        get_text("database_statistics", language),
+                                                        get_text(
+                                                            "database_statistics",
+                                                            language,
+                                                        ),
                                                         className="card-title text-primary",
                                                     ),
                                                     html.Hr(className="my-2"),
                                                     html.P(
                                                         [
                                                             html.Strong(
-                                                                get_text("total_records", language)
+                                                                get_text(
+                                                                    "total_records",
+                                                                    language,
+                                                                )
                                                             ),
                                                             f"{total_records:,}",
                                                         ],
@@ -863,7 +869,12 @@ def register_main_callbacks(app):
                                                     ),
                                                     html.P(
                                                         [
-                                                            html.Strong(get_text("unique_keywords", language)),
+                                                            html.Strong(
+                                                                get_text(
+                                                                    "unique_keywords",
+                                                                    language,
+                                                                )
+                                                            ),
                                                             f"{total_keywords:,}",
                                                         ],
                                                         className="mb-2 text-dark",
@@ -871,7 +882,10 @@ def register_main_callbacks(app):
                                                     html.P(
                                                         [
                                                             html.Strong(
-                                                                get_text("data_sources_count", language)
+                                                                get_text(
+                                                                    "data_sources_count",
+                                                                    language,
+                                                                )
                                                             ),
                                                             f"{len(selected_sources)}",
                                                         ],
@@ -889,7 +903,9 @@ def register_main_callbacks(app):
                                             html.Div(
                                                 [
                                                     html.H5(
-                                                        get_text("current_query", language),
+                                                        get_text(
+                                                            "current_query", language
+                                                        ),
                                                         className="card-title text-success",
                                                     ),
                                                     html.Hr(className="my-2"),
@@ -938,32 +954,56 @@ def register_main_callbacks(app):
                                             html.Div(
                                                 [
                                                     html.H5(
-                                                        get_text("system_performance", language),
+                                                        get_text(
+                                                            "system_performance",
+                                                            language,
+                                                        ),
                                                         className="card-title text-warning",
                                                     ),
                                                     html.Hr(className="my-2"),
                                                     html.P(
                                                         [
                                                             html.Strong(
-                                                                get_text("analysis_type", language)
+                                                                get_text(
+                                                                    "analysis_type",
+                                                                    language,
+                                                                )
                                                             ),
-                                                            get_text("multi_source", language)
+                                                            get_text(
+                                                                "multi_source", language
+                                                            )
                                                             if len(selected_sources) > 1
-                                                            else get_text("single_source", language),
+                                                            else get_text(
+                                                                "single_source",
+                                                                language,
+                                                            ),
                                                         ],
                                                         className="mb-2 text-dark",
                                                     ),
                                                     html.P(
                                                         [
-                                                            html.Strong(get_text("language_label", language)),
+                                                            html.Strong(
+                                                                get_text(
+                                                                    "language_label",
+                                                                    language,
+                                                                )
+                                                            ),
                                                             language.upper(),
                                                         ],
                                                         className="mb-2 text-dark",
                                                     ),
                                                     html.P(
                                                         [
-                                                            html.Strong(get_text("dashboard_label", language)),
-                                                            get_text("dashboard_name", language),
+                                                            html.Strong(
+                                                                get_text(
+                                                                    "dashboard_label",
+                                                                    language,
+                                                                )
+                                                            ),
+                                                            get_text(
+                                                                "dashboard_name",
+                                                                language,
+                                                            ),
                                                         ],
                                                         className="mb-0 text-dark",
                                                     ),
@@ -1022,7 +1062,12 @@ def register_main_callbacks(app):
                             html.P(
                                 [
                                     html.Strong(get_text("current_query", language)),
-                                    f"{len(selected_sources)} " + (get_text("data_sources_count", language).rstrip(":")),
+                                    f"{len(selected_sources)} "
+                                    + (
+                                        get_text("data_sources_count", language).rstrip(
+                                            ":"
+                                        )
+                                    ),
                                 ],
                                 className="text-muted",
                             ),
