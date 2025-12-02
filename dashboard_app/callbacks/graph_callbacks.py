@@ -6,7 +6,14 @@ including temporal analysis, 3D plots, seasonal analysis, Fourier analysis,
 and regression analysis.
 """
 
+import os
+import sys
+
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import dash
+from dash import html, callback_context, no_update
 from dash.dependencies import Input, Output, State
 import pandas as pd
 import numpy as np
@@ -19,7 +26,10 @@ from statsmodels.tsa.seasonal import seasonal_decompose
 from scipy.fft import fft, fftfreq
 
 # Import database and utility functions
-from fix_source_mapping import map_display_names_to_source_ids, DBASE_OPTIONS as dbase_options
+from fix_source_mapping import (
+    map_display_names_to_source_ids,
+    DBASE_OPTIONS as dbase_options,
+)
 from translations import get_text, get_tool_name, translate_source_name
 from database import get_database_manager
 from utils import (
@@ -82,6 +92,9 @@ def aggregate_data_for_3d(data, frequency, source_name):
 
 def register_graph_callbacks(app):
     """Register all graph-related callbacks with the Dash app."""
+
+    # Register heatmap click callback for regression analysis
+    register_heatmap_click_callback(app)
 
     @app.callback(
         Output("temporal-2d-graph", "figure"),
@@ -148,11 +161,15 @@ def register_graph_callbacks(app):
 
             combined_dataset = combined_dataset.reset_index()
             date_column = combined_dataset.columns[0]
-            combined_dataset[date_column] = pd.to_datetime(combined_dataset[date_column])
+            combined_dataset[date_column] = pd.to_datetime(
+                combined_dataset[date_column]
+            )
             combined_dataset = combined_dataset.rename(columns={date_column: "Fecha"})
 
             # Sort by date to ensure chronological order for slider indices
-            combined_dataset = combined_dataset.sort_values("Fecha").reset_index(drop=True)
+            combined_dataset = combined_dataset.sort_values("Fecha").reset_index(
+                drop=True
+            )
 
             # Filter out rows where ALL selected sources are NaN (preserve partial data)
             data_columns = [dbase_options[src_id] for src_id in selected_source_ids]
@@ -192,7 +209,8 @@ def register_graph_callbacks(app):
                             years_back = int(trigger_id.split("-")[-1].replace("y", ""))
                             end_date = combined_dataset["Fecha"].max().date()
                             start_date = (
-                                pd.to_datetime(end_date) - pd.DateOffset(years=years_back)
+                                pd.to_datetime(end_date)
+                                - pd.DateOffset(years=years_back)
                             ).date()
                         print(
                             f"DEBUG: Updated date range from button: {start_date} to {end_date}"
@@ -208,7 +226,9 @@ def register_graph_callbacks(app):
                                 start_date = (
                                     combined_dataset["Fecha"].iloc[start_idx].date()
                                 )
-                                end_date = combined_dataset["Fecha"].iloc[end_idx].date()
+                                end_date = (
+                                    combined_dataset["Fecha"].iloc[end_idx].date()
+                                )
                                 print(
                                     f"DEBUG: Updated date range from slider: {start_date} to {end_date}"
                                 )
@@ -266,7 +286,9 @@ def register_graph_callbacks(app):
         print(f"DEBUG: mapped to source IDs: {selected_source_ids}")
 
         if not selected_keyword or not selected_sources:
-            print(f"DEBUG: Returning default slider values - missing keyword or sources")
+            print(
+                f"DEBUG: Returning default slider values - missing keyword or sources"
+            )
             return 0, 100, {}, [0, 100]
 
         try:
@@ -292,7 +314,9 @@ def register_graph_callbacks(app):
 
             combined_dataset = combined_dataset.reset_index()
             date_column = combined_dataset.columns[0]
-            combined_dataset[date_column] = pd.to_datetime(combined_dataset[date_column])
+            combined_dataset[date_column] = pd.to_datetime(
+                combined_dataset[date_column]
+            )
             combined_dataset = combined_dataset.rename(columns={date_column: "Fecha"})
 
             # Filter out rows where ALL selected sources are NaN (preserve partial data)
@@ -307,7 +331,8 @@ def register_graph_callbacks(app):
             # Create marks for the slider
             n_marks = min(5, len(combined_dataset))  # Limit to 5 marks
             mark_indices = [
-                int(i * (len(combined_dataset) - 1) / (n_marks - 1)) for i in range(n_marks)
+                int(i * (len(combined_dataset) - 1) / (n_marks - 1))
+                for i in range(n_marks)
             ]
             marks = {
                 idx: combined_dataset["Fecha"].iloc[idx].strftime("%Y-%m")
@@ -375,12 +400,16 @@ def register_graph_callbacks(app):
 
             combined_dataset = combined_dataset.reset_index()
             date_column = combined_dataset.columns[0]
-            combined_dataset[date_column] = pd.to_datetime(combined_dataset[date_column])
+            combined_dataset[date_column] = pd.to_datetime(
+                combined_dataset[date_column]
+            )
             combined_dataset = combined_dataset.rename(columns={date_column: "Fecha"})
             combined_dataset = combined_dataset.set_index("Fecha")
 
             # Create proper translation mapping
-            translation_mapping = create_translation_mapping(selected_source_ids, language)
+            translation_mapping = create_translation_mapping(
+                selected_source_ids, language
+            )
 
             # Use safe column access for y_axis
             y_data_column = safe_dataframe_column_access(
@@ -531,11 +560,15 @@ def register_graph_callbacks(app):
 
             combined_dataset = combined_dataset.reset_index()
             date_column = combined_dataset.columns[0]
-            combined_dataset[date_column] = pd.to_datetime(combined_dataset[date_column])
+            combined_dataset[date_column] = pd.to_datetime(
+                combined_dataset[date_column]
+            )
             combined_dataset = combined_dataset.rename(columns={date_column: "Fecha"})
 
             # Create proper translation mapping
-            translation_mapping = create_translation_mapping(selected_source_ids, language)
+            translation_mapping = create_translation_mapping(
+                selected_source_ids, language
+            )
 
             # Use safe column access
             ts_data_column = safe_dataframe_column_access(
@@ -546,6 +579,10 @@ def register_graph_callbacks(app):
 
             ts_data = ts_data_column.dropna()
             if len(ts_data) < 24:
+                return {}
+
+            # Additional safety check for None values in the data
+            if ts_data is None or len(ts_data) == 0:
                 return {}
 
             decomposition = seasonal_decompose(ts_data, model="additive", period=12)
@@ -576,7 +613,9 @@ def register_graph_callbacks(app):
             )
             fig.add_trace(
                 go.Scatter(
-                    x=combined_dataset["Fecha"], y=decomposition.seasonal, name="Estacional"
+                    x=combined_dataset["Fecha"],
+                    y=decomposition.seasonal,
+                    name="Estacional",
                 ),
                 row=3,
                 col=1,
@@ -590,7 +629,12 @@ def register_graph_callbacks(app):
             )
 
             # Create title with tool name if provided
-            base_title = get_text("seasonal_title", language, source=selected_source)
+            if selected_source:
+                base_title = get_text(
+                    "seasonal_title", language, source=selected_source
+                )
+            else:
+                base_title = get_text("seasonal_analysis", language)
             tool_display_name = (
                 get_tool_name(selected_keyword, language) if selected_keyword else None
             )
@@ -619,394 +663,7 @@ def register_graph_callbacks(app):
         except Exception as e:
             return {}
 
-    @app.callback(
-        [Output("regression-graph", "figure"), Output("regression-equations", "children")],
-        [
-            Input("correlation-heatmap", "clickData"),
-            Input("keyword-dropdown", "value"),
-            Input("data-sources-store-v2", "data"),
-            Input("language-store", "data"),
-        ],
-        prevent_initial_call=False,
-    )
-    def update_regression_analysis(
-        click_data, selected_keyword, selected_sources, language
-    ):
-        print(f"DEBUG: update_regression_analysis called")
-        print(f"DEBUG: click_data={click_data}")
-        print(f"DEBUG: selected_keyword={selected_keyword}")
-        print(f"DEBUG: selected_sources={selected_sources}")
-
-        if selected_sources is None:
-            selected_sources = []
-
-        selected_source_ids = map_display_names_to_source_ids(selected_sources)
-        print(f"DEBUG: selected_source_ids={selected_source_ids}")
-
-        # Proper validation of click_data structure before accessing it
-        if not selected_keyword or len(selected_sources) < 2 or not click_data:
-            print(
-                f"DEBUG: Returning empty figure - missing keyword, sources, or click_data"
-            )
-            fig = go.Figure()
-            fig.update_layout(
-                title=get_text("click_heatmap", language),
-                xaxis_title="",
-                yaxis_title="",
-                height=400,
-            )
-            return fig, ""
-
-        # Validate click_data structure before accessing it
-        try:
-            if (
-                not isinstance(click_data, dict)
-                or "points" not in click_data
-                or not click_data["points"]
-            ):
-                print(f"DEBUG: Invalid click_data structure")
-                fig = go.Figure()
-                fig.update_layout(
-                    title="Error: Invalid click data structure",
-                    xaxis_title="",
-                    yaxis_title="",
-                    height=400,
-                )
-                return fig, ""
-
-            # Safely extract x and y variables with error handling
-            point = click_data["points"][0]
-            if not isinstance(point, dict) or "x" not in point or "y" not in point:
-                print(f"DEBUG: Invalid point structure in click_data")
-                fig = go.Figure()
-                fig.update_layout(
-                    title="Error: Invalid point data structure",
-                    xaxis_title="",
-                    yaxis_title="",
-                    height=400,
-                )
-                return fig, ""
-
-            x_var = point["x"]
-            y_var = point["y"]
-
-        except (KeyError, IndexError, TypeError) as e:
-            print(f"DEBUG: Error extracting variables from click_data: {e}")
-            fig = go.Figure()
-            fig.update_layout(
-                title=f"Error extracting click data: {str(e)}",
-                xaxis_title="",
-                yaxis_title="",
-                height=400,
-            )
-            return fig, ""
-
-        # Get the data for regression analysis
-        try:
-            datasets_norm, sl_sc = db_manager.get_data_for_keyword(
-                selected_keyword, selected_source_ids
-            )
-            combined_dataset = create_combined_dataset2(
-                datasets_norm=datasets_norm,
-                selected_sources=sl_sc,
-                dbase_options=dbase_options,
-            )
-
-            combined_dataset = combined_dataset.reset_index()
-            date_column = combined_dataset.columns[0]
-            combined_dataset[date_column] = pd.to_datetime(combined_dataset[date_column])
-            combined_dataset = combined_dataset.rename(columns={date_column: "Fecha"})
-
-            # Filter out rows where ALL selected sources are NaN (preserve partial data)
-            # Use the actual column names from the combined dataset
-            actual_columns = [col for col in combined_dataset.columns if col != "Fecha"]
-            if actual_columns:
-                combined_dataset = combined_dataset.dropna(subset=actual_columns, how="all")
-
-            selected_source_names = [
-                translate_source_name(dbase_options[src_id], language)
-                for src_id in selected_source_ids
-            ]
-
-            # Use the proper translation mapping functions
-            # Create translation mapping for proper column name resolution
-            translation_mapping = create_translation_mapping(selected_source_ids, language)
-
-            # Debug: print available columns and clicked variables
-            print(f"Available columns: {list(combined_dataset.columns)}")
-            print(f"Clicked variables: x='{x_var}', y='{y_var}'")
-            print(f"Translation mapping: {translation_mapping}")
-
-            # Check if variables are the same (diagonal click on heatmap)
-            if x_var == y_var:
-                fig = go.Figure()
-                fig.add_annotation(
-                    text=get_text("cannot_regress_same", language, var=x_var)
-                    + "<br>"
-                    + get_text("select_different_vars", language),
-                    xref="paper",
-                    yref="paper",
-                    x=0.5,
-                    y=0.5,
-                    showarrow=False,
-                    font=dict(size=14, color="red"),
-                )
-                fig.update_layout(
-                    title=get_text("invalid_selection", language),
-                    xaxis=dict(showticklabels=False),
-                    yaxis=dict(showticklabels=False),
-                    height=400,
-                )
-                return fig, get_text("invalid_selection", language)
-
-            # Use the proper column name resolution
-            x_var_original = get_original_column_name(x_var, translation_mapping)
-            y_var_original = get_original_column_name(y_var, translation_mapping)
-
-            print(
-                f"Mapped variables: x='{x_var}' -> '{x_var_original}', y='{y_var}' -> '{y_var_original}'"
-            )
-
-            if (
-                x_var_original not in combined_dataset.columns
-                or y_var_original not in combined_dataset.columns
-            ):
-                print(
-                    f"Variables not found in dataset: x='{x_var_original}', y='{y_var_original}'"
-                )
-                # Return empty figure instead of empty dict
-                fig = go.Figure()
-                fig.update_layout(
-                    title=get_text(
-                        "variables_not_found", language, x_var=x_var, y_var=y_var
-                    ),
-                    xaxis_title="",
-                    yaxis_title="",
-                    height=500,
-                )
-                return fig, ""
-
-            # Use safe column access to get the data
-            x_data_column = safe_dataframe_column_access(
-                combined_dataset, x_var, translation_mapping
-            )
-            y_data_column = safe_dataframe_column_access(
-                combined_dataset, y_var, translation_mapping
-            )
-
-            if x_data_column is None or y_data_column is None:
-                print(
-                    f"ERROR: Could not access columns for regression: x='{x_var}' -> {x_data_column}, y='{y_var}' -> {y_data_column}"
-                )
-                fig = go.Figure()
-                fig.update_layout(
-                    title=get_text(
-                        "variables_not_found", language, x_var=x_var, y_var=y_var
-                    ),
-                    xaxis_title="",
-                    yaxis_title="",
-                    height=500,
-                )
-                return fig, ""
-
-            # Create a dataframe with the two series for regression
-            regression_df = pd.DataFrame({x_var: x_data_column, y_var: y_data_column})
-
-            # Drop NaN values
-            valid_data = regression_df.dropna()
-            if len(valid_data) < 2:
-                fig = go.Figure()
-                fig.update_layout(
-                    title="Insufficient data for regression analysis",
-                    xaxis_title="",
-                    yaxis_title="",
-                    height=400,
-                )
-                return fig, ""
-
-            X = valid_data[x_var].values.reshape(-1, 1)
-            y = valid_data[y_var].values
-
-            # Colors for different polynomial degrees
-            poly_colors = ["red", "blue", "green", "orange"]
-            degree_names = [
-                get_text("linear", language),
-                get_text("quadratic", language),
-                get_text("cubic", language),
-                get_text("quartic", language),
-            ]
-
-            fig = go.Figure()
-
-            # Add scatter plot of original data
-            fig.add_trace(
-                go.Scatter(
-                    x=valid_data[x_var],
-                    y=valid_data[y_var],
-                    mode="markers",
-                    name=get_text("data_points", language),
-                    marker=dict(color="gray", size=6, opacity=0.7),
-                )
-            )
-
-            # Sort X for smooth polynomial curves
-            X_sorted = np.sort(X.flatten())
-            X_sorted_reshaped = X_sorted.reshape(-1, 1)
-
-            # Annotations for formulas and R-squared
-            annotations = []
-
-            for degree in range(1, 5):  # Degrees 1, 2, 3, 4
-                try:
-                    # Ensure data is numeric and properly shaped
-                    X_clean = X.astype(float)
-                    y_clean = y.astype(float)
-
-                    # Fit polynomial regression
-                    poly_features = PolynomialFeatures(degree=degree)
-                    X_poly = poly_features.fit_transform(X_clean)
-
-                    model = LinearRegression()
-                    model.fit(X_poly, y_clean)
-
-                    # Predict on sorted X values for smooth curve
-                    X_poly_sorted = poly_features.transform(X_sorted_reshaped)
-                    y_pred_sorted = model.predict(X_poly_sorted)
-
-                    # Calculate R-squared
-                    y_pred = model.predict(X_poly)
-                    r_squared = r2_score(y_clean, y_pred)
-
-                    # Create polynomial formula string with proper mathematical formatting
-                    coefs = model.coef_
-                    intercept = model.intercept_
-
-                    if degree == 1:
-                        # Linear: y = mx + b
-                        formula = f"y = {coefs[1]:.3f}x {'+' if intercept >= 0 else ''}{intercept:.3f}"
-                    else:
-                        # Polynomial: y = dx³ + cx² + bx + a (highest power to lowest)
-                        terms = []
-
-                        # Polynomial terms (highest power first)
-                        for i in range(
-                            len(coefs) - 1, 0, -1
-                        ):  # Start from highest degree down to x term
-                            if abs(coefs[i]) > 0.001:  # Only show significant coefficients
-                                coef_str = f"{coefs[i]:+.3f}"
-                                if i == 1:
-                                    terms.append(f"{coef_str}x")
-                                else:
-                                    terms.append(f"{coef_str}x<sup>{i}</sup>")
-
-                        # Intercept term (comes last)
-                        if abs(intercept) > 0.001:
-                            terms.append(f"{intercept:+.3f}")
-
-                        # Join terms with proper spacing
-                        formula = f"y = {' '.join(terms)}"
-
-                    # Add regression line
-                    fig.add_trace(
-                        go.Scatter(
-                            x=X_sorted,
-                            y=y_pred_sorted,
-                            mode="lines",
-                            name=f"{degree_names[degree - 1]} (R² = {r_squared:.3f})",
-                            line=dict(color=poly_colors[degree - 1], width=2),
-                        )
-                    )
-
-                    # Add annotation for this degree
-                    annotations.append(
-                        f"<b>{degree_names[degree - 1]}:</b><br>"
-                        f"{formula}<br>"
-                        f"R² = {r_squared:.3f}"
-                    )
-                except Exception as poly_e:
-                    print(f"Error fitting degree {degree} polynomial: {poly_e}")
-                    # Add error annotation for this degree
-                    annotations.append(
-                        f"<b>{degree_names[degree - 1]}:</b><br>"
-                        f"Error fitting polynomial<br>"
-                        f"R² = N/A"
-                    )
-
-            # Create title with tool name if provided
-            base_title = get_text("regression_title", language, y_var=y_var, x_var=x_var)
-            tool_display_name = (
-                get_tool_name(selected_keyword, language) if selected_keyword else None
-            )
-            if tool_display_name:
-                title_text = f"{base_title} - {tool_display_name}"
-            else:
-                title_text = base_title
-
-            # Update layout with increased height for legend and equations
-            fig.update_layout(
-                title={
-                    "text": title_text,
-                    "y": 0.95,
-                    "x": 0.5,
-                    "xanchor": "center",
-                    "yanchor": "top",
-                },
-                xaxis_title=x_var,
-                yaxis_title=y_var,
-                height=600,  # Increased height to accommodate legend and equations
-                showlegend=True,
-                legend=dict(
-                    orientation="h",
-                    yanchor="bottom",
-                    y=-0.2,  # Moved 2 lines below the graph
-                    xanchor="center",
-                    x=0.5,
-                ),
-            )
-
-            # Add source URL annotation as legend-style outside the graph
-            source_text = (
-                get_text("source", language) + " https://dashboard.solidum360.com/"
-            )
-            fig.add_annotation(
-                xref="paper",
-                yref="paper",
-                x=1,
-                y=1.08,  # Position relative to plot (above title)
-                text=source_text,
-                showarrow=False,
-                font=dict(size=12),
-                align="left",
-            )
-
-            # Create equations content
-            equations_content = html.Div(
-                [
-                    html.H6(get_text("regression_equations", language)),
-                    html.Br(),
-                    *[
-                        html.Div(annotation, style={"margin-bottom": "10px"})
-                        for annotation in annotations
-                    ],
-                ]
-            )
-
-            return fig, equations_content
-
-        except Exception as e:
-            print(f"Error in regression analysis: {e}")
-            import traceback
-
-            traceback.print_exc()
-            # Return empty figure and empty equations
-            fig = go.Figure()
-            fig.update_layout(
-                title=f"Error: {str(e)}",
-                xaxis_title="",
-                yaxis_title="",
-                height=400,
-            )
-            return fig, ""
+    # Consolidated regression analysis callback (handles both keyword changes and heatmap clicks)
 
     @app.callback(
         Output("fourier-analysis-graph", "figure"),
@@ -1054,7 +711,9 @@ def register_graph_callbacks(app):
                 break
 
         if source_key is None:
-            print(f"Fourier: Could not map display name '{selected_source}' to numeric key")
+            print(
+                f"Fourier: Could not map display name '{selected_source}' to numeric key"
+            )
             return go.Figure()
 
         try:
@@ -1065,8 +724,12 @@ def register_graph_callbacks(app):
 
             # Get the source key from display name
             # Create translation mapping to find the correct source ID
-            translation_mapping = create_translation_mapping(selected_source_ids, language)
-            original_name = get_original_column_name(selected_source, translation_mapping)
+            translation_mapping = create_translation_mapping(
+                selected_source_ids, language
+            )
+            original_name = get_original_column_name(
+                selected_source, translation_mapping
+            )
 
             # Find the source key that matches the original name
             source_key = None
@@ -1090,6 +753,10 @@ def register_graph_callbacks(app):
             # Extract values and remove NaN
             values = data.iloc[:, 0].dropna().values
             if len(values) < 10:  # Need minimum data points
+                return go.Figure()
+
+            # Additional safety check for None values
+            if values is None or len(values) == 0:
                 return go.Figure()
 
             # Add data size limits to prevent performance issues
@@ -1116,6 +783,15 @@ def register_graph_callbacks(app):
             # For monthly data, frequency represents cycles per month
             periods = 1 / frequencies[1:]  # Skip DC component (freq=0)
             magnitude = magnitude[1:]  # Skip DC component
+
+            # Check for valid periods and magnitude
+            if (
+                periods is None
+                or magnitude is None
+                or len(periods) == 0
+                or len(magnitude) == 0
+            ):
+                return go.Figure()
 
             # Simplified significance threshold using percentiles
             # Much faster than chi-squared distribution calculations
@@ -1219,7 +895,10 @@ def register_graph_callbacks(app):
                 )
 
             # Create title with tool name if provided
-            base_title = get_text("fourier_title", language, source=selected_source)
+            if selected_source:
+                base_title = get_text("fourier_title", language, source=selected_source)
+            else:
+                base_title = get_text("fourier_analysis", language)
             tool_display_name = (
                 get_tool_name(selected_keyword, language) if selected_keyword else None
             )
@@ -1275,3 +954,411 @@ def register_graph_callbacks(app):
 
         except Exception as e:
             return go.Figure()
+
+
+def register_heatmap_click_callback(app):
+    """Register heatmap click callback for regression analysis."""
+
+    @app.callback(
+        [
+            Output("regression-graph", "figure"),
+            Output("regression-equations", "children"),
+        ],
+        [
+            Input("correlation-heatmap", "clickData"),
+            Input("keyword-dropdown", "value"),
+            Input("data-sources-store-v2", "data"),
+            Input("language-store", "data"),
+        ],
+        prevent_initial_call=False,
+    )
+    def update_regression_from_heatmap(
+        click_data, selected_keyword, selected_sources, language
+    ):
+        # Check if this callback was triggered by correlation-heatmap
+        from dash import callback_context
+
+        if not callback_context.triggered:
+            # No trigger, skip
+            return dash.no_update, dash.no_update
+
+        # Get the trigger prop_id
+        trigger_prop_id = callback_context.triggered[0]["prop_id"]
+
+        # Only process if triggered by correlation-heatmap
+        if "correlation-heatmap" not in trigger_prop_id:
+            print(f"DEBUG: Callback not triggered by correlation-heatmap, skipping")
+            return dash.no_update, dash.no_update
+
+        print(f"DEBUG: update_regression_analysis called")
+        print(f"DEBUG: click_data={click_data}")
+        print(f"DEBUG: selected_keyword={selected_keyword}")
+        print(f"DEBUG: selected_sources={selected_sources}")
+
+        if selected_sources is None:
+            selected_sources = []
+
+        selected_source_ids = map_display_names_to_source_ids(selected_sources)
+        print(f"DEBUG: selected_source_ids={selected_source_ids}")
+
+        # Handle both cases: with click data (heatmap click) and without (auto-select)
+        x_var = None
+        y_var = None
+        click_data_available = False
+
+        # Check if correlation-heatmap click data is available
+        if (
+            click_data
+            and isinstance(click_data, dict)
+            and "points" in click_data
+            and click_data["points"]
+        ):
+            try:
+                point = click_data["points"][0]
+                if isinstance(point, dict) and "x" in point and "y" in point:
+                    x_var = point["x"]
+                    y_var = point["y"]
+                    click_data_available = True
+                    print(
+                        f"DEBUG: Using variables from heatmap click: x={x_var}, y={y_var}"
+                    )
+            except (KeyError, IndexError, TypeError) as e:
+                print(f"DEBUG: Error extracting variables from click_data: {e}")
+                # Fall through to auto-selection below
+        else:
+            print(
+                f"DEBUG: No heatmap click data available (correlation-heatmap may not exist or no click occurred)"
+            )
+
+        # If no valid click data, auto-select first two available sources
+        if not click_data_available:
+            print(f"DEBUG: No click data available, will auto-select variables")
+            # Need to get the data first to see available columns
+            try:
+                db_manager = get_database_manager()
+                datasets_norm, sl_sc = db_manager.get_data_for_keyword(
+                    selected_keyword, selected_source_ids
+                )
+                combined_dataset = create_combined_dataset2(
+                    datasets_norm=datasets_norm,
+                    selected_sources=sl_sc,
+                    dbase_options=dbase_options,
+                )
+
+                combined_dataset = combined_dataset.reset_index()
+                date_column = combined_dataset.columns[0]
+                combined_dataset[date_column] = pd.to_datetime(
+                    combined_dataset[date_column]
+                )
+                combined_dataset = combined_dataset.rename(
+                    columns={date_column: "Fecha"}
+                )
+
+                # Filter out rows where ALL selected sources are NaN (preserve partial data)
+                actual_columns = [
+                    col for col in combined_dataset.columns if col != "Fecha"
+                ]
+                if actual_columns:
+                    combined_dataset = combined_dataset.dropna(
+                        subset=actual_columns, how="all"
+                    )
+
+                # Auto-select first two available columns
+                available_columns = [
+                    col for col in combined_dataset.columns if col != "Fecha"
+                ]
+                if len(available_columns) >= 2:
+                    x_var = available_columns[0]
+                    y_var = available_columns[1]
+                    print(f"DEBUG: Auto-selected variables: x={x_var}, y={y_var}")
+                else:
+                    print(f"DEBUG: Insufficient columns for regression analysis")
+                    fig = go.Figure()
+                    fig.update_layout(
+                        title=get_text("need_two_sources", language),
+                        xaxis_title="",
+                        yaxis_title="",
+                        height=400,
+                    )
+                    return fig, ""
+            except Exception as e:
+                print(f"DEBUG: Error getting data for auto-selection: {e}")
+                fig = go.Figure()
+                fig.update_layout(
+                    title="Error: Could not auto-select variables",
+                    xaxis_title="",
+                    yaxis_title="",
+                    height=400,
+                )
+                return fig, ""
+
+        # Basic validation
+        if not selected_keyword or len(selected_sources) < 2:
+            print(f"DEBUG: Returning empty figure - missing keyword or sources")
+            fig = go.Figure()
+            fig.update_layout(
+                title=get_text("select_heatmap_points", language),
+                xaxis_title="",
+                yaxis_title="",
+                height=400,
+            )
+            return fig, ""
+
+        if not x_var or not y_var:
+            print(f"DEBUG: Missing variables for regression")
+            fig = go.Figure()
+            fig.update_layout(
+                title="Error: Could not determine variables for regression",
+                xaxis_title="",
+                yaxis_title="",
+                height=400,
+            )
+            return fig, ""
+
+        # Check if variables are the same (diagonal click on heatmap)
+        if x_var == y_var:
+            print(f"DEBUG: Cannot regress {x_var} against itself")
+            error_msg = (
+                f"No se puede hacer regresión de {x_var} contra sí mismo."
+                if language == "es"
+                else f"Cannot regress {x_var} against itself."
+            )
+            fig = go.Figure()
+            fig.update_layout(
+                title=error_msg,
+                xaxis_title="",
+                yaxis_title="",
+                height=400,
+            )
+            return fig, error_msg
+
+        # Get the data for regression analysis
+        try:
+            db_manager = get_database_manager()
+            datasets_norm, sl_sc = db_manager.get_data_for_keyword(
+                selected_keyword, selected_source_ids
+            )
+            combined_dataset = create_combined_dataset2(
+                datasets_norm=datasets_norm,
+                selected_sources=sl_sc,
+                dbase_options=dbase_options,
+            )
+
+            combined_dataset = combined_dataset.reset_index()
+            date_column = combined_dataset.columns[0]
+            combined_dataset[date_column] = pd.to_datetime(
+                combined_dataset[date_column]
+            )
+            combined_dataset = combined_dataset.rename(columns={date_column: "Fecha"})
+
+            # Filter out rows where ALL selected sources are NaN (preserve partial data)
+            # Use the actual column names from the combined dataset
+            actual_columns = [col for col in combined_dataset.columns if col != "Fecha"]
+            combined_dataset = combined_dataset.dropna(subset=actual_columns, how="all")
+
+            # Get the columns that correspond to the selected variables
+            translation_mapping = create_translation_mapping(
+                selected_source_ids, language
+            )
+
+            # Map display names back to original column names
+            x_original = get_original_column_name(x_var, translation_mapping)
+            y_original = get_original_column_name(y_var, translation_mapping)
+
+            # If mapping doesn't work, try direct match
+            if x_original not in combined_dataset.columns:
+                x_original = x_var
+            if y_original not in combined_dataset.columns:
+                y_original = y_var
+
+            print(
+                f"DEBUG: x_var={x_var} (original: {x_original}), y_var={y_var} (original: {y_original})"
+            )
+            print(f"DEBUG: Available columns: {list(combined_dataset.columns)}")
+
+            # Validate that columns exist
+            if (
+                x_original not in combined_dataset.columns
+                or y_original not in combined_dataset.columns
+            ):
+                error_msg = (
+                    f"Variables not found: {x_original}, {y_original}"
+                    if language == "es"
+                    else f"Variables not found: {x_original}, {y_original}"
+                )
+                fig = go.Figure()
+                fig.update_layout(
+                    title=error_msg,
+                    xaxis_title="",
+                    yaxis_title="",
+                    height=400,
+                )
+                return fig, error_msg
+
+            # Filter out rows where the selected variables are NaN
+            regression_data = combined_dataset[
+                ["Fecha", x_original, y_original]
+            ].dropna()
+
+            if len(regression_data) < 10:
+                error_msg = (
+                    f"Insufficient data for regression analysis"
+                    if language == "es"
+                    else "Insufficient data for regression analysis"
+                )
+                fig = go.Figure()
+                fig.update_layout(
+                    title=error_msg,
+                    xaxis_title="",
+                    yaxis_title="",
+                    height=400,
+                )
+                return fig, error_msg
+
+            # Fit polynomial regression models of different degrees
+            x = regression_data[x_original].values
+            y = regression_data[y_original].values
+
+            degree_names = (
+                ["Linear", "Quadratic", "Cubic"]
+                if language == "en"
+                else ["Lineal", "Cuadrático", "Cúbico"]
+            )
+            poly_colors = ["red", "blue", "green"]
+            annotations = []
+
+            fig = go.Figure()
+
+            # Add scatter plot of actual data points
+            fig.add_trace(
+                go.Scatter(
+                    x=x,
+                    y=y,
+                    mode="markers",
+                    name=f"Data Points ({len(regression_data)})",
+                    marker=dict(color="lightblue", size=5, opacity=0.6),
+                    showlegend=True,
+                )
+            )
+
+            # Fit polynomial regression of different degrees
+            for degree in range(1, 4):
+                try:
+                    # Create polynomial features
+                    poly_features = PolynomialFeatures(degree=degree)
+                    X_poly = poly_features.fit_transform(x.reshape(-1, 1))
+
+                    # Fit the model
+                    model = LinearRegression()
+                    model.fit(X_poly, y)
+
+                    # Make predictions for plotting
+                    x_plot = np.linspace(x.min(), x.max(), 100)
+                    X_plot_poly = poly_features.transform(x_plot.reshape(-1, 1))
+                    y_pred = model.predict(X_plot_poly)
+
+                    # Calculate R²
+                    y_pred_all = model.predict(X_poly)
+                    r_squared = r2_score(y, y_pred_all)
+
+                    # Create formula string
+                    coef = model.coef_
+                    intercept = model.intercept_
+                    formula = f"y = {intercept:.3f}"
+                    for i, c in enumerate(coef[1:], 1):
+                        if c >= 0:
+                            formula += f" + {c:.3f}x^{i}"
+                        else:
+                            formula += f" - {abs(c):.3f}x^{i}"
+
+                    # Add polynomial fit line
+                    fig.add_trace(
+                        go.Scatter(
+                            x=x_plot,
+                            y=y_pred,
+                            mode="lines",
+                            name=f"{degree_names[degree - 1]} (R² = {r_squared:.3f})",
+                            line=dict(color=poly_colors[degree - 1], width=2),
+                        )
+                    )
+
+                    # Add annotation for this degree
+                    annotations.append(
+                        f"<b>{degree_names[degree - 1]}:</b><br>"
+                        f"{formula}<br>"
+                        f"R² = {r_squared:.3f}"
+                    )
+                except Exception as poly_e:
+                    print(f"Error fitting degree {degree} polynomial: {poly_e}")
+                    # Add error annotation for this degree
+                    annotations.append(
+                        f"<b>{degree_names[degree - 1]}:</b><br>"
+                        f"Error fitting polynomial<br>"
+                        f"R² = N/A"
+                    )
+
+            # Create title with tool name if provided
+            base_title = get_text(
+                "regression_title", language, y_var=y_var, x_var=x_var
+            )
+            tool_display_name = (
+                get_tool_name(selected_keyword, language) if selected_keyword else None
+            )
+            if tool_display_name:
+                title_text = f"{base_title} - {tool_display_name}"
+            else:
+                title_text = base_title
+
+            # Update layout with increased height for legend and equations
+            fig.update_layout(
+                title={
+                    "text": title_text,
+                    "y": 0.95,
+                    "x": 0.5,
+                    "xanchor": "center",
+                    "yanchor": "top",
+                },
+                xaxis_title=x_var,
+                yaxis_title=y_var,
+                height=600,  # Increased height to accommodate legend and equations
+                showlegend=True,
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=-0.2,  # Moved 2 lines below the graph
+                    xanchor="center",
+                    x=0.5,
+                ),
+                xaxis=dict(
+                    title=x_var,
+                ),
+                yaxis=dict(
+                    title=y_var,
+                ),
+            )
+
+            # Create equations text for the side panel
+            equations_text = "<br>".join(annotations)
+
+            print(f"DEBUG: Regression analysis completed successfully")
+            return fig, equations_text
+
+        except Exception as e:
+            print(f"Error in regression analysis: {e}")
+            import traceback
+
+            traceback.print_exc()
+
+            error_msg = (
+                f"Error en análisis de regresión: {str(e)}"
+                if language == "es"
+                else f"Error in regression analysis: {str(e)}"
+            )
+            fig = go.Figure()
+            fig.update_layout(
+                title=error_msg,
+                xaxis_title="",
+                yaxis_title="",
+                height=400,
+            )
+            return fig, error_msg

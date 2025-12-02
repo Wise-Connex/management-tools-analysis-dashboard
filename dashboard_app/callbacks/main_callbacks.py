@@ -14,7 +14,10 @@ from plotly.subplots import make_subplots
 import numpy as np
 
 # Import database and utility functions
-from fix_source_mapping import map_display_names_to_source_ids, DBASE_OPTIONS as dbase_options
+from fix_source_mapping import (
+    map_display_names_to_source_ids,
+    DBASE_OPTIONS as dbase_options,
+)
 from translations import get_text, get_tool_name, translate_source_name
 from database import get_database_manager
 from utils import (
@@ -110,7 +113,9 @@ def register_main_callbacks(app):
                 combined_dataset[date_column] = pd.to_datetime(
                     combined_dataset[date_column]
                 )
-                combined_dataset = combined_dataset.rename(columns={date_column: "Fecha"})
+                combined_dataset = combined_dataset.rename(
+                    columns={date_column: "Fecha"}
+                )
                 # Keep Fecha as datetime for calculations, format only for display in table
                 combined_dataset_fecha_formatted = combined_dataset.copy()
                 combined_dataset_fecha_formatted["Fecha"] = (
@@ -121,7 +126,9 @@ def register_main_callbacks(app):
 
                 # Filter out rows where ALL selected sources are NaN (preserve partial data)
                 data_columns = [dbase_options[src_id] for src_id in selected_source_ids]
-                combined_dataset = combined_dataset.dropna(subset=data_columns, how="all")
+                combined_dataset = combined_dataset.dropna(
+                    subset=data_columns, how="all"
+                )
 
                 selected_source_names = [
                     translate_source_name(dbase_options[src_id], language)
@@ -150,7 +157,9 @@ def register_main_callbacks(app):
                 from utils import create_temporal_2d_figure
 
                 tool_display_name = (
-                    get_tool_name(selected_keyword, language) if selected_keyword else None
+                    get_tool_name(selected_keyword, language)
+                    if selected_keyword
+                    else None
                 )
                 temporal_2d_fig = create_temporal_2d_figure(
                     combined_dataset,
@@ -163,7 +172,7 @@ def register_main_callbacks(app):
                     html.Div(
                         [
                             html.H3(
-                                get_text("temporal_analysis_title", language),
+                                get_text("temporal_analysis_2d", language),
                                 className="section-title",
                                 id="section-temporal",
                             ),
@@ -199,7 +208,7 @@ def register_main_callbacks(app):
                                                         className="btn btn-outline-secondary btn-sm me-2",
                                                         title=language
                                                         if language == "es"
-                                                        else "Last 20 years"
+                                                        else "Last 20 years",
                                                     ),
                                                     html.Button(
                                                         "15Y",
@@ -269,7 +278,7 @@ def register_main_callbacks(app):
                     html.Div(
                         [
                             html.H3(
-                                get_text("temporal_analysis_title", language),
+                                get_text("temporal_analysis_2d", language),
                                 className="section-title",
                             ),
                             html.P(
@@ -285,7 +294,9 @@ def register_main_callbacks(app):
             try:
                 print(f"DEBUG: Creating mean analysis figure")
                 tool_display_name = (
-                    get_tool_name(selected_keyword, language) if selected_keyword else None
+                    get_tool_name(selected_keyword, language)
+                    if selected_keyword
+                    else None
                 )
                 mean_fig = create_mean_analysis_figure(
                     datasets_norm, selected_source_ids, language, tool_display_name
@@ -324,15 +335,12 @@ def register_main_callbacks(app):
                 try:
                     print("DEBUG: Running comprehensive PCA analysis")
                     pca_results = perform_comprehensive_pca_analysis(
-                        datasets_norm, selected_sources, language
+                        combined_dataset, selected_sources, language
                     )
-                    if pca_results["success"]:
-                        # Extract PCA dataset for visualization
-                        pca_dataset = pca_results["pca_dataset"]
-
-                        # Create visualization
+                    if pca_results.get("success"):
+                        # Create visualization using the DataFrame
                         pca_fig = create_pca_figure(
-                            pca_dataset, selected_sources, language
+                            combined_dataset, selected_sources, language
                         )
 
                         content.append(
@@ -358,7 +366,9 @@ def register_main_callbacks(app):
                         )
                         print("✅ PCA Analysis section added to main content")
                     else:
-                        print(f"PCA analysis failed: {pca_results.get('error', 'Unknown error')}")
+                        print(
+                            f"PCA analysis failed: {pca_results.get('error', 'Unknown error')}"
+                        )
                         content.append(
                             html.Div(
                                 [
@@ -400,7 +410,7 @@ def register_main_callbacks(app):
                 try:
                     print("DEBUG: Creating correlation heatmap")
                     heatmap_fig = create_correlation_heatmap(
-                        datasets_norm, selected_sources, language
+                        combined_dataset, selected_sources, language
                     )
                     content.append(
                         html.Div(
@@ -462,7 +472,7 @@ def register_main_callbacks(app):
                         html.Div(
                             [
                                 html.H3(
-                                    get_text("temporal_3d_title", language),
+                                    get_text("temporal_analysis_3d", language),
                                     className="section-title",
                                     id="section-3d",
                                 ),
@@ -531,7 +541,7 @@ def register_main_callbacks(app):
                         html.Div(
                             [
                                 html.H3(
-                                    get_text("temporal_3d_title", language),
+                                    get_text("temporal_analysis_3d", language),
                                     className="section-title",
                                 ),
                                 html.P(
@@ -559,7 +569,7 @@ def register_main_callbacks(app):
                         html.Div(
                             [
                                 html.H3(
-                                    get_text("seasonal_title", language),
+                                    get_text("seasonal_analysis", language),
                                     className="section-title",
                                     id="section-seasonal",
                                 ),
@@ -602,7 +612,7 @@ def register_main_callbacks(app):
                     html.Div(
                         [
                             html.H3(
-                                get_text("seasonal_title", language),
+                                get_text("seasonal_analysis", language),
                                 className="section-title",
                             ),
                             html.P(
@@ -630,7 +640,7 @@ def register_main_callbacks(app):
                         html.Div(
                             [
                                 html.H3(
-                                    get_text("fourier_title", language),
+                                    get_text("fourier_analysis", language),
                                     className="section-title",
                                     id="section-fourier",
                                 ),
@@ -673,7 +683,7 @@ def register_main_callbacks(app):
                     html.Div(
                         [
                             html.H3(
-                                get_text("fourier_title", language),
+                                get_text("fourier_analysis", language),
                                 className="section-title",
                             ),
                             html.P(
@@ -691,7 +701,7 @@ def register_main_callbacks(app):
                     html.Div(
                         [
                             html.H3(
-                                get_text("regression_title", language),
+                                get_text("regression_analysis", language),
                                 className="section-title",
                                 id="section-regression",
                             ),
@@ -738,7 +748,9 @@ def register_main_callbacks(app):
                                     {"name": col, "id": col}
                                     for col in combined_dataset_fecha_formatted.columns
                                 ],
-                                data=combined_dataset_fecha_formatted.to_dict("records"),
+                                data=combined_dataset_fecha_formatted.to_dict(
+                                    "records"
+                                ),
                                 page_size=10,
                                 style_table={"overflowX": "auto"},
                                 style_cell={"textAlign": "left", "padding": "10px"},
@@ -777,50 +789,248 @@ def register_main_callbacks(app):
                     )
                 )
 
-            # 10. Performance Metrics section
+            # 9. Performance Metrics section
             try:
-                cache_stats = get_cache_stats()
+                # Get database stats for performance metrics
+                table_stats = (
+                    db_manager.get_table_stats()
+                    if hasattr(db_manager, "get_table_stats")
+                    else {}
+                )
+                total_records = (
+                    sum(
+                        stats.get("row_count", 0)
+                        for stats in table_stats.values()
+                        if "error" not in stats
+                    )
+                    if table_stats
+                    else 0
+                )
+                total_keywords = (
+                    sum(
+                        stats.get("keyword_count", 0)
+                        for stats in table_stats.values()
+                        if "error" not in stats
+                    )
+                    if table_stats
+                    else 0
+                )
+
+                # Calculate additional metrics
+                data_points = (
+                    len(combined_dataset) if "combined_dataset" in locals() else 0
+                )
+                selected_tool = (
+                    get_tool_name(selected_keyword, language)
+                    if selected_keyword
+                    else "N/A"
+                )
+
                 content.append(
                     html.Div(
                         [
                             html.H3(
-                                get_text("performance_metrics", language),
-                                className="section-title",
+                                [
+                                    html.I(
+                                        className="fas fa-tachometer-alt me-2",
+                                        style={"color": "#17a2b8"},
+                                    ),
+                                    get_text("performance_metrics", language),
+                                ],
+                                className="section-title d-flex align-items-center",
                                 id="section-performance",
                             ),
                             html.Div(
                                 [
-                                    html.P(
-                                        f"{get_text('cache_entries', language)}: {cache_stats['entries']}",
-                                        className="mb-1",
+                                    # Database Statistics Card
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                [
+                                                    html.H5(
+                                                        get_text("database_statistics", language),
+                                                        className="card-title text-primary",
+                                                    ),
+                                                    html.Hr(className="my-2"),
+                                                    html.P(
+                                                        [
+                                                            html.Strong(
+                                                                get_text("total_records", language)
+                                                            ),
+                                                            f"{total_records:,}",
+                                                        ],
+                                                        className="mb-2 text-dark",
+                                                    ),
+                                                    html.P(
+                                                        [
+                                                            html.Strong(get_text("unique_keywords", language)),
+                                                            f"{total_keywords:,}",
+                                                        ],
+                                                        className="mb-2 text-dark",
+                                                    ),
+                                                    html.P(
+                                                        [
+                                                            html.Strong(
+                                                                get_text("data_sources_count", language)
+                                                            ),
+                                                            f"{len(selected_sources)}",
+                                                        ],
+                                                        className="mb-0 text-dark",
+                                                    ),
+                                                ],
+                                                className="card-body",
+                                            )
+                                        ],
+                                        className="card border-primary shadow-sm h-100",
                                     ),
-                                    html.P(
-                                        f"{get_text('cache_usage', language)}: {cache_stats['usage']}",
-                                        className="mb-1",
+                                    # Current Analysis Card
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                [
+                                                    html.H5(
+                                                        get_text("current_query", language),
+                                                        className="card-title text-success",
+                                                    ),
+                                                    html.Hr(className="my-2"),
+                                                    html.P(
+                                                        [
+                                                            html.Strong(
+                                                                "Selected Tool: "
+                                                            ),
+                                                            selected_tool,
+                                                        ],
+                                                        className="mb-2 text-dark",
+                                                    ),
+                                                    html.P(
+                                                        [
+                                                            html.Strong(
+                                                                "Data Points: "
+                                                            ),
+                                                            f"{data_points:,}",
+                                                        ],
+                                                        className="mb-2 text-dark",
+                                                    ),
+                                                    html.P(
+                                                        [
+                                                            html.Strong("Sources: "),
+                                                            ", ".join(
+                                                                selected_sources[:3]
+                                                            )
+                                                            + (
+                                                                "..."
+                                                                if len(selected_sources)
+                                                                > 3
+                                                                else ""
+                                                            ),
+                                                        ],
+                                                        className="mb-0 text-dark",
+                                                    ),
+                                                ],
+                                                className="card-body",
+                                            )
+                                        ],
+                                        className="card border-success shadow-sm h-100",
                                     ),
-                                    html.P(
-                                        f"{get_text('cache_efficiency', language)}: {cache_stats['efficiency']}",
-                                        className="mb-1",
-                                    ),
-                                    html.P(
-                                        f"{get_text('data_sources_count', language)}: {len(selected_sources)}",
-                                        className="mb-1",
-                                    ),
-                                    html.P(
-                                        f"{get_text('data_points_total', language)}: {len(combined_dataset)}",
-                                        className="mb-1",
+                                    # System Performance Card
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                [
+                                                    html.H5(
+                                                        get_text("system_performance", language),
+                                                        className="card-title text-warning",
+                                                    ),
+                                                    html.Hr(className="my-2"),
+                                                    html.P(
+                                                        [
+                                                            html.Strong(
+                                                                get_text("analysis_type", language)
+                                                            ),
+                                                            get_text("multi_source", language)
+                                                            if len(selected_sources) > 1
+                                                            else get_text("single_source", language),
+                                                        ],
+                                                        className="mb-2 text-dark",
+                                                    ),
+                                                    html.P(
+                                                        [
+                                                            html.Strong(get_text("language_label", language)),
+                                                            language.upper(),
+                                                        ],
+                                                        className="mb-2 text-dark",
+                                                    ),
+                                                    html.P(
+                                                        [
+                                                            html.Strong(get_text("dashboard_label", language)),
+                                                            get_text("dashboard_name", language),
+                                                        ],
+                                                        className="mb-0 text-dark",
+                                                    ),
+                                                ],
+                                                className="card-body",
+                                            )
+                                        ],
+                                        className="card border-warning shadow-sm h-100",
                                     ),
                                 ],
-                                className="row",
+                                className="row g-3",
+                            ),
+                            # Performance Footer
+                            html.Div(
+                                [
+                                    html.Hr(),
+                                    html.P(
+                                        [
+                                            html.I(
+                                                className="fas fa-info-circle me-2 text-info"
+                                            ),
+                                            get_text("performance_info", language),
+                                        ],
+                                        className="text-muted text-center mb-0 small",
+                                    ),
+                                ],
+                                className="mt-3",
+                            ),
+                        ],
+                        className="analysis-section bg-gradient p-4 mt-4",
+                        id="section-performance",
+                        style={
+                            "background": "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)",
+                            "border": "2px solid #dee2e6",
+                            "borderRadius": "10px",
+                        },
+                    )
+                )
+                print("✅ Performance Metrics section added to main content")
+            except Exception as e:
+                print(f"Error adding performance metrics: {e}")
+                # Fallback simple performance section
+                content.append(
+                    html.Div(
+                        [
+                            html.H3(
+                                [
+                                    html.I(
+                                        className="fas fa-tachometer-alt me-2",
+                                        style={"color": "#17a2b8"},
+                                    ),
+                                    get_text("performance_metrics", language),
+                                ],
+                                className="section-title",
+                            ),
+                            html.P(
+                                [
+                                    html.Strong(get_text("current_query", language)),
+                                    f"{len(selected_sources)} " + (get_text("data_sources_count", language).rstrip(":")),
+                                ],
+                                className="text-muted",
                             ),
                         ],
                         className="analysis-section bg-light p-3 mt-4",
                         id="section-performance",
                     )
                 )
-                print("✅ Performance Metrics section added to main content")
-            except Exception as e:
-                print(f"Error adding performance metrics: {e}")
 
             return html.Div(content), credits_open
 

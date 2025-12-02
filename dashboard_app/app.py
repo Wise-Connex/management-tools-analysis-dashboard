@@ -844,6 +844,7 @@ app.clientside_callback(
     }
     """,
     Output("react-warning-suppression", "data"),
+    Input("language-store", "data"),  # Add input to trigger callback
     prevent_initial_call=False,
 )
 
