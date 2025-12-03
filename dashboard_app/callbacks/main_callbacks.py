@@ -330,136 +330,7 @@ def register_main_callbacks(app):
                 traceback.print_exc()
                 mean_fig = go.Figure()
 
-            # 3. PCA Analysis (only for multiple sources)
-            if len(selected_sources) > 1:
-                try:
-                    print("DEBUG: Running comprehensive PCA analysis")
-                    pca_results = perform_comprehensive_pca_analysis(
-                        combined_dataset, selected_source_names, language
-                    )
-                    if pca_results.get("success"):
-                        # Create visualization using the DataFrame
-                        pca_fig = create_pca_figure(
-                            combined_dataset, selected_source_names, language
-                        )
-
-                        content.append(
-                            html.Div(
-                                [
-                                    html.H3(
-                                        get_text("pca_title", language),
-                                        className="section-title",
-                                        id="section-pca",
-                                    ),
-                                    html.Div(
-                                        dcc.Graph(
-                                            id="pca-plot",
-                                            figure=pca_fig,
-                                            className="analysis-graph",
-                                        ),
-                                        className="graph-container",
-                                    ),
-                                ],
-                                className="analysis-section",
-                                id="section-pca-analysis",
-                            )
-                        )
-                        print("✅ PCA Analysis section added to main content")
-                    else:
-                        print(
-                            f"PCA analysis failed: {pca_results.get('error', 'Unknown error')}"
-                        )
-                        content.append(
-                            html.Div(
-                                [
-                                    html.H3(
-                                        get_text("pca_title", language),
-                                        className="section-title",
-                                    ),
-                                    html.P(
-                                        f"PCA analysis failed: {pca_results.get('error', 'Unknown error')}",
-                                        className="text-warning",
-                                    ),
-                                ],
-                                className="analysis-section",
-                            )
-                        )
-                except Exception as e:
-                    print(f"Error in PCA analysis: {e}")
-                    import traceback
-
-                    traceback.print_exc()
-                    content.append(
-                        html.Div(
-                            [
-                                html.H3(
-                                    get_text("pca_title", language),
-                                    className="section-title",
-                                ),
-                                html.P(
-                                    f"Error in PCA analysis: {str(e)}",
-                                    className="text-danger",
-                                ),
-                            ],
-                            className="analysis-section",
-                        )
-                    )
-
-            # 4. Correlation Heatmap (only for multiple sources)
-            if len(selected_sources) > 1:
-                try:
-                    print("DEBUG: Creating correlation heatmap")
-                    heatmap_fig = create_correlation_heatmap(
-                        combined_dataset, selected_source_names, language
-                    )
-                    content.append(
-                        html.Div(
-                            [
-                                html.H3(
-                                    get_text("correlation_heatmap_title", language),
-                                    className="section-title",
-                                    id="section-correlation",
-                                ),
-                                html.P(
-                                    get_text("heatmap_instructions", language),
-                                    className="text-muted mb-3",
-                                ),
-                                html.Div(
-                                    dcc.Graph(
-                                        id="correlation-heatmap",
-                                        figure=heatmap_fig,
-                                        className="analysis-graph clickable-heatmap",
-                                    ),
-                                    className="graph-container",
-                                ),
-                            ],
-                            className="analysis-section",
-                            id="section-correlation-analysis",
-                        )
-                    )
-                    print("✅ Correlation Heatmap section added to main content")
-                except Exception as e:
-                    print(f"Error creating correlation heatmap: {e}")
-                    import traceback
-
-                    traceback.print_exc()
-                    content.append(
-                        html.Div(
-                            [
-                                html.H3(
-                                    get_text("correlation_heatmap_title", language),
-                                    className="section-title",
-                                ),
-                                html.P(
-                                    f"Error creating correlation heatmap: {str(e)}",
-                                    className="text-danger",
-                                ),
-                            ],
-                            className="analysis-section",
-                        )
-                    )
-
-            # 5. 3D Temporal Analysis (only for multiple sources)
+            # 3. 3D Temporal Analysis (only for multiple sources)
             if len(selected_sources) > 1:
                 try:
                     # Get source options for dropdowns
@@ -553,16 +424,23 @@ def register_main_callbacks(app):
                         )
                     )
 
-            # 6. Seasonal Analysis (if sufficient data)
+            # 4. Seasonal Analysis (if sufficient data)
             try:
+                # Get datasets_norm if not available (e.g., from cache)
+                if datasets_norm is None:
+                    datasets_norm, _ = db_manager.get_data_for_keyword(
+                        selected_keyword, selected_source_ids
+                    )
+
                 # Check if any source has sufficient data for seasonal analysis
                 has_seasonal_data = False
-                for src_id in selected_source_ids:
-                    if src_id in datasets_norm:
-                        data = datasets_norm[src_id].dropna()
-                        if len(data) >= 24:  # Need at least 24 data points
-                            has_seasonal_data = True
-                            break
+                if datasets_norm:
+                    for src_id in selected_source_ids:
+                        if src_id in datasets_norm:
+                            data = datasets_norm[src_id].dropna()
+                            if len(data) >= 24:  # Need at least 24 data points
+                                has_seasonal_data = True
+                                break
 
                 if has_seasonal_data:
                     content.append(
@@ -624,16 +502,23 @@ def register_main_callbacks(app):
                     )
                 )
 
-            # 7. Fourier Analysis (if sufficient data)
+            # 5. Fourier Analysis (if sufficient data)
             try:
+                # Get datasets_norm if not available (e.g., from cache)
+                if datasets_norm is None:
+                    datasets_norm, _ = db_manager.get_data_for_keyword(
+                        selected_keyword, selected_source_ids
+                    )
+
                 # Check if any source has sufficient data for Fourier analysis
                 has_fourier_data = False
-                for src_id in selected_source_ids:
-                    if src_id in datasets_norm:
-                        data = datasets_norm[src_id].dropna()
-                        if len(data) >= 10:  # Need at least 10 data points
-                            has_fourier_data = True
-                            break
+                if datasets_norm:
+                    for src_id in selected_source_ids:
+                        if src_id in datasets_norm:
+                            data = datasets_norm[src_id].dropna()
+                            if len(data) >= 10:  # Need at least 10 data points
+                                has_fourier_data = True
+                                break
 
                 if has_fourier_data:
                     content.append(
@@ -695,7 +580,61 @@ def register_main_callbacks(app):
                     )
                 )
 
-            # 8. Regression Analysis (only for multiple sources)
+            # 6. Correlation Heatmap (only for multiple sources)
+            if len(selected_sources) > 1:
+                try:
+                    print("DEBUG: Creating correlation heatmap")
+                    heatmap_fig = create_correlation_heatmap(
+                        combined_dataset, selected_source_names, language
+                    )
+                    content.append(
+                        html.Div(
+                            [
+                                html.H3(
+                                    get_text("correlation_heatmap_title", language),
+                                    className="section-title",
+                                    id="section-correlation",
+                                ),
+                                html.P(
+                                    get_text("heatmap_instructions", language),
+                                    className="text-muted mb-3",
+                                ),
+                                html.Div(
+                                    dcc.Graph(
+                                        id="correlation-heatmap",
+                                        figure=heatmap_fig,
+                                        className="analysis-graph clickable-heatmap",
+                                    ),
+                                    className="graph-container",
+                                ),
+                            ],
+                            className="analysis-section",
+                            id="section-correlation-analysis",
+                        )
+                    )
+                    print("✅ Correlation Heatmap section added to main content")
+                except Exception as e:
+                    print(f"Error creating correlation heatmap: {e}")
+                    import traceback
+
+                    traceback.print_exc()
+                    content.append(
+                        html.Div(
+                            [
+                                html.H3(
+                                    get_text("correlation_heatmap_title", language),
+                                    className="section-title",
+                                ),
+                                html.P(
+                                    f"Error creating correlation heatmap: {str(e)}",
+                                    className="text-danger",
+                                ),
+                            ],
+                            className="analysis-section",
+                        )
+                    )
+
+            # 7. Regression Analysis (only for multiple sources)
             if len(selected_sources) > 1:
                 content.append(
                     html.Div(
@@ -730,7 +669,84 @@ def register_main_callbacks(app):
                         id="section-regression-analysis",
                     )
                 )
-                print("✅ Regression Analysis section added to main content")
+
+            # 8. PCA Analysis (only for multiple sources)
+            if len(selected_sources) > 1:
+                try:
+                    print("DEBUG: Running comprehensive PCA analysis")
+                    pca_results = perform_comprehensive_pca_analysis(
+                        combined_dataset, selected_source_names, language
+                    )
+                    if pca_results.get("success"):
+                        # Create visualization using the DataFrame
+                        pca_fig = create_pca_figure(
+                            combined_dataset,
+                            selected_sources,
+                            language,
+                            selected_keyword,
+                        )
+
+                        content.append(
+                            html.Div(
+                                [
+                                    html.H3(
+                                        get_text("pca_title", language),
+                                        className="section-title",
+                                        id="section-pca",
+                                    ),
+                                    html.Div(
+                                        dcc.Graph(
+                                            id="pca-plot",
+                                            figure=pca_fig,
+                                            className="analysis-graph",
+                                        ),
+                                        className="graph-container",
+                                    ),
+                                ],
+                                className="analysis-section",
+                                id="section-pca-analysis",
+                            )
+                        )
+                        print("✅ PCA Analysis section added to main content")
+                    else:
+                        print(
+                            f"PCA analysis failed: {pca_results.get('error', 'Unknown error')}"
+                        )
+                        content.append(
+                            html.Div(
+                                [
+                                    html.H3(
+                                        get_text("pca_title", language),
+                                        className="section-title",
+                                    ),
+                                    html.P(
+                                        f"PCA analysis failed: {pca_results.get('error', 'Unknown error')}",
+                                        className="text-warning",
+                                    ),
+                                ],
+                                className="analysis-section",
+                            )
+                        )
+                except Exception as e:
+                    print(f"Error in PCA analysis: {e}")
+                    import traceback
+
+                    traceback.print_exc()
+                    content.append(
+                        html.Div(
+                            [
+                                html.H3(
+                                    get_text("pca_title", language),
+                                    className="section-title",
+                                ),
+                                html.P(
+                                    f"Error in PCA analysis: {str(e)}",
+                                    className="text-danger",
+                                ),
+                            ],
+                            className="analysis-section",
+                        )
+                    )
 
             # 9. Data Table
             try:
@@ -788,7 +804,6 @@ def register_main_callbacks(app):
                         className="analysis-section",
                     )
                 )
-
             # 9. Performance Metrics section
             try:
                 # Get database stats for performance metrics

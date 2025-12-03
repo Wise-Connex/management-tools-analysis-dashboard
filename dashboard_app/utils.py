@@ -19,6 +19,7 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from scipy import stats
 from statsmodels.tsa.arima.model import ARIMA
+from dash import html
 from statsmodels.tsa.seasonal import seasonal_decompose
 
 # Import project-specific modules
@@ -39,29 +40,18 @@ from translations import get_text
 _processed_data_cache = {}
 _cache_max_size = 10
 
-# Color map for consistent source coloring (matches old version)
+# Color map for consistent source coloring (matches actual DISPLAY_NAMES)
 color_map = {
+    # Standard sources (from DISPLAY_NAMES in fix_source_mapping.py)
     "Google Trends": "#1f77b4",  # Blue
-    "Bain Usability": "#ff7f0e",  # Orange
-    "Harvard Business Review": "#2ca02c",  # Green
-    "McKinsey Insights": "#d62728",  # Red
-    "BCG Analysis": "#9467bd",  # Purple
-    "Google Trends - Market": "#8c564b",  # Brown
-    "Bain Usabilidad": "#e377c2",  # Pink
-    "Harvard Business Review - Strategy": "#7f7f7f",  # Gray
-    "McKinsey Insights - Operations": "#bcbd22",  # Olive
-    "BCG Analysis - Growth": "#17becf",  # Cyan
+    "Google Books": "#ff7f0e",  # Orange
+    "Bain Usability": "#2ca02c",  # Green
+    "Bain Satisfaction": "#d62728",  # Red
+    "Crossref": "#9467bd",  # Purple
+    # Spanish translations (for bilingual support)
+    "Bain Usabilidad": "#2ca02c",  # Green (same as English)
+    "Bain Satisfacción": "#d62728",  # Red (same as English)
 }
-
-# Add Spanish translations to color map
-color_map.update(
-    {
-        "Bain Usabilidad": color_map["Bain Usability"],
-        "Harvard Business - Estrategia": color_map["Harvard Business Review"],
-        "McKinsey Insights - Operaciones": color_map["McKinsey Insights"],
-        "BCG Analysis - Crecimiento": color_map["BCG Analysis"],
-    }
-)
 
 
 def parse_text_with_links(text):
@@ -968,20 +958,33 @@ def create_pca_figure(data, sources, language="es", tool_name=None):
     selected_source_ids = map_display_names_to_source_ids(sources)
     translation_mapping = create_translation_mapping(selected_source_ids, language)
 
-    # Prepare data for PCA - use original column names
+    # Prepare data for PCA - map display names to actual DataFrame column names
     original_columns = []
     print(f"DEBUG: PCA Analysis - Processing {len(sources)} sources")
     print(f"DEBUG: Input sources: {sources}")
     print(f"DEBUG: Translation mapping: {translation_mapping}")
+    print(f"DEBUG: Available dataset columns: {list(data.columns)}")
 
     for source in sources:
-        original_name = get_original_column_name(source, translation_mapping)
-        print(f"DEBUG: Processing source '{source}' -> '{original_name}'")
-        if original_name in data.columns:
-            original_columns.append(original_name)
-            print(f"DEBUG: ✓ Found column '{original_name}' in dataset")
+        # Get the database column name for this display name
+        db_column_name = get_original_column_name(source, translation_mapping)
+        print(
+            f"DEBUG: Processing source '{source}' -> database name '{db_column_name}'"
+        )
+
+        # Check if the database column name exists in the DataFrame
+        if db_column_name in data.columns:
+            original_columns.append(db_column_name)
+            print(f"DEBUG: ✓ Found column '{db_column_name}' in dataset")
         else:
-            print(f"DEBUG: ✗ Column '{original_name}' not found in dataset")
+            # Fallback: try the original source name directly
+            if source in data.columns:
+                original_columns.append(source)
+                print(f"DEBUG: ✓ Found column '{source}' in dataset (direct match)")
+            else:
+                print(
+                    f"DEBUG: ✗ Column '{db_column_name}' or '{source}' not found in dataset"
+                )
 
     if len(original_columns) < 2:
         print(
@@ -1039,11 +1042,12 @@ def create_pca_figure(data, sources, language="es", tool_name=None):
         # Use display name for labels
         display_name = source
 
-        # Get color mapping - use original database name for consistent colors
-        original_source_name = get_original_column_name(
-            display_name, translation_mapping
-        )
-        arrow_color = color_map.get(original_source_name, "#000000")
+        # Get color mapping - use display name directly for consistent colors
+        # This matches the approach used in temporal analysis functions
+        arrow_color = color_map.get(display_name, "#000000")
+
+        # DEBUG: Log color mapping for verification
+        print(f"DEBUG PCA: Source '{display_name}' -> Color: '{arrow_color}'")
 
         # Add arrow line from origin to point
         fig.add_trace(
@@ -1353,7 +1357,21 @@ def get_original_column_name(display_name, translation_mapping):
     Returns:
         str: Original column name
     """
-    return translation_mapping.get(display_name, display_name)
+    # First try the translation mapping
+    if display_name in translation_mapping:
+        return translation_mapping[display_name]
+
+    # Then try the display-to-database name mapping
+    try:
+        from fix_source_mapping import DISPLAY_TO_DB_NAME
+
+        if display_name in DISPLAY_TO_DB_NAME:
+            return DISPLAY_TO_DB_NAME[display_name]
+    except ImportError:
+        pass
+
+    # Fallback: return the display name as-is
+    return display_name
 
 
 def safe_dataframe_column_access(data, translated_name, translation_mapping):
