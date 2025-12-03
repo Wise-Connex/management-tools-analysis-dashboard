@@ -1,3 +1,112 @@
+/* Regression Equations Styling */
+.regression-equations-panel {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 15px 0;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    font-family: 'Courier New', monospace;
+}
+
+.equations-title {
+    color: #2c3e50;
+    font-size: 1.2em;
+    font-weight: 600;
+    margin-bottom: 15px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.equations-divider {
+    border: none;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #3498db, transparent);
+    margin: 15px 0;
+}
+
+.equations-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.equation-card {
+    background: white;
+    border-left: 4px solid #3498db;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.equation-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.equation-degree {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 1.1em;
+    margin-bottom: 8px;
+    text-transform: capitalize;
+}
+
+.equation-formula {
+    font-family: 'Courier New', monospace;
+    font-size: 1.0em;
+    color: #34495e;
+    background: #f8f9fa;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin: 8px 0;
+    border: 1px solid #e9ecef;
+    word-break: break-all;
+}
+
+.equation-r-squared {
+    font-weight: 500;
+    color: #27ae60;
+    font-size: 0.95em;
+    margin-top: 8px;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {
+    .regression-equations-panel {
+        padding: 15px;
+        margin: 10px 0;
+    }
+    
+    .equation-card {
+        padding: 12px;
+    }
+    
+    .equations-title {
+        font-size: 1.1em;
+    }
+}
+
+/* Regression section specific styling */
+#section-regression-analysis {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    margin: 20px 0;
+    padding: 25px;
+}
+
+#regression-equations {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 15px;
+    min-height: 400px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
 /* Markdown Content Styling for Key Findings */
 .markdown-content {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -120,4 +229,61 @@
 
 .markdown-content table:contains("Spearman") {
     font-size: 0.8em;
+}
+
+/* Performance Metrics Section - Reduced Font Size */
+#section-performance .card-body {
+    font-size: 0.85rem;
+    padding: 1rem;
+}
+
+#section-performance .card-title {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+#section-performance .card-body p {
+    font-size: 0.8rem;
+    margin-bottom: 0.4rem;
+    line-height: 1.3;
+}
+
+#section-performance .card-body strong {
+    font-size: 0.8rem;
+}
+
+#section-performance .text-muted.small {
+    font-size: 0.75rem;
+}
+
+/* Performance Metrics Cards - Compact Layout */
+#section-performance .row.g-3 {
+    row-gap: 1rem;
+}
+
+#section-performance .card {
+    margin-bottom: 0;
+}
+
+#section-performance hr {
+    margin: 0.5rem 0;
+}
+
+/* Performance Metrics Section Title - Smaller */
+#section-performance .section-title {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Performance Metrics - Card Headers */
+#section-performance .card.border-primary {
+    border-width: 1px;
+}
+
+#section-performance .card.border-success {
+    border-width: 1px;
+}
+
+#section-performance .card.border-warning {
+    border-width: 1px;
 }
