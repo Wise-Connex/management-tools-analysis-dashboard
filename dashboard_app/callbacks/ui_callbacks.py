@@ -86,35 +86,20 @@ def register_ui_callbacks(app):
 
         affiliations = html.Div(
             [
-                html.P(
-                    get_text("university", language),
+                html.Img(
+                    src="/assets/TempoLoop.gif",
+                    alt="Tempo Logo",
                     style={
-                        "margin": "2px 0",
-                        "fontSize": "12px",
-                        "fontWeight": "normal",
-                        "textAlign": "center",
-                    },
-                ),
-                html.P(
-                    get_text("postgraduate_coordination", language),
-                    style={
-                        "margin": "2px 0",
-                        "fontSize": "11px",
-                        "fontWeight": "normal",
-                        "textAlign": "center",
-                    },
-                ),
-                html.P(
-                    get_text("doctoral_program", language),
-                    style={
-                        "margin": "2px 0",
-                        "fontSize": "13px",
-                        "fontWeight": "bold",
-                        "textAlign": "center",
+                        "width": "100%",
+                        "maxWidth": "180px",
+                        "height": "auto",
+                        "display": "block",
+                        "margin": "0 auto 10px auto",
+                        "borderRadius": "5px",
                     },
                 ),
             ],
-            style={"marginBottom": "15px"},
+            style={"marginBottom": "15px", "textAlign": "center"},
         )
 
         return tool_label, sources_label, affiliations
@@ -136,6 +121,7 @@ def register_ui_callbacks(app):
         # Import here to avoid circular imports
         import sys
         import os
+
         sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
         from app import source_colors_by_display
 
@@ -211,7 +197,11 @@ def register_ui_callbacks(app):
 
             row = html.Div(
                 [button, icon],
-                style={"display": "flex", "alignItems": "center", "marginBottom": "5px"},
+                style={
+                    "display": "flex",
+                    "alignItems": "center",
+                    "marginBottom": "5px",
+                },
             )
             components.append(row)
 
@@ -303,7 +293,9 @@ def register_ui_callbacks(app):
 
             elif "data-source-button" in trigger_id:
                 # Extract the source name from the triggered button
-                button_id = eval(trigger_id.split(".")[0])  # Convert string back to dict
+                button_id = eval(
+                    trigger_id.split(".")[0]
+                )  # Convert string back to dict
                 source = button_id["index"]
 
                 # Toggle selection
@@ -382,12 +374,17 @@ def register_ui_callbacks(app):
 
         if not ctx.triggered:
             # Initial load - set default text
-            return get_text("key_findings", language), {"enabled": True, "text": get_text("key_findings", language)}
+            return get_text("key_findings", language), {
+                "enabled": True,
+                "text": get_text("key_findings", language),
+            }
 
         trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
 
         # Handle language change
-        if trigger_id == "language-store" or (trigger_id == "generate-key-findings-btn" and n_clicks is None):
+        if trigger_id == "language-store" or (
+            trigger_id == "generate-key-findings-btn" and n_clicks is None
+        ):
             button_text = get_text("key_findings", language)
             return button_text, {"enabled": True, "text": button_text}
 
@@ -416,87 +413,228 @@ def register_ui_callbacks(app):
 
         return False
 
+    # Callback to control Key Findings button visibility
+    @app.callback(
+        Output("key-findings-button-container", "style"),
+        Input("keyword-dropdown", "value"),
+        Input("data-sources-store-v2", "data"),
+    )
+    def update_key_findings_button_visibility(selected_tool, selected_sources):
+        """Update Key Findings button visibility based on tool and data source selection"""
+        # Show button only when both tool and at least one data source are selected
+        if selected_tool and selected_sources and len(selected_sources) > 0:
+            return {
+                "display": "block",
+                "marginTop": "10px",
+                "marginBottom": "15px",
+            }  # Show button
+        else:
+            return {
+                "display": "none",
+                "marginTop": "10px",
+                "marginBottom": "15px",
+            }  # Hide button
+
     # Callback to update credits content
     @app.callback(
         Output("credits-content", "children"),
         Input("language-store", "data"),
     )
     def update_credits_content(language):
-        """Update credits modal content based on language"""
-
-        # Import here to avoid circular imports
-        from utils import get_current_date_for_citation
-
-        current_date = get_current_date_for_citation()
-        # Extract APA format date for display
-        display_date = current_date.get("apa", "")
-
-        if language == "es":
-            credits_content = html.Div([
-                html.H5("Créditos y Reconocimientos", className="mb-3"),
-                html.P("Este dashboard ha sido desarrollado como parte de una investigación doctoral sobre el análisis de tendencias en herramientas de gestión.",
-                      className="mb-2"),
-                html.P([
-                    "Desarrollado por: ",
-                    html.Strong("Diego Armando Maradona")
-                ], className="mb-2"),
-                html.P([
-                    "Programa de Doctorado en: ",
-                    html.Strong("Administración y Dirección de Empresas")
-                ], className="mb-2"),
-                html.P([
-                    "Universidad: ",
-                    html.Strong("Universidad Nacional de La Pampa")
-                ], className="mb-2"),
-                html.P([
-                    html.Strong("Fuentes de datos: "),
-                    "Google Trends, Google Books, Bain Survey, Crossref"
-                ], className="mb-2"),
-                html.P([
-                    html.Strong("Fecha de acceso: "),
-                    display_date
-                ], className="mb-2"),
-                html.Hr(),
-                html.H6("Tecnologías Utilizadas", className="mt-3 mb-2"),
-                html.P("Python, Dash, Plotly, Bootstrap, SQLite", className="mb-2"),
-                html.H6("Reconocimiento", className="mt-3 mb-2"),
-                html.P("Este trabajo utiliza datos de múltiples fuentes académicas y comerciales para el análisis de tendencias en herramientas de gestión.",
-                      className="mb-0", style={"fontSize": "0.9em", "fontStyle": "italic"})
-            ])
-        else:
-            credits_content = html.Div([
-                html.H5("Credits and Acknowledgments", className="mb-3"),
-                html.P("This dashboard has been developed as part of doctoral research on management tools trend analysis.",
-                      className="mb-2"),
-                html.P([
-                    "Developed by: ",
-                    html.Strong("Diego Armando Maradona")
-                ], className="mb-2"),
-                html.P([
-                    "PhD Program: ",
-                    html.Strong("Business Administration and Management")
-                ], className="mb-2"),
-                html.P([
-                    "University: ",
-                    html.Strong("National University of La Pampa")
-                ], className="mb-2"),
-                html.P([
-                    html.Strong("Data sources: "),
-                    "Google Trends, Google Books, Bain Survey, Crossref"
-                ], className="mb-2"),
-                html.P([
-                    html.Strong("Access date: "),
-                    display_date
-                ], className="mb-2"),
-                html.Hr(),
-                html.H6("Technologies Used", className="mt-3 mb-2"),
-                html.P("Python, Dash, Plotly, Bootstrap, SQLite", className="mb-2"),
-                html.H6("Acknowledgment", className="mt-3 mb-2"),
-                html.P("This work uses data from multiple academic and commercial sources for the analysis of management tools trends.",
-                      className="mb-0", style={"fontSize": "0.9em", "fontStyle": "italic"})
-            ])
-
-        return credits_content
+        """Update credits content based on language"""
+        return [
+            html.P(
+                [
+                    get_text("dashboard_analysis", language) + " ",
+                    html.B(get_text("management_tools_lower", language)),
+                ],
+                style={"marginBottom": "2px", "fontSize": "9px", "textAlign": "left"},
+            ),
+            html.P(
+                [get_text("developed_with", language)],
+                style={
+                    "fontSize": "9px",
+                    "textAlign": "left",
+                    "marginTop": "0px",
+                    "marginBottom": "2px",
+                },
+            ),
+            html.P(
+                [
+                    get_text("by", language) + ": ",
+                    html.A(
+                        [
+                            html.Img(
+                                src="assets/orcid.logo.icon.svg",
+                                style={
+                                    "height": "13px",
+                                    "verticalAlign": "middle",
+                                    "marginRight": "2px",
+                                },
+                            ),
+                            html.B("Dimar Anez"),
+                        ],
+                        href="https://orcid.org/0009-0001-5386-2689",
+                        target="_blank",
+                        title="ORCID",
+                        style={
+                            "color": "#6c757d",
+                            "textDecoration": "none",
+                            "fontSize": "9px",
+                        },
+                    ),
+                    " - ",
+                    html.A(
+                        "Wise Connex",
+                        href="https://wiseconnex.com/",
+                        target="_blank",
+                        title="wiseconnex.com",
+                        style={
+                            "color": "#6c757d",
+                            "textDecoration": "none",
+                            "fontSize": "9px",
+                        },
+                    ),
+                ],
+                style={
+                    "fontSize": "9px",
+                    "textAlign": "left",
+                    "marginTop": "0px",
+                    "marginBottom": "5px",
+                },
+            ),
+            # Horizontal rule above logos
+            html.Hr(style={"margin": "8px 0 5px 0"}),
+            # Logos section - side by side below author credit, above copyright
+            html.Div(
+                [
+                    html.A(
+                        html.Img(
+                            src="assets/LogoSolidumBUSINESS.png",
+                            style={
+                                "height": "34px",
+                                "width": "auto",
+                                "marginRight": "8px",
+                                "verticalAlign": "middle",
+                            },
+                        ),
+                        href="https://solidum360.com",
+                        target="_blank",
+                        title="Solidum Consulting",
+                    ),
+                    html.A(
+                        html.Img(
+                            src="assets/WC-Logo-SQ.png",
+                            style={
+                                "height": "34px",
+                                "width": "auto",
+                                "verticalAlign": "middle",
+                            },
+                        ),
+                        href="https://wiseconnex.com",
+                        target="_blank",
+                        title="Wise Connex",
+                    ),
+                ],
+                style={"textAlign": "left", "marginBottom": "5px", "marginTop": "3px"},
+            ),
+            html.Hr(style={"margin": "8px 0 5px 0"}),
+            html.P(
+                "© 2024-2025 Diomar Añez - Dimar Añez. "
+                + get_text("license", language),
+                style={
+                    "margin": "2px 0",
+                    "fontSize": "9px",
+                    "textAlign": "left",
+                    "lineHeight": "1.3",
+                },
+            ),
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.A(
+                                get_text("harvard_dataverse", language),
+                                href="https://dataverse.harvard.edu/dataverse/management-fads",
+                                target="_blank",
+                                title=get_text("harvard_title", language),
+                                style={
+                                    "color": "#993300",
+                                    "textDecoration": "none",
+                                    "fontSize": "9px",
+                                    "display": "block",
+                                    "margin": "3px 0",
+                                    "padding": "0",
+                                    "lineHeight": "1",
+                                },
+                            ),
+                            html.A(
+                                get_text("nlm_publication", language),
+                                href="https://datasetcatalog.nlm.nih.gov/searchResults?filters=agent%3AAnez%252C%2520Diomar&sort=rel&page=1&size=10",
+                                target="_blank",
+                                title=get_text("nlm_title", language),
+                                style={
+                                    "color": "#993300",
+                                    "textDecoration": "none",
+                                    "fontSize": "9px",
+                                    "display": "block",
+                                    "margin": "3px 0",
+                                    "padding": "0",
+                                    "lineHeight": "1",
+                                },
+                            ),
+                            html.A(
+                                get_text("zenodo_publication", language),
+                                href="https://zenodo.org/search?q=metadata.creators.person_or_org.name%3A%22Anez%2C%20Diomar%22&l=list&p=1&s=10&sort=bestmatch",
+                                target="_blank",
+                                title=get_text("zenodo_title", language),
+                                style={
+                                    "color": "#993300",
+                                    "textDecoration": "none",
+                                    "fontSize": "9px",
+                                    "display": "block",
+                                    "margin": "3px 0",
+                                    "padding": "0",
+                                    "lineHeight": "1",
+                                },
+                            ),
+                            html.A(
+                                get_text("openaire_visibility", language),
+                                href="https://explore.openaire.eu/search/advanced/research-outcomes?f0=resultauthor&fv0=Diomar%2520Anez",
+                                target="_blank",
+                                title=get_text("openaire_title", language),
+                                style={
+                                    "color": "#993300",
+                                    "textDecoration": "none",
+                                    "fontSize": "9px",
+                                    "display": "block",
+                                    "margin": "3px 0",
+                                    "padding": "0",
+                                    "lineHeight": "1",
+                                },
+                            ),
+                            html.A(
+                                get_text("github_reports", language),
+                                href="https://github.com/Wise-Connex/Management-Tools-Analysis/tree/main/Informes",
+                                target="_blank",
+                                title=get_text("github_title", language),
+                                style={
+                                    "color": "#993300",
+                                    "textDecoration": "none",
+                                    "fontSize": "9px",
+                                    "display": "block",
+                                    "margin": "3px 0",
+                                    "padding": "0",
+                                    "lineHeight": "1",
+                                },
+                            ),
+                        ],
+                        style={"margin": "3px 0", "padding": "0", "lineHeight": "1"},
+                    )
+                ],
+                style={"marginTop": "5px"},
+            ),
+        ]
 
     # Callback to update header content
     @app.callback(
@@ -506,18 +644,65 @@ def register_ui_callbacks(app):
         Input("language-store", "data"),
     )
     def update_header_content(language):
-        """Update dashboard header content based on language"""
+        """Update header content based on language"""
 
-        if language == "es":
-            subtitle = "Base analítica para la Investigación Doctoral"
-            title = "Herramientas gerenciales: Tendencias, Usabilidad y Satisfacción"
-            credits = "Investigador Principal: Diego Armando Maradona - Universidad Nacional de La Pampa"
-        else:
-            subtitle = "Analytical Base for Doctoral Research"
-            title = "Management Tools: Trends, Usability and Satisfaction"
-            credits = "Principal Investigator: Diego Armando Maradona - National University of La Pampa"
+        # Import get_text function from translations
+        from translations import get_text
+        from dash import html
 
-        return subtitle, title, credits
+        subtitle = [
+            get_text("doctoral_research_focus", language) + ": ",
+            html.I("«" + get_text("ontological_dichotomy", language) + "»"),
+        ]
+
+        title = get_text("management_tools", language)
+
+        credits_content = [
+            get_text("principal_investigator", language) + ": ",
+            html.A(
+                [
+                    html.Img(
+                        src="assets/orcid.logo.icon.svg",
+                        style={
+                            "height": "18px",
+                            "verticalAlign": "middle",
+                            "marginRight": "3px",
+                        },
+                    ),
+                    html.B("Diomar Añez"),
+                ],
+                href="https://orcid.org/0000-0002-7925-5078",
+                target="_blank",
+                style={"color": "#495057", "textDecoration": "none"},
+            ),
+            " (",
+            html.A(
+                get_text("solidum_consulting", language),
+                href="https://solidum360.com",
+                target="_blank",
+                style={"color": "#495057", "textDecoration": "none"},
+            ),
+            ") | " + get_text("academic_tutor", language) + ": ",
+            html.A(
+                [
+                    html.Img(
+                        src="assets/orcid.logo.icon.svg",
+                        style={
+                            "height": "18px",
+                            "verticalAlign": "middle",
+                            "marginRight": "3px",
+                        },
+                    ),
+                    html.B("Dra. Elizabeth Pereira"),
+                ],
+                href="https://orcid.org/0000-0002-8264-7080",
+                target="_blank",
+                style={"color": "#495057", "textDecoration": "none"},
+            ),
+            " (" + get_text("ulac", language) + ")",
+        ]
+
+        return subtitle, title, credits_content
 
     # Callback to toggle notes modal
     @app.callback(
@@ -591,9 +776,9 @@ def register_ui_callbacks(app):
         citation_date = current_date.get("apa", "")
 
         if language == "es":
-            citation = f"""Maradona, D. A. ({citation_date}). *Dashboard de Análisis de Herramientas de Gestión*. Programa de Doctorado en Administración y Dirección de Empresas, Universidad Nacional de La Pampa. Recuperado de {dash.get_relative_path('/')}"""
+            citation = f"""Maradona, D. A. ({citation_date}). *Dashboard de Análisis de Herramientas de Gestión*. Programa de Doctorado en Administración y Dirección de Empresas, Universidad Nacional de La Pampa. Recuperado de {dash.get_relative_path("/")}"""
         else:
-            citation = f"""Maradona, D. A. ({citation_date}). *Management Tools Analysis Dashboard*. PhD Program in Business Administration and Management, National University of La Pampa. Retrieved from {dash.get_relative_path('/')}"""
+            citation = f"""Maradona, D. A. ({citation_date}). *Management Tools Analysis Dashboard*. PhD Program in Business Administration and Management, National University of La Pampa. Retrieved from {dash.get_relative_path("/")}"""
 
         return citation
 
@@ -619,11 +804,11 @@ def register_ui_callbacks(app):
 
         # Generate RIS format citation
         ris_content = f"""TY  - COMP
-T1  - {'Dashboard de Análisis de Herramientas de Gestión' if language == 'es' else 'Management Tools Analysis Dashboard'}
+T1  - {"Dashboard de Análisis de Herramientas de Gestión" if language == "es" else "Management Tools Analysis Dashboard"}
 AU  - Maradona, Diego Armando
 PY  - {citation_year}
-PB  - {'Programa de Doctorado en Administración y Dirección de Empresas, Universidad Nacional de La Pampa' if language == 'es' else 'PhD Program in Business Administration and Management, National University of La Pampa'}
-UR  - {dash.get_relative_path('/')}
+PB  - {"Programa de Doctorado en Administración y Dirección de Empresas, Universidad Nacional de La Pampa" if language == "es" else "PhD Program in Business Administration and Management, National University of La Pampa"}
+UR  - {dash.get_relative_path("/")}
 ER  - """
 
         # This would need to be implemented as a proper download endpoint
