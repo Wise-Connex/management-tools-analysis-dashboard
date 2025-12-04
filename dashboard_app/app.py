@@ -1671,9 +1671,11 @@ def generate_ris_download_link(n_clicks, language):
         return "", ""
 
     # Generate RIS content based on current language
+    ris_url = get_ris_url()
+
     if language == "es":
         # Spanish RIS content
-        ris_content = """TY  - WEB
+        ris_content = f"""TY  - WEB
 AU  - Añez, Diomar
 AU  - Añez, Dimar
 PY  - 2025
@@ -1684,12 +1686,12 @@ KW  - Herramientas Gerenciales
 KW  - Modas Gerenciales
 KW  - Visualización de Datos
 KW  - Antinomias Policontextuales
-UR  - {get_ris_url()}
+UR  - {ris_url}
 ER  -"""
         filename = "dashboard_citacion_es.ris"
     else:
         # English RIS content
-        ris_content = """TY  - WEB
+        ris_content = f"""TY  - WEB
 AU  - Añez, Diomar
 AU  - Añez, Dimar
 PY  - 2025
@@ -1700,7 +1702,7 @@ KW  - Management Tools
 KW  - Management Fads
 KW  - Data Visualization
 KW  - Policontextual Antinomies
-UR  - {get_ris_url()}
+UR  - {ris_url}
 ER  -"""
         filename = "dashboard_citation_en.ris"
 
