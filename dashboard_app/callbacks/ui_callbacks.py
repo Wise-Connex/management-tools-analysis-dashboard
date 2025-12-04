@@ -91,15 +91,20 @@ def register_ui_callbacks(app):
                     alt="Tempo Logo",
                     style={
                         "width": "100%",
-                        "maxWidth": "180px",
                         "height": "auto",
                         "display": "block",
-                        "margin": "0 auto 10px auto",
-                        "borderRadius": "5px",
+                        "objectFit": "contain",
+                        "borderRadius": "0",
                     },
                 ),
             ],
-            style={"marginBottom": "15px", "textAlign": "center"},
+            style={
+                "marginBottom": "15px",
+                "textAlign": "center",
+                "padding": "0",
+                "width": "100%",
+                "overflow": "hidden",
+            },
         )
 
         return tool_label, sources_label, affiliations
