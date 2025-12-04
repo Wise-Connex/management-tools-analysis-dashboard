@@ -6,6 +6,57 @@ including temporal analysis, 3D plots, seasonal analysis, Fourier analysis,
 and regression analysis.
 """
 
+
+def create_enhanced_regression_equations(annotations, language="es"):
+    """
+    Create enhanced regression equations with proper formatting and styling.
+
+    Args:
+        annotations: List of equation strings
+        language: Current language ("es" or "en")
+
+    Returns:
+        html.Div with styled equations
+    """
+    from dash import html
+
+    # Create individual equation components
+    equation_components = []
+
+    for i, equation in enumerate(annotations):
+        # Parse the equation string (format: "<b>Degree:</b><br>formula<br>R² = value")
+        parts = equation.split("<br>")
+        if len(parts) >= 3:
+            degree_part = parts[0].replace("<b>", "").replace("</b>", "")
+            formula_part = parts[1]
+            r_squared_part = parts[2]
+
+            # Create styled equation card
+            equation_card = html.Div(
+                [
+                    html.Div(degree_part, className="equation-degree"),
+                    html.Div(formula_part, className="equation-formula"),
+                    html.Div(r_squared_part, className="equation-r-squared"),
+                ],
+                className="equation-card",
+                id=f"equation-card-{i}",
+            )
+
+            equation_components.append(equation_card)
+
+    # Create the main equations container
+    title = "Ecuaciones de Regresión" if language == "es" else "Regression Equations"
+
+    return html.Div(
+        [
+            html.H5(title, className="equations-title"),
+            html.Hr(className="equations-divider"),
+            html.Div(equation_components, className="equations-container"),
+        ],
+        className="regression-equations-panel",
+    )
+
+
 import os
 import sys
 
@@ -88,6 +139,56 @@ def aggregate_data_for_3d(data, frequency, source_name):
     else:
         # Bain (BU/BS): Average
         return data.resample("Y").mean()
+
+
+def create_enhanced_regression_equations(annotations, language="es"):
+    """
+    Create enhanced regression equations with proper formatting and styling.
+
+    Args:
+        annotations: List of equation strings
+        language: Current language ("es" or "en")
+
+    Returns:
+        html.Div with styled equations
+    """
+    from dash import html
+
+    # Create individual equation components
+    equation_components = []
+
+    for i, equation in enumerate(annotations):
+        # Parse the equation string (format: "<b>Degree:</b><br>formula<br>R² = value")
+        parts = equation.split("<br>")
+        if len(parts) >= 3:
+            degree_part = parts[0].replace("<b>", "").replace("</b>", "")
+            formula_part = parts[1]
+            r_squared_part = parts[2]
+
+            # Create styled equation card
+            equation_card = html.Div(
+                [
+                    html.Div(degree_part, className="equation-degree"),
+                    html.Div(formula_part, className="equation-formula"),
+                    html.Div(r_squared_part, className="equation-r-squared"),
+                ],
+                className="equation-card",
+                id=f"equation-card-{i}",
+            )
+
+            equation_components.append(equation_card)
+
+    # Create the main equations container
+    title = "Ecuaciones de Regresión" if language == "es" else "Regression Equations"
+
+    return html.Div(
+        [
+            html.H5(title, className="equations-title"),
+            html.Hr(className="equations-divider"),
+            html.Div(equation_components, className="equations-container"),
+        ],
+        className="regression-equations-panel",
+    )
 
 
 def register_graph_callbacks(app):
@@ -1337,11 +1438,11 @@ def register_heatmap_click_callback(app):
                 ),
             )
 
-            # Create equations text for the side panel
-            equations_text = "<br>".join(annotations)
+            # Create enhanced equations with proper formatting and styling
+            equations_html = create_enhanced_regression_equations(annotations, language)
 
             print(f"DEBUG: Regression analysis completed successfully")
-            return fig, equations_text
+            return fig, equations_html
 
         except Exception as e:
             print(f"Error in regression analysis: {e}")

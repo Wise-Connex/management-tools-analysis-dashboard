@@ -1048,12 +1048,12 @@ def register_main_callbacks(app):
                                 className="mt-3",
                             ),
                         ],
-                        className="analysis-section bg-gradient p-4 mt-4",
+                        className="analysis-section bg-gradient p-3 mt-3",
                         id="section-performance",
                         style={
                             "background": "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)",
-                            "border": "2px solid #dee2e6",
-                            "borderRadius": "10px",
+                            "border": "1px solid #dee2e6",
+                            "borderRadius": "8px",
                         },
                     )
                 )

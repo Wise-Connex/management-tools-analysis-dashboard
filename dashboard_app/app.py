@@ -249,6 +249,7 @@ def initialize_key_findings_service():
             traceback.print_exc()
             KEY_FINDINGS_AVAILABLE = False
 
+
 # Initialize KeyFindingsService modal component (after service is initialized)
 try:
     if KEY_FINDINGS_AVAILABLE and key_findings_service:
@@ -267,24 +268,11 @@ try:
 except Exception as modal_error:
     print(f"⚠️ Error initializing KeyFindingsService modal component: {modal_error}")
     import traceback
+
     traceback.print_exc()
 
 
 # Notes and DOI data is now loaded from the database
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 # Initialize the Dash app
@@ -311,7 +299,9 @@ try:
         # Additional React warnings suppression
         os.environ["DASH_SUPPRESS_CALLBACK_EXCEPTIONS"] = "true"
         # Suppress React 18 warnings
-        os.environ["NODE_ENV"] = "production"  # Reduces React warnings in production mode
+        os.environ["NODE_ENV"] = (
+            "production"  # Reduces React warnings in production mode
+        )
 except KeyError:
     # Fallback if DEBUG key doesn't exist
     pass
@@ -1172,14 +1162,6 @@ def update_credits_button_text(language):
     )
 
 
-
-
-
-
-
-
-
-
 # Seasonal analysis callback moved to callbacks/graph_callbacks.py
 
 
@@ -1248,7 +1230,7 @@ def update_navigation_visibility(selected_keyword, selected_sources, language):
             {
                 "id": 4,
                 "text": get_text("seasonal_nav", language),
-                "href": "#section-seasonal",
+                "href": "#section-seasonal-analysis",
                 "color": "#f0fff4",
                 "border": "#9ae6b4",
                 "min_sources": 1,
@@ -1256,7 +1238,7 @@ def update_navigation_visibility(selected_keyword, selected_sources, language):
             {
                 "id": 5,
                 "text": get_text("fourier_nav", language),
-                "href": "#section-fourier",
+                "href": "#section-fourier-analysis",
                 "color": "#faf5ff",
                 "border": "#d6bcfa",
                 "min_sources": 1,
@@ -1264,7 +1246,7 @@ def update_navigation_visibility(selected_keyword, selected_sources, language):
             {
                 "id": 6,
                 "text": get_text("correlation_nav", language),
-                "href": "#section-correlation",
+                "href": "#section-correlation-analysis",
                 "color": "#e6fffa",
                 "border": "#81e6d9",
                 "min_sources": 2,
@@ -1272,7 +1254,7 @@ def update_navigation_visibility(selected_keyword, selected_sources, language):
             {
                 "id": 7,
                 "text": get_text("regression_nav", language),
-                "href": "#section-regression",
+                "href": "#section-regression-analysis",
                 "color": "#fffaf0",
                 "border": "#fce5cd",
                 "min_sources": 2,
@@ -1280,7 +1262,7 @@ def update_navigation_visibility(selected_keyword, selected_sources, language):
             {
                 "id": 8,
                 "text": get_text("pca_nav", language),
-                "href": "#section-pca",
+                "href": "#section-pca-analysis",
                 "color": "#f0f9ff",
                 "border": "#bee3f8",
                 "min_sources": 2,
@@ -1740,8 +1722,12 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Management Tools Analysis Dashboard")
-    parser.add_argument("--port", type=int, default=8050, help="Port to run the dashboard on")
-    parser.add_argument("--debug", action="store_true", default=True, help="Enable debug mode")
+    parser.add_argument(
+        "--port", type=int, default=8050, help="Port to run the dashboard on"
+    )
+    parser.add_argument(
+        "--debug", action="store_true", default=True, help="Enable debug mode"
+    )
     args = parser.parse_args()
 
     app.run(debug=args.debug, host="0.0.0.0", port=args.port)
