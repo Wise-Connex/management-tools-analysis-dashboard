@@ -12,10 +12,37 @@ import time
 import logging
 from datetime import datetime
 
-from config import get_config
+# Import from root config module, not dashboard_app/config package
+import sys
+import os
+
+# Add parent directory to path to access root config.py
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Import from root config module, not dashboard_app/config package
+import sys
+import os
+
+# Add parent directory to path to access root config.py
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Import from root config module, avoiding conflict with dashboard_app/config package
+try:
+    # Try importing from parent directory first
+    import sys
+    import os
+
+    parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if parent_dir not in sys.path:
+        sys.path.insert(0, parent_dir)
+    from config import get_config
+except ImportError:
+    # Fallback to direct import if parent directory approach fails
+    from ..config import get_config
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
 
 class DatabaseManager:
     """
@@ -48,10 +75,14 @@ class DatabaseManager:
             conn = sqlite3.connect(
                 str(self.db_path),
                 timeout=timeout,
-                isolation_level=None  # Enable autocommit mode
+                isolation_level=None,  # Enable autocommit mode
             )
-            conn.execute("PRAGMA journal_mode=WAL")  # Write-Ahead Logging for better concurrency
-            conn.execute("PRAGMA synchronous=NORMAL")  # Balance between performance and safety
+            conn.execute(
+                "PRAGMA journal_mode=WAL"
+            )  # Write-Ahead Logging for better concurrency
+            conn.execute(
+                "PRAGMA synchronous=NORMAL"
+            )  # Balance between performance and safety
             conn.execute("PRAGMA cache_size=-64000")  # 64MB cache
             conn.execute("PRAGMA temp_store=MEMORY")  # Store temp tables in memory
             yield conn
@@ -87,7 +118,7 @@ class DatabaseManager:
                 "CREATE INDEX IF NOT EXISTS idx_crossref_keyword ON crossref(keyword)",
                 "CREATE INDEX IF NOT EXISTS idx_google_books_keyword ON google_books(keyword)",
                 "CREATE INDEX IF NOT EXISTS idx_bain_usability_keyword ON bain_usability(keyword)",
-                "CREATE INDEX IF NOT EXISTS idx_bain_satisfaction_keyword ON bain_satisfaction(keyword)"
+                "CREATE INDEX IF NOT EXISTS idx_bain_satisfaction_keyword ON bain_satisfaction(keyword)",
             ]
 
             for index_sql in indexes:
@@ -104,16 +135,25 @@ class DatabaseManager:
                     print(f"Warning: Could not create config index: {e}")
 
             # Insert schema version
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT OR REPLACE INTO metadata (key, value)
                 VALUES (?, ?)
-            """, ("schema_version", self.config.database_config.get("schema_version", "1.0")))
+            """,
+                (
+                    "schema_version",
+                    self.config.database_config.get("schema_version", "1.0"),
+                ),
+            )
 
             # Insert creation timestamp
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT OR REPLACE INTO metadata (key, value)
                 VALUES (?, ?)
-            """, ("created_at", datetime.now().isoformat()))
+            """,
+                ("created_at", datetime.now().isoformat()),
+            )
 
             conn.commit()
 
@@ -172,7 +212,7 @@ class DatabaseManager:
                 key TEXT PRIMARY KEY,
                 value TEXT
             )
-            """
+            """,
         ]
 
     def insert_data_batch(self, table_name: str, data: List[Tuple[str, str, float]]):
@@ -189,11 +229,13 @@ class DatabaseManager:
         with self.get_connection() as conn:
             conn.executemany(
                 f"INSERT OR REPLACE INTO {table_name} (date, keyword, value) VALUES (?, ?, ?)",
-                data
+                data,
             )
             conn.commit()
 
-    def get_data_for_keyword(self, keyword: str, sources: List[int]) -> Tuple[Dict[int, pd.DataFrame], List[int]]:
+    def get_data_for_keyword(
+        self, keyword: str, sources: List[int]
+    ) -> Tuple[Dict[int, pd.DataFrame], List[int]]:
         """
         Retrieve pre-interpolated data for a keyword and list of sources.
 
@@ -210,14 +252,14 @@ class DatabaseManager:
             2: "google_books",
             3: "bain_usability",
             4: "crossref",
-            5: "bain_satisfaction"
+            5: "bain_satisfaction",
         }
 
         datasets_norm = {}
         valid_sources = []
 
         logging.info(f"Getting data for keyword='{keyword}', sources={sources}")
-        
+
         with self.get_connection() as conn:
             for source_id in sources:
                 table_name = self.config.get_table_name(source_id)
@@ -234,7 +276,7 @@ class DatabaseManager:
                         conn,
                         params=[keyword],
                         index_col="date",
-                        parse_dates=["date"]
+                        parse_dates=["date"],
                     )
 
                     if not df.empty:
@@ -243,11 +285,16 @@ class DatabaseManager:
                         datasets_norm[source_id] = df_norm
                         valid_sources.append(source_id)
                     else:
-                        logging.info(f"No data found in {table_name} for keyword='{keyword}'")
+                        logging.info(
+                            f"No data found in {table_name} for keyword='{keyword}'"
+                        )
 
                 except Exception as e:
-                    logging.error(f"Could not retrieve data for source {source_id} ({table_name}): {e}")
+                    logging.error(
+                        f"Could not retrieve data for source {source_id} ({table_name}): {e}"
+                    )
                     import traceback
+
                     traceback.print_exc()
                     continue
 
@@ -265,7 +312,9 @@ class DatabaseManager:
         """
         with self.get_connection() as conn:
             if key:
-                cursor = conn.execute("SELECT key, value FROM metadata WHERE key = ?", [key])
+                cursor = conn.execute(
+                    "SELECT key, value FROM metadata WHERE key = ?", [key]
+                )
             else:
                 cursor = conn.execute("SELECT key, value FROM metadata")
 
@@ -282,7 +331,7 @@ class DatabaseManager:
         with self.get_connection() as conn:
             conn.execute(
                 "INSERT OR REPLACE INTO metadata (key, value) VALUES (?, ?)",
-                [key, value]
+                [key, value],
             )
             conn.commit()
 
@@ -293,7 +342,13 @@ class DatabaseManager:
         Returns:
             Dictionary with table statistics
         """
-        tables = ["google_trends", "crossref", "google_books", "bain_usability", "bain_satisfaction"]
+        tables = [
+            "google_trends",
+            "crossref",
+            "google_books",
+            "bain_usability",
+            "bain_satisfaction",
+        ]
         stats = {}
 
         with self.get_connection() as conn:
@@ -304,7 +359,9 @@ class DatabaseManager:
                     row_count = cursor.fetchone()[0]
 
                     # Get keyword count
-                    cursor = conn.execute(f"SELECT COUNT(DISTINCT keyword) FROM {table}")
+                    cursor = conn.execute(
+                        f"SELECT COUNT(DISTINCT keyword) FROM {table}"
+                    )
                     keyword_count = cursor.fetchone()[0]
 
                     # Get date range
@@ -315,7 +372,7 @@ class DatabaseManager:
                         "row_count": row_count,
                         "keyword_count": keyword_count,
                         "min_date": min_date,
-                        "max_date": max_date
+                        "max_date": max_date,
                     }
                 except Exception as e:
                     print(f"Warning: Could not get stats for table {table}: {e}")
@@ -384,13 +441,19 @@ class DatabaseManager:
                 2: "google_books",
                 3: "bain_usability",
                 4: "crossref",
-                5: "bain_satisfaction"
+                5: "bain_satisfaction",
             }
             table_name = source_to_table.get(source_id)
             if table_name:
                 tables = [table_name]
         else:
-            tables = ["google_trends", "crossref", "google_books", "bain_usability", "bain_satisfaction"]
+            tables = [
+                "google_trends",
+                "crossref",
+                "google_books",
+                "bain_usability",
+                "bain_satisfaction",
+            ]
 
         keywords = set()
 
@@ -417,7 +480,9 @@ class DatabaseManager:
         try:
             with self.get_connection(timeout=5.0) as conn:
                 # Check if metadata table exists
-                cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='metadata'")
+                cursor = conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name='metadata'"
+                )
                 return len(cursor.fetchall()) > 0
         except Exception:
             return False
@@ -433,7 +498,9 @@ class DatabaseManager:
             return self.db_path.stat().st_size
         return 0
 
-    def get_tool_notes_and_doi(self, tool_name: str, source_name: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_tool_notes_and_doi(
+        self, tool_name: str, source_name: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         """
         Get DOI links and notes for a specific tool and optionally filtered by source.
 
@@ -464,13 +531,15 @@ class DatabaseManager:
 
                 for row in cursor.fetchall():
                     doi, source, notes, links, keywords = row
-                    results.append({
-                        'doi': doi,
-                        'source': source,
-                        'notes': notes,
-                        'links': links,
-                        'keywords': keywords
-                    })
+                    results.append(
+                        {
+                            "doi": doi,
+                            "source": source,
+                            "notes": notes,
+                            "links": links,
+                            "keywords": keywords,
+                        }
+                    )
 
                 return results
 

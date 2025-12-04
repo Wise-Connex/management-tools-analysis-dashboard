@@ -83,6 +83,7 @@ from fix_source_mapping import (
 )
 from translations import get_text, get_tool_name, translate_source_name
 from database import get_database_manager
+from dashboard_config import get_source_url
 from utils import (
     create_combined_dataset2,
     create_translation_mapping,
@@ -604,7 +605,7 @@ def register_graph_callbacks(app):
 
             # Add source URL annotation as legend-style outside the graph
             source_text = (
-                get_text("source", language) + " https://dashboard.solidum360.com/"
+                get_source_url(language)
             )
             fig.add_annotation(
                 xref="paper",
@@ -748,7 +749,7 @@ def register_graph_callbacks(app):
 
             # Add source URL annotation as legend-style outside the graph
             source_text = (
-                get_text("source", language) + " https://dashboard.solidum360.com/"
+                get_source_url(language)
             )
             fig.add_annotation(
                 xref="paper",
@@ -1038,7 +1039,7 @@ def register_graph_callbacks(app):
 
             # Add source URL annotation as legend-style outside the graph
             source_text = (
-                get_text("source", language) + " https://dashboard.solidum360.com/"
+                get_source_url(language)
             )
             fig.add_annotation(
                 xref="paper",

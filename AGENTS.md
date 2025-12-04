@@ -19,13 +19,14 @@ uv run python app.py                    # Main application
 ```
 
 ### Testing
-- **No formal test suite currently exists** - tests should be added manually
-- For testing changes: run the application and verify functionality in browser
-- Single test approach: Create test files in `tests/` directory and run with `python -m pytest tests/`
+- **Database Tests**: Well-established test suite for precomputed findings
+- **Single test approach**: Create test files in root directory and run directly
+- **Integration testing**: Run application and verify functionality in browser
 
 **Database Testing:**
 ```bash
 # Test precomputed findings database implementation
+cd /Users/Dimar/Documents/python-code/MTSA/tools-dashboard
 python3 database_implementation/test_database.py
 
 # Expected output: All tests PASSED with performance metrics
@@ -39,9 +40,18 @@ python3 database_implementation/test_database.py
 - ✅ Performance benchmarking (<100ms target)
 - ✅ Job queue system validation
 
+**Other Test Patterns:**
+```bash
+# Run specific integration tests
+python3 comprehensive_key_findings_test.py          # Full integration test
+python3 populate_database_test.py                   # Database population test
+python3 test_ai_integration.py                      # AI service integration
+```
+
 ### Code Quality
-- **No linting configured** - consider adding `ruff` or `black` for code formatting
-- **No type checking configured** - consider adding `mypy` for static type checking
+- **Linting**: Consider adding `ruff` or `black` for code formatting
+- **Type checking**: Consider adding `mypy` for static type checking
+- **Current practice**: Type hints are widely used with `from typing import` patterns
 
 ## Code Style Guidelines
 
@@ -49,6 +59,7 @@ python3 database_implementation/test_database.py
 - Standard library imports first, then third-party, then local imports
 - Group related imports together
 - Use `from typing import` for type hints
+- Add parent directory to sys.path when importing across directories
 ```python
 import os
 import sys
@@ -60,6 +71,24 @@ import dash
 from dash import html, dcc
 
 from config import get_config
+from database import get_database_manager
+```
+
+**Actual patterns from codebase:**
+```python
+# From app.py - grouped by functionality
+import dash
+from dash import html, dcc, dash_table
+import dash_bootstrap_components as dbc
+from dash.dependencies import Input, Output, State, ALL
+import pandas as pd
+import numpy as np
+import plotly.graph_objects as go
+from typing import Dict, List, Any
+
+# Add path for database imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from tools import tool_file_dic, get_tool_options, translate_tool_key, get_tool_name
 from database import get_database_manager
 ```
 
@@ -180,6 +209,27 @@ python3 database_implementation/test_database.py
 - `key_findings/` - AI analysis modules
 - `assets/` - Static assets (images, icons)
 
+### Dashboard App Structure
+```
+dashboard_app/
+├── app.py                    # Main Dash app entry point
+├── layout.py                 # App layout definitions
+├── tools.py                  # Tool data and mappings
+├── translations.py           # I18N support
+├── utils.py                  # Utility functions and caching
+├── callbacks/                # Callback modules
+│   ├── main_callbacks.py     # Primary content callbacks
+│   ├── graph_callbacks.py    # Visualization callbacks
+│   ├── kf_callbacks.py       # Key findings callbacks
+│   └── ui_callbacks.py       # UI interaction callbacks
+├── key_findings/             # AI analysis components
+│   ├── key_findings_service.py      # Main analysis service
+│   ├── database_manager.py          # Precomputed findings DB
+│   ├── unified_ai_service.py        # AI service integration
+│   └── ...
+└── assets/                   # Static files (logos, icons, styles)
+```
+
 ### Database Implementation Files
 - `database_implementation/schema.sql` - Precomputed findings database schema
 - `database_implementation/precomputed_findings_db.py` - Database manager class
@@ -229,3 +279,19 @@ python3 database_implementation/test_database.py
 - ✅ Performance targets exceeded (1.59ms vs 100ms target)
 - ✅ Ready for Phase 2: AI Integration Testing
 - ✅ Full test suite passing with comprehensive validation
+
+### Precomputation Pipeline
+- **Pipeline**: `database_implementation/phase3_precomputation_pipeline.py`
+- **Purpose**: Automated generation of precomputed findings for all tool-source-language combinations
+- **Coverage**: 1,302 unique combinations (21 tools × 5 sources × multiple languages)
+- **Job Tracking**: Computation jobs stored in database with status monitoring
+- **Integration**: Seamlessly integrates with AI services for batch processing
+
+**Pipeline Usage:**
+```python
+# Run precomputation pipeline
+python3 database_implementation/phase3_precomputation_pipeline.py
+
+# Monitor progress via computation_jobs table
+# Analyze usage via usage_analytics table
+```

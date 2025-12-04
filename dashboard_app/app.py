@@ -48,6 +48,9 @@ sys.path.insert(0, os.path.dirname(__file__))
 from tools import tool_file_dic, get_tool_options, translate_tool_key, get_tool_name
 from database import get_database_manager
 
+# Import centralized configuration
+from dashboard_config import get_dashboard_url, get_citation_url, get_ris_url
+
 # Import centralized source mapping
 from fix_source_mapping import (
     map_display_names_to_source_ids,
@@ -1384,7 +1387,7 @@ def toggle_citation_modal(citation_clicks, close_clicks, language):
                     html.Div(
                         [
                             html.P(
-                                "Añez, D., y Añez, D. (2025). Herramientas gerenciales: Dinámicas temporales contingentes y antinomias policontextuales [Dashboard de análisis de datos]. Solidum Consulting / Wise Connex. https://dashboard.solidum360.com/",
+                                f"Añez, D., y Añez, D. (2025). Herramientas gerenciales: Dinámicas temporales contingentes y antinomias policontextuales [Dashboard de análisis de datos]. Solidum Consulting / Wise Connex. {get_citation_url()}/",
                                 className="mb-2",
                                 style={"fontSize": "12px"},
                             ),
@@ -1404,7 +1407,7 @@ def toggle_citation_modal(citation_clicks, close_clicks, language):
                     html.Div(
                         [
                             html.P(
-                                f'Añez, Diomar, y Dimar Añez. 2025. "Herramientas Gerenciales: Dinámicas Temporales Contingentes y Antinomias Policontextuales". Dashboard de Análisis. Solidum Consulting / Wise Connex. Consultado el {current_date["chicago"]}. https://dashboard.solidum360.com/.',
+                                f'Añez, Diomar, y Dimar Añez. 2025. "Herramientas Gerenciales: Dinámicas Temporales Contingentes y Antinomias Policontextuales". Dashboard de Análisis. Solidum Consulting / Wise Connex. Consultado el {current_date["chicago"]}. {get_citation_url()}/.',
                                 className="mb-2",
                                 style={"fontSize": "12px"},
                             ),
@@ -1422,7 +1425,7 @@ def toggle_citation_modal(citation_clicks, close_clicks, language):
                     html.Div(
                         [
                             html.P(
-                                "Añez, Diomar, y Dimar Añez. Herramientas Gerenciales: Dinámicas Temporales Contingentes y Antinomias Policontextuales. 2025, Solidum Consulting / Wise Connex, dashboard.solidum360.com/.",
+                                f"Añez, Diomar, y Dimar Añez. Herramientas Gerenciales: Dinámicas Temporales Contingentes y Antinomias Policontextuales. 2025, Solidum Consulting / Wise Connex, {get_citation_url()}/.",
                                 className="mb-2",
                                 style={"fontSize": "12px"},
                             ),
@@ -1440,7 +1443,7 @@ def toggle_citation_modal(citation_clicks, close_clicks, language):
                     html.Div(
                         [
                             html.P(
-                                f"Diomar Añez y Dimar Añez, Herramientas gerenciales: Dinámicas temporales contingentes y antinomias policontextuales (Solidum Consulting / Wise Connex, 2025) <https://dashboard.solidum360.com/> accedido el {current_date['oscola']}.",
+                                f"Diomar Añez y Dimar Añez, Herramientas gerenciales: Dinámicas temporales contingentes y antinomias policontextuales (Solidum Consulting / Wise Connex, 2025) <{get_citation_url()}/> accedido el {current_date['oscola']}.",
                                 className="mb-2",
                                 style={"fontSize": "12px"},
                             ),
@@ -1458,7 +1461,7 @@ def toggle_citation_modal(citation_clicks, close_clicks, language):
                     html.Div(
                         [
                             html.P(
-                                f"1. Añez D, Añez D. Herramientas gerenciales: Dinámicas temporales contingentes y antinomias policontextuales [Internet]. Solidum Consulting / Wise Connex; 2025 [citado el {current_date['vancouver']}]. Disponible en: https://dashboard.solidum360.com/",
+                                f"1. Añez D, Añez D. Herramientas gerenciales: Dinámicas temporales contingentes y antinomias policontextuales [Internet]. Solidum Consulting / Wise Connex; 2025 [citado el {current_date['vancouver']}]. Disponible en: {get_citation_url()}/",
                                 className="mb-2",
                                 style={"fontSize": "12px"},
                             ),
@@ -1476,7 +1479,7 @@ def toggle_citation_modal(citation_clicks, close_clicks, language):
                     html.Div(
                         [
                             html.P(
-                                '[1] D. Añez y D. Añez, "Herramientas gerenciales: Dinámicas temporales contingentes y antinomias policontextuales", Solidum Consulting / Wise Connex, 2025. [En línea]. Disponible: https://dashboard.solidum360.com/.',
+                                f'[1] D. Añez y D. Añez, "Herramientas gerenciales: Dinámicas temporales contingentes y antinomias policontextuales", Solidum Consulting / Wise Connex, 2025. [En línea]. Disponible: {get_citation_url()}/.',
                                 className="mb-2",
                                 style={"fontSize": "12px"},
                             ),
@@ -1512,7 +1515,7 @@ def toggle_citation_modal(citation_clicks, close_clicks, language):
                     html.Div(
                         [
                             html.P(
-                                "Añez, D., & Añez, D. (2025). Management tools: Contingent temporal dynamics and policontextual antinomies [Data analysis dashboard]. Solidum Consulting / Wise Connex. https://dashboard.solidum360.com/",
+                                f"Añez, D., & Añez, D. (2025). Management tools: Contingent temporal dynamics and policontextual antinomies [Data analysis dashboard]. Solidum Consulting / Wise Connex. {get_citation_url()}/",
                                 className="mb-2",
                                 style={"fontSize": "12px"},
                             ),
@@ -1532,7 +1535,7 @@ def toggle_citation_modal(citation_clicks, close_clicks, language):
                     html.Div(
                         [
                             html.P(
-                                f'Añez, Diomar, and Dimar Añez. 2025. "Management Tools: Contingent Temporal Dynamics and Policontextual Antinomies." Analysis Dashboard. Solidum Consulting / Wise Connex. Accessed {current_date["chicago"]}. https://dashboard.solidum360.com/.',
+                                f'Añez, Diomar, and Dimar Añez. 2025. "Management Tools: Contingent Temporal Dynamics and Policontextual Antinomies." Analysis Dashboard. Solidum Consulting / Wise Connex. Accessed {current_date["chicago"]}. {get_citation_url()}/.',
                                 className="mb-2",
                                 style={"fontSize": "12px"},
                             ),
@@ -1550,7 +1553,7 @@ def toggle_citation_modal(citation_clicks, close_clicks, language):
                     html.Div(
                         [
                             html.P(
-                                "Añez, Diomar, and Dimar Añez. Management Tools: Contingent Temporal Dynamics and Policontextual Antinomies. 2025, Solidum Consulting / Wise Connex, dashboard.solidum360.com/.",
+                                f"Añez, Diomar, and Dimar Añez. Management Tools: Contingent Temporal Dynamics and Policontextual Antinomies. 2025, Solidum Consulting / Wise Connex, {get_citation_url()}/.",
                                 className="mb-2",
                                 style={"fontSize": "12px"},
                             ),
@@ -1568,7 +1571,7 @@ def toggle_citation_modal(citation_clicks, close_clicks, language):
                     html.Div(
                         [
                             html.P(
-                                f"Diomar Añez and Dimar Añez, Management tools: Contingent temporal dynamics and policontextual antinomies (Solidum Consulting / Wise Connex, 2025) <https://dashboard.solidum360.com/> accessed {current_date['oscola']}.",
+                                f"Diomar Añez and Dimar Añez, Management tools: Contingent temporal dynamics and policontextual antinomies (Solidum Consulting / Wise Connex, 2025) <{get_citation_url()}/> accessed {current_date['oscola']}.",
                                 className="mb-2",
                                 style={"fontSize": "12px"},
                             ),
@@ -1586,7 +1589,7 @@ def toggle_citation_modal(citation_clicks, close_clicks, language):
                     html.Div(
                         [
                             html.P(
-                                f"1. Añez D, Añez D. Management tools: Contingent temporal dynamics and policontextual antinomies [Internet]. Solidum Consulting / Wise Connex; 2025 [cited {current_date['vancouver']}]. Available from: https://dashboard.solidum360.com/",
+                                f"1. Añez D, Añez D. Management tools: Contingent temporal dynamics and policontextual antinomies [Internet]. Solidum Consulting / Wise Connex; 2025 [cited {current_date['vancouver']}]. Available from: {get_citation_url()}/",
                                 className="mb-2",
                                 style={"fontSize": "12px"},
                             ),
@@ -1604,7 +1607,7 @@ def toggle_citation_modal(citation_clicks, close_clicks, language):
                     html.Div(
                         [
                             html.P(
-                                '[1] D. Añez and D. Añez, "Management tools: Contingent temporal dynamics and policontextual antinomies," Solidum Consulting / Wise Connex, 2025. [Online]. Available: https://dashboard.solidum360.com/.',
+                                f'[1] D. Añez and D. Añez, "Management tools: Contingent temporal dynamics and policontextual antinomies," Solidum Consulting / Wise Connex, 2025. [Online]. Available: {get_citation_url()}/.',
                                 className="mb-2",
                                 style={"fontSize": "12px"},
                             ),
@@ -1681,7 +1684,7 @@ KW  - Herramientas Gerenciales
 KW  - Modas Gerenciales
 KW  - Visualización de Datos
 KW  - Antinomias Policontextuales
-UR  - https://dashboard.solidum360.com/
+UR  - {get_ris_url()}
 ER  -"""
         filename = "dashboard_citacion_es.ris"
     else:
@@ -1697,7 +1700,7 @@ KW  - Management Tools
 KW  - Management Fads
 KW  - Data Visualization
 KW  - Policontextual Antinomies
-UR  - https://dashboard.solidum360.com/
+UR  - {get_ris_url()}
 ER  -"""
         filename = "dashboard_citation_en.ris"
 

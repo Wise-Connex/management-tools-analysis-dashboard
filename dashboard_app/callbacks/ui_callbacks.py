@@ -129,7 +129,7 @@ def register_ui_callbacks(app):
         import os
 
         sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-        from app import source_colors_by_display
+        from dashboard_config import get_source_color
 
         sources = DISPLAY_NAMES
 
@@ -151,7 +151,7 @@ def register_ui_callbacks(app):
                 display_name = display_to_source[source]
 
             # Determine button style based on selection state
-            base_color = source_colors_by_display.get(source, "#6c757d")
+            base_color = get_source_color(source)
 
             # IMPORTANT: Check if source is in the CURRENT selected_sources list
             is_selected = source in selected_sources

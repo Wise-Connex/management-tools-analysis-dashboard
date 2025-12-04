@@ -35,23 +35,16 @@ from fix_source_mapping import (
 # Import translation functions
 from translations import get_text
 
+# Import centralized configuration
+from dashboard_config import get_dashboard_url, get_source_url, get_source_color
+
 
 # Global cache for processed datasets
 _processed_data_cache = {}
 _cache_max_size = 10
 
-# Color map for consistent source coloring (matches actual DISPLAY_NAMES)
-color_map = {
-    # Standard sources (from DISPLAY_NAMES in fix_source_mapping.py)
-    "Google Trends": "#1f77b4",  # Blue
-    "Google Books": "#ff7f0e",  # Orange
-    "Bain Usability": "#2ca02c",  # Green
-    "Bain Satisfaction": "#d62728",  # Red
-    "Crossref": "#9467bd",  # Purple
-    # Spanish translations (for bilingual support)
-    "Bain Usabilidad": "#2ca02c",  # Green (same as English)
-    "Bain Satisfacción": "#d62728",  # Red (same as English)
-}
+# Color consistency is now handled by centralized configuration
+# Use get_source_color() function for all color lookups
 
 
 def parse_text_with_links(text):
@@ -444,14 +437,8 @@ def create_temporal_2d_figure(
     from fix_source_mapping import map_display_names_to_source_ids
     from translations import get_text
 
-    # Basic color map for sources - this should match database column names from DBASE_OPTIONS
-    color_map = {
-        "Google Trends": "#1f77b4",  # Google Trends - blue
-        "Google Books Ngrams": "#ff7f0e",  # Google Books - orange
-        "Bain - Usabilidad": "#2ca02c",  # Bain Usability - green
-        "Crossref.org": "#d62728",  # Crossref - red
-        "Bain - Satisfacción": "#9467bd",  # Bain Satisfaction - purple
-    }
+    # Use centralized color configuration
+    # Colors are now handled by get_source_color() function
 
     print(f"DEBUG: create_temporal_2d_figure called")
     print(f"DEBUG: data shape: {data.shape}")
@@ -530,7 +517,7 @@ def create_temporal_2d_figure(
                     original_source_name = get_original_column_name(
                         source, translation_mapping
                     )
-                    source_color = color_map.get(original_source_name, "#000000")
+                    source_color = get_source_color(original_source_name, "db")
                     print(
                         f"DEBUG: Source {source} -> Original: {original_source_name} -> Color: {source_color}"
                     )
@@ -610,7 +597,7 @@ def create_temporal_2d_figure(
     )
 
     # Add source URL annotation as legend-style outside the graph
-    source_text = get_text("source", language) + " https://dashboard.solidum360.com/"
+    source_text = get_source_url(language)
     fig.add_annotation(
         xref="paper",
         yref="paper",
@@ -642,14 +629,8 @@ def create_mean_analysis_figure(data, sources, language="es", tool_name=None):
     from fix_source_mapping import map_display_names_to_source_ids
     from translations import get_text
 
-    # Basic color map for sources - this should match database column names from DBASE_OPTIONS
-    color_map = {
-        "Google Trends": "#1f77b4",  # Google Trends - blue
-        "Google Books Ngrams": "#ff7f0e",  # Google Books - orange
-        "Bain - Usabilidad": "#2ca02c",  # Bain Usability - green
-        "Crossref.org": "#d62728",  # Crossref - red
-        "Bain - Satisfacción": "#9467bd",  # Bain Satisfaction - purple
-    }
+    # Use centralized color configuration
+    # Colors are now handled by get_source_color() function
 
     print(f"DEBUG: create_mean_analysis_figure called with data shape: {data.shape}")
     print(f"DEBUG: sources: {sources}")
@@ -769,7 +750,7 @@ def create_mean_analysis_figure(data, sources, language="es", tool_name=None):
             original_source_name = get_original_column_name(
                 row["Source"], translation_mapping
             )
-            bar_color = color_map.get(original_source_name, "#000000")
+            bar_color = get_source_color(original_source_name)
             print(
                 f"DEBUG: Bar color for {row['Source']} -> Original: {original_source_name} -> Color: {bar_color}"
             )
@@ -795,7 +776,7 @@ def create_mean_analysis_figure(data, sources, language="es", tool_name=None):
 
             # Get color using original database name for color mapping
             original_source_name = get_original_column_name(source, translation_mapping)
-            line_color = color_map.get(original_source_name, "#000000")
+            line_color = get_source_color(original_source_name)
             print(
                 f"DEBUG: Line color for {source} -> Original: {original_source_name} -> Color: {line_color}"
             )
@@ -846,7 +827,7 @@ def create_mean_analysis_figure(data, sources, language="es", tool_name=None):
     )
 
     # Add source URL annotation as legend-style outside the graph
-    source_text = get_text("source", language) + " https://dashboard.solidum360.com/"
+    source_text = get_source_url(language)
     fig.add_annotation(
         xref="paper",
         yref="paper",
@@ -1044,7 +1025,7 @@ def create_pca_figure(data, sources, language="es", tool_name=None):
 
         # Get color mapping - use display name directly for consistent colors
         # This matches the approach used in temporal analysis functions
-        arrow_color = color_map.get(display_name, "#000000")
+        arrow_color = get_source_color(display_name)
 
         # DEBUG: Log color mapping for verification
         print(f"DEBUG PCA: Source '{display_name}' -> Color: '{arrow_color}'")
@@ -1166,7 +1147,7 @@ def create_pca_figure(data, sources, language="es", tool_name=None):
     )
 
     # Add source URL annotation as legend-style outside the graph
-    source_text = get_text("source", language) + " https://dashboard.solidum360.com/"
+    source_text = get_source_url(language)
     fig.add_annotation(
         xref="paper",
         yref="paper",
@@ -1307,7 +1288,7 @@ def create_correlation_heatmap(data, sources, language="es", tool_name=None):
     )
 
     # Add source URL annotation as legend-style outside the graph
-    source_text = get_text("source", language) + " https://dashboard.solidum360.com/"
+    source_text = get_source_url(language)
     fig.add_annotation(
         xref="paper",
         yref="paper",
