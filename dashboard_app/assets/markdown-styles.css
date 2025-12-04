@@ -288,11 +288,13 @@
     border-width: 1px;
 }
 
-/* Sidebar TempoLogo - Full Width Styling */
+/* Sidebar TempoLogo - Full Width Styling with Rounded Corners */
 #sidebar-affiliations {
     width: 100%;
     padding: 0 !important;
     margin: 0 !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
 }
 
 #sidebar-affiliations img {
@@ -301,7 +303,7 @@
     height: auto !important;
     display: block !important;
     object-fit: contain !important;
-    border-radius: 0 !important;
+    border-radius: 8px !important;
     margin: 0 !important;
 }
 
@@ -309,4 +311,6 @@
     width: 100% !important;
     padding: 0 !important;
     margin: 0 !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
 }

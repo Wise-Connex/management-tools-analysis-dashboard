@@ -94,7 +94,7 @@ def register_ui_callbacks(app):
                         "height": "auto",
                         "display": "block",
                         "objectFit": "contain",
-                        "borderRadius": "0",
+                        "borderRadius": "8px",
                     },
                 ),
             ],
@@ -104,6 +104,7 @@ def register_ui_callbacks(app):
                 "padding": "0",
                 "width": "100%",
                 "overflow": "hidden",
+                "borderRadius": "8px",
             },
         )
 
