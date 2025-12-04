@@ -465,52 +465,8 @@ def register_ui_callbacks(app):
                     "marginBottom": "2px",
                 },
             ),
-            html.P(
-                [
-                    get_text("by", language) + ": ",
-                    html.A(
-                        [
-                            html.Img(
-                                src="assets/orcid.logo.icon.svg",
-                                style={
-                                    "height": "13px",
-                                    "verticalAlign": "middle",
-                                    "marginRight": "2px",
-                                },
-                            ),
-                            html.B("Dimar Anez"),
-                        ],
-                        href="https://orcid.org/0009-0001-5386-2689",
-                        target="_blank",
-                        title="ORCID",
-                        style={
-                            "color": "#6c757d",
-                            "textDecoration": "none",
-                            "fontSize": "9px",
-                        },
-                    ),
-                    " - ",
-                    html.A(
-                        "Wise Connex",
-                        href="https://wiseconnex.com/",
-                        target="_blank",
-                        title="wiseconnex.com",
-                        style={
-                            "color": "#6c757d",
-                            "textDecoration": "none",
-                            "fontSize": "9px",
-                        },
-                    ),
-                ],
-                style={
-                    "fontSize": "9px",
-                    "textAlign": "left",
-                    "marginTop": "0px",
-                    "marginBottom": "5px",
-                },
-            ),
             # Horizontal rule above logos
-            html.Hr(style={"margin": "8px 0 5px 0"}),
+            html.Hr(style={"margin": "5px 0 5px 0"}),
             # Logos section - side by side below author credit, above copyright
             html.Div(
                 [
