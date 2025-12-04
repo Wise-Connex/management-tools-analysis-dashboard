@@ -677,7 +677,7 @@ def register_ui_callbacks(app):
                     ),
                     html.B("Diomar Añez"),
                 ],
-                href="https://orcid.org/0009-0001-5386-2689",
+                href="https://orcid.org/0000-0002-7925-5078",
                 target="_blank",
                 style={"color": "#495057", "textDecoration": "none"},
             ),
