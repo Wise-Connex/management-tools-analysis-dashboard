@@ -244,7 +244,7 @@ TRANSLATIONS = {
         "optimized": "Optimizado",
         "average_compression": "85% promedio",
         # Key Findings Modal - Spanish
-        "key_findings_modal_title": "🧠 Key Findings - Análisis",
+        "key_findings_modal_title": "🧠 Hallazgos Principales",
         "generating_analysis": "Generando análisis...",
         "may_take_30_seconds": "Esto puede tomar hasta 30 segundos...",
         "analyzing_multisource_data": "Analizando datos multi-fuente con énfasis en PCA...",
@@ -538,7 +538,7 @@ TRANSLATIONS = {
         "optimized": "Optimized",
         "average_compression": "85% average",
         # Key Findings Modal - English
-        "key_findings_modal_title": "🧠 Key Findings - Analysis",
+        "key_findings_modal_title": "🧠 Principal Findings",
         "generating_analysis": "Generating analysis...",
         "may_take_30_seconds": "This may take up to 30 seconds...",
         "analyzing_multisource_data": "Analyzing multi-source data with emphasis on PCA...",

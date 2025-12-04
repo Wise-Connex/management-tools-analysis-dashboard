@@ -170,75 +170,24 @@ def initialize_key_findings_service():
         try:
             print("🔍 DEBUG: Starting Key Findings service initialization...")
 
-            # Use local path for development, Docker path for production
-            import os
-
-            if os.path.exists("/app/data"):
-                db_path = "/app/data/key_findings.db"
-                print(f"🔍 DEBUG: Using Docker database path: {db_path}")
-            else:
-                db_path = "./data/key_findings.db"
-                print(f"🔍 DEBUG: Using local database path: {db_path}")
-
-            # Check if database file exists
-            if os.path.exists(db_path):
-                print(f"🔍 DEBUG: Database file exists at {db_path}")
-            else:
-                print(f"🔍 DEBUG: Database file does NOT exist at {db_path}")
-
-            config = {"key_findings_db_path": db_path}
+            # SIMPLIFIED: Use direct database access without caching layer
+            config = {}
             api_key = os.getenv("OPENROUTER_API_KEY")
             print(f"🔍 DEBUG: API key loaded: {bool(api_key)}")
 
-            # Initialize service without modal component to avoid callback conflicts
+            # Initialize service using factory function
             print("🔍 DEBUG: Importing Key Findings components...")
-            from key_findings.key_findings_service import KeyFindingsService
-            from key_findings.database_manager import KeyFindingsDBManager
-            from key_findings.unified_ai_service import get_unified_ai_service
-            from key_findings.data_aggregator import DataAggregator
-            from key_findings.prompt_engineer import PromptEngineer
+            from key_findings.key_findings_service import get_key_findings_service
 
             print("🔍 DEBUG: Creating Key Findings service instance...")
-            key_findings_service = KeyFindingsService.__new__(KeyFindingsService)
-            key_findings_service.db_manager = db_manager
+            groq_api_key = os.getenv("GROQ_API_KEY") or ""
+            openrouter_api_key = os.getenv("OPENROUTER_API_KEY") or ""
 
-            print("🔍 DEBUG: Initializing Key Findings database manager...")
-            key_findings_service.kf_db_manager = KeyFindingsDBManager(db_path)
-
-            # Initialize Unified AI service (Groq primary, OpenRouter fallback)
-            print("🔍 DEBUG: Initializing Unified AI service...")
-            groq_api_key = os.getenv("GROQ_API_KEY")
-            openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
-            from key_findings.unified_ai_service import get_unified_ai_service
-
-            key_findings_service.ai_service = get_unified_ai_service(
-                groq_api_key, openrouter_api_key, config
+            key_findings_service = get_key_findings_service(
+                db_manager, groq_api_key, openrouter_api_key, config
             )
 
-            # Initialize data aggregator
-            print("🔍 DEBUG: Initializing data aggregator...")
-            key_findings_service.data_aggregator = DataAggregator(
-                db_manager, key_findings_service.kf_db_manager
-            )
-
-            # Initialize prompt engineer
-            print("🔍 DEBUG: Initializing prompt engineer...")
-            key_findings_service.prompt_engineer = PromptEngineer()
-
-            key_findings_service.modal_component = None
-            key_findings_service.config = {
-                "cache_ttl": 86400,
-                "max_retries": 3,
-                "enable_pca_emphasis": True,
-                "confidence_threshold": 0.7,
-            }
-            key_findings_service.performance_metrics = {
-                "total_requests": 0,
-                "cache_hits": 0,
-                "cache_misses": 0,
-                "avg_response_time_ms": 0,
-                "error_count": 0,
-            }
+            print("✅ Key Findings service initialized successfully")
 
             print("✅ Key Findings service initialized successfully")
 

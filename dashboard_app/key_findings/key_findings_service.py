@@ -1,8 +1,8 @@
 """
-Key Findings Service
+Simplified Key Findings Service - Database-First Approach
 
 Main service that integrates all components for AI-powered
-doctoral-level analysis with intelligent caching and performance monitoring.
+doctoral-level analysis with direct database access and no caching layer.
 """
 
 import asyncio
@@ -15,7 +15,6 @@ from datetime import datetime, date
 from pathlib import Path
 
 # Import Key Findings components
-from .database_manager import KeyFindingsDBManager
 from .unified_ai_service import UnifiedAIService, get_unified_ai_service
 from .data_aggregator import DataAggregator
 
@@ -24,30 +23,31 @@ try:
     from ..translations import get_text
 except ImportError:
     # Fallback for standalone usage
-    def get_text(key: str, language: str = 'es', **kwargs) -> str:
+    def get_text(key: str, language: str = "es", **kwargs) -> str:
         """Fallback translation function"""
         translations = {
-            'es': {
-                'section_prefix_executive_summary': '📋 RESUMEN EJECUTIVO',
-                'section_prefix_principal_findings': '🔍 HALLAZGOS PRINCIPALES',
-                'section_prefix_temporal_analysis': '🔍 ANÁLISIS TEMPORAL',
-                'section_prefix_seasonal_analysis': '📅 PATRONES ESTACIONALES',
-                'section_prefix_fourier_analysis': '🌊 ANÁLISIS ESPECTRAL',
-                'section_prefix_strategic_synthesis': '🎯 SÍNTESIS ESTRATÉGICA',
-                'section_prefix_conclusions': '📝 CONCLUSIONES',
+            "es": {
+                "section_prefix_executive_summary": "📋 RESUMEN EJECUTIVO",
+                "section_prefix_principal_findings": "🔍 HALLAZGOS PRINCIPALES",
+                "section_prefix_temporal_analysis": "🔍 ANÁLISIS TEMPORAL",
+                "section_prefix_seasonal_analysis": "📅 PATRONES ESTACIONALES",
+                "section_prefix_fourier_analysis": "🌊 ANÁLISIS ESPECTRAL",
+                "section_prefix_strategic_synthesis": "🎯 SÍNTESIS ESTRATÉGICA",
+                "section_prefix_conclusions": "📝 CONCLUSIONES",
             },
-            'en': {
-                'section_prefix_executive_summary': '📋 EXECUTIVE SUMMARY',
-                'section_prefix_principal_findings': '🔍 PRINCIPAL FINDINGS',
-                'section_prefix_temporal_analysis': '🔍 TEMPORAL ANALYSIS',
-                'section_prefix_seasonal_analysis': '📅 SEASONAL PATTERNS',
-                'section_prefix_fourier_analysis': '🌊 SPECTRAL ANALYSIS',
-                'section_prefix_strategic_synthesis': '🎯 STRATEGIC SYNTHESIS',
-                'section_prefix_conclusions': '📝 CONCLUSIONS',
-            }
+            "en": {
+                "section_prefix_executive_summary": "📋 EXECUTIVE SUMMARY",
+                "section_prefix_principal_findings": "🔍 PRINCIPAL FINDINGS",
+                "section_prefix_temporal_analysis": "🔍 TEMPORAL ANALYSIS",
+                "section_prefix_seasonal_analysis": "📅 SEASONAL PATTERNS",
+                "section_prefix_fourier_analysis": "🌊 SPECTRAL ANALYSIS",
+                "section_prefix_strategic_synthesis": "🎯 STRATEGIC SYNTHESIS",
+                "section_prefix_conclusions": "📝 CONCLUSIONS",
+            },
         }
         return translations.get(language, {}).get(key, key)
-# from .single_source_fixer import SingleSourceFixer  # Disabled - fixed section extraction instead
+
+
 from .prompt_engineer import PromptEngineer
 from .modal_component import KeyFindingsModal
 
@@ -59,9 +59,9 @@ logging.basicConfig(
 
 class KeyFindingsService:
     """
-    Main service for Key Findings functionality.
+    Simplified Key Findings Service - Database-First Approach
 
-    Integrates data aggregation, AI analysis, caching, and performance monitoring
+    Integrates data aggregation, AI analysis, and direct database access
     to provide doctoral-level insights with optimal performance.
     """
 
@@ -83,36 +83,24 @@ class KeyFindingsService:
         """
         self.db_manager = db_manager
 
-        # Initialize Key Findings database
-        db_path = (
-            config.get("key_findings_db_path", "/app/data/key_findings.db")
-            if config
-            else "/app/data/key_findings.db"
-        )
-        self.kf_db_manager = KeyFindingsDBManager(db_path)
-
         # Initialize Unified AI service (Groq primary, OpenRouter fallback)
         self.ai_service = get_unified_ai_service(
             groq_api_key, openrouter_api_key, config
         )
 
         # Initialize data aggregator
-        self.data_aggregator = DataAggregator(db_manager, self.kf_db_manager)
+        self.data_aggregator = DataAggregator(
+            db_manager, None
+        )  # No cache manager needed
 
         # Initialize prompt engineer
         self.prompt_engineer = PromptEngineer()
-
-        # Initialize single source fixer
-        # self.single_source_fixer = SingleSourceFixer()  # Disabled - fixed section extraction instead
 
         # Initialize modal component (will be set later with app instance)
         self.modal_component = None
 
         # Configuration
         self.config = {
-            "cache_ttl": config.get("cache_ttl", 86400)
-            if config
-            else 86400,  # 24 hours
             "max_retries": config.get("max_retries", 3) if config else 3,
             "enable_pca_emphasis": config.get("enable_pca_emphasis", True)
             if config
@@ -125,8 +113,8 @@ class KeyFindingsService:
         # Performance tracking
         self.performance_metrics = {
             "total_requests": 0,
-            "cache_hits": 0,
-            "cache_misses": 0,
+            "precomputed_hits": 0,
+            "live_ai_requests": 0,
             "avg_response_time_ms": 0,
             "error_count": 0,
         }
@@ -159,7 +147,7 @@ class KeyFindingsService:
         source_display_names: List[str] = None,
     ) -> Dict[str, Any]:
         """
-        Generate Key Findings analysis with intelligent caching.
+        Generate Key Findings analysis with direct database access.
 
         Args:
             tool_name: Selected management tool
@@ -177,23 +165,28 @@ class KeyFindingsService:
         # Debug: Log function parameters at entry
         logging.info(f"🔍 generate_key_findings ENTRY:")
         logging.info(f"🔍   tool_name: {tool_name}")
-        logging.info(f"🔍   selected_sources: {selected_sources} (type: {type(selected_sources)})")
+        logging.info(
+            f"🔍   selected_sources: {selected_sources} (type: {type(selected_sources)})"
+        )
         logging.info(f"🔍   language: {language}")
         logging.info(f"🔍   force_refresh: {force_refresh}")
 
         try:
             # Simplified architecture: Direct query to precomputed findings database
-            # Remove secondary cache layer - query precomputed findings directly
+            # No secondary cache layer - query precomputed findings directly
 
             # Check precomputed findings database directly (primary storage)
-            precomputed_result = self._get_precomputed_findings(
+            precomputed_result = self._get_precomputed_findings_direct(
                 tool_name, selected_sources, language
             )
             if precomputed_result:
                 response_time_ms = int((time.time() - start_time) * 1000)
 
                 # Log direct database hit
-                logging.info(f"Direct database hit for {tool_name} + {len(selected_sources)} sources")
+                logging.info(
+                    f"Direct database hit for {tool_name} + {len(selected_sources)} sources"
+                )
+                self.performance_metrics["precomputed_hits"] += 1
 
                 return {
                     "success": True,
@@ -207,18 +200,27 @@ class KeyFindingsService:
             logging.info(
                 f"No precomputed data for {tool_name} + {len(selected_sources)} sources - generating new analysis"
             )
+            self.performance_metrics["live_ai_requests"] += 1
 
             # Check if this is a single source analysis
             is_single_source = len(selected_sources) == 1
             if is_single_source:
                 logging.info(f"🔍 BEFORE _generate_single_source_analysis call:")
-                logging.info(f"🔍   selected_sources: {selected_sources} (type: {type(selected_sources)})")
-                logging.info(f"🔍   selected_sources[0]: {selected_sources[0]} (type: {type(selected_sources[0])})")
+                logging.info(
+                    f"🔍   selected_sources: {selected_sources} (type: {type(selected_sources)})"
+                )
+                logging.info(
+                    f"🔍   selected_sources[0]: {selected_sources[0]} (type: {type(selected_sources[0])})"
+                )
                 logging.info(
                     f"🔍 Single source detected: {selected_sources[0]}. Using single source workflow."
                 )
                 return await self._generate_single_source_analysis(
-                    tool_name, selected_sources, language, start_time, source_display_names
+                    tool_name,
+                    selected_sources,
+                    language,
+                    start_time,
+                    source_display_names,
                 )
 
             # Multi-source analysis path (original implementation)
@@ -239,15 +241,16 @@ class KeyFindingsService:
                 raise Exception(f"Data collection failed: {analysis_data['error']}")
 
             # Generate AI analysis
-            ai_result = await self._generate_ai_analysis(analysis_data, language, is_single_source=False)
+            ai_result = await self._generate_ai_analysis(
+                analysis_data, language, is_single_source=False
+            )
 
             if not ai_result["success"]:
                 raise Exception(
                     f"AI analysis failed: {ai_result.get('error', 'Unknown error')}"
                 )
 
-            # Prepare report data for caching with new structure
-            # Handle both old and new JSON structures
+            # Prepare report data for direct return (no caching)
             content = ai_result["content"]
 
             # Extract PCA Analysis from appropriate field
@@ -262,11 +265,14 @@ class KeyFindingsService:
 
             # OVERRIDE AI-generated values with correct system values for multi-source
             system_model_used = ai_result["model_used"]  # Actual model from system
-            system_data_points = analysis_data.get("data_points_used", 0)  # Actual data points from analysis
+            system_data_points = analysis_data.get(
+                "data_points_used", 0
+            )  # Actual data points from analysis
             system_response_time = ai_result["response_time_ms"]  # Actual response time
 
-            logging.info(f"🔧 Multi-source system values - Model: {system_model_used}, Data points: {system_data_points}, Response time: {system_response_time}ms")
-            logging.info(f"🔧 Multi-source AI-generated values - Model: {content.get('model_used', 'N/A')}, Data points: {content.get('data_points_analyzed', 'N/A')}")
+            logging.info(
+                f"🔧 Multi-source system values - Model: {system_model_used}, Data points: {system_data_points}, Response time: {system_response_time}ms"
+            )
 
             report_data = {
                 "tool_name": tool_name,
@@ -287,18 +293,8 @@ class KeyFindingsService:
                 "json_structure": content.get("original_structure", "unknown"),
             }
 
-            # Simplified architecture: Return report data directly without secondary caching
+            # Simplified architecture: Return report data directly without caching
             response_time_ms = int((time.time() - start_time) * 1000)
-
-            # Log model performance
-            self.kf_db_manager.log_model_performance(
-                ai_result["model_used"],
-                ai_result["response_time_ms"],
-                ai_result["token_count"],
-                True,
-                None,
-                None,  # User satisfaction to be provided later
-            )
 
             logging.info(
                 f"Generated new analysis for {tool_name} + {len(selected_sources)} sources in {response_time_ms}ms"
@@ -347,28 +343,14 @@ class KeyFindingsService:
             Dictionary containing analysis results and metadata
         """
         try:
-            # Debug: Log function parameters at entry
-            logging.info(f"🔍 _generate_single_source_analysis ENTRY:")
-            logging.info(f"🔍   tool_name: {tool_name}")
-            logging.info(f"🔍   selected_sources: {selected_sources} (type: {type(selected_sources)})")
-            logging.info(f"🔍   language: {language}")
-            logging.info(f"🔍   source_display_names: {source_display_names}")
-
-            # Debug: Check if single_source_fixer exists
-            logging.info(f"🔍 Checking single_source_fixer existence...")
-            logging.info(f"🔍 hasattr(self, 'single_source_fixer'): {hasattr(self, 'single_source_fixer')}")
-            if hasattr(self, 'single_source_fixer'):
-                logging.info(f"🔍 self.single_source_fixer type: {type(self.single_source_fixer)}")
-            else:
-                logging.info(f"🔍 self.single_source_fixer does not exist!")
-                logging.info(f"🔍 Available attributes: {[attr for attr in dir(self) if not attr.startswith('_')]}")
-
             # Collect analysis data for single source
             from fix_source_mapping import map_display_names_to_source_ids
 
             selected_source_ids = map_display_names_to_source_ids(selected_sources)
 
-            logging.info(f"🔍 About to call collect_analysis_data for single source with:")
+            logging.info(
+                f"🔍 About to call collect_analysis_data for single source with:"
+            )
             logging.info(f"🔍   tool_name: {tool_name}")
             logging.info(f"🔍   selected_source_ids: {selected_source_ids}")
             logging.info(f"🔍   language: {language}")
@@ -454,7 +436,9 @@ class KeyFindingsService:
             logging.info(
                 f"🤖 Using IMPROVED narrative prompts for single source analysis"
             )
-            ai_result = await self._generate_ai_analysis(single_source_data, language, is_single_source=True)
+            ai_result = await self._generate_ai_analysis(
+                single_source_data, language, is_single_source=True
+            )
             logging.info(
                 f"🤖 AI service result: success={ai_result.get('success', False)}"
             )
@@ -464,31 +448,11 @@ class KeyFindingsService:
                 logging.error(f"❌ AI service failed: {error_msg}")
                 raise Exception(f"Single source AI analysis failed: {error_msg}")
 
-            # Prepare report data for caching with single source structure
+            # Prepare report data for direct return (no caching)
             content = ai_result["content"]
             logging.info(
                 f"📝 AI content received: {list(content.keys()) if content else 'None'}"
             )
-
-            # Apply single source structure fixer to ensure exact format
-            # DISABLED - Fixed section extraction patterns instead
-            logging.info("🔧 Single source fixer disabled - using improved section extraction")
-            content = content  # Use content as-is
-            is_valid = True
-            if not is_valid:
-                logging.warning("⚠️ Single source structure validation failed, but continuing")
-
-            # Calculate confidence score
-            confidence_score = self._calculate_confidence_score_single_source(content)
-            logging.info(f"📊 Confidence score: {confidence_score}")
-
-            # OVERRIDE AI-generated values with correct system values
-            system_model_used = ai_result["model_used"]  # Actual model from system
-            system_data_points = analysis_data.get("data_points_used", 240)  # Actual data points from analysis
-            system_response_time = ai_result["response_time_ms"]  # Actual response time
-
-            logging.info(f"🔧 System values - Model: {system_model_used}, Data points: {system_data_points}, Response time: {system_response_time}ms")
-            logging.info(f"🔧 AI-generated values - Model: {content.get('model_used', 'N/A')}, Data points: {content.get('data_points_analyzed', 'N/A')}")
 
             # Build proper single-source report structure
             # For single-source, combine all analysis into principal_findings narrative
@@ -498,46 +462,71 @@ class KeyFindingsService:
             print(f"🔍 SERVICE DEBUG: AI content sections: {list(content.keys())}")
             print(f"🔍 SERVICE DEBUG: Available sections in AI response:")
             for key, value in content.items():
-                if value and key in ['executive_summary', 'temporal_analysis', 'seasonal_analysis', 'fourier_analysis', 'strategic_synthesis', 'conclusions']:
+                if value and key in [
+                    "executive_summary",
+                    "temporal_analysis",
+                    "seasonal_analysis",
+                    "fourier_analysis",
+                    "strategic_synthesis",
+                    "conclusions",
+                ]:
                     print(f"  - {key}: Present (length: {len(str(value))})")
-                elif not value and key in ['executive_summary', 'temporal_analysis', 'seasonal_analysis', 'fourier_analysis', 'strategic_synthesis', 'conclusions']:
+                elif not value and key in [
+                    "executive_summary",
+                    "temporal_analysis",
+                    "seasonal_analysis",
+                    "fourier_analysis",
+                    "strategic_synthesis",
+                    "conclusions",
+                ]:
                     print(f"  - {key}: Missing/Empty")
 
             # Add executive summary if available
             if content.get("executive_summary"):
-                principal_findings_content.append(f"{get_text('section_prefix_executive_summary', language)}\n{content.get('executive_summary')}")
+                principal_findings_content.append(
+                    f"{get_text('section_prefix_executive_summary', language)}\n{content.get('executive_summary')}"
+                )
 
             # Add temporal analysis if available
             if content.get("temporal_analysis"):
-                principal_findings_content.append(f"{get_text('section_prefix_temporal_analysis', language)}\n{content.get('temporal_analysis')}")
+                principal_findings_content.append(
+                    f"{get_text('section_prefix_temporal_analysis', language)}\n{content.get('temporal_analysis')}"
+                )
 
             # Add seasonal analysis if available
             if content.get("seasonal_analysis"):
-                principal_findings_content.append(f"{get_text('section_prefix_seasonal_analysis', language)}\n{content.get('seasonal_analysis')}")
+                principal_findings_content.append(
+                    f"{get_text('section_prefix_seasonal_analysis', language)}\n{content.get('seasonal_analysis')}"
+                )
             else:
                 print(f"🔍 SERVICE DEBUG: seasonal_analysis section is missing!")
 
             # Add fourier analysis if available
             if content.get("fourier_analysis"):
-                principal_findings_content.append(f"{get_text('section_prefix_fourier_analysis', language)}\n{content.get('fourier_analysis')}")
+                principal_findings_content.append(
+                    f"{get_text('section_prefix_fourier_analysis', language)}\n{content.get('fourier_analysis')}"
+                )
             else:
                 print(f"🔍 SERVICE DEBUG: fourier_analysis section is missing!")
 
             # Add strategic synthesis if available
             if content.get("strategic_synthesis"):
-                principal_findings_content.append(f"{get_text('section_prefix_strategic_synthesis', language)}\n{content.get('strategic_synthesis')}")
+                principal_findings_content.append(
+                    f"{get_text('section_prefix_strategic_synthesis', language)}\n{content.get('strategic_synthesis')}"
+                )
 
             # Add conclusions if available
             if content.get("conclusions"):
-                principal_findings_content.append(f"{get_text('section_prefix_conclusions', language)}\n{content.get('conclusions')}")
+                principal_findings_content.append(
+                    f"{get_text('section_prefix_conclusions', language)}\n{content.get('conclusions')}"
+                )
 
-            print(f"🔍 SERVICE DEBUG: Total sections combined: {len(principal_findings_content)}")
+            print(
+                f"🔍 SERVICE DEBUG: Total sections combined: {len(principal_findings_content)}"
+            )
 
             # Combine all sections into principal_findings narrative
             principal_findings_narrative = "\n\n".join(principal_findings_content)
-
-            # Don't add main header since individual sections already have their own prefixes
-            # This avoids duplicate "🔍 HALLAZGOS PRINCIPALES" header
 
             # Remove statistical summary section if present (this comes from AI-generated content)
             lines_to_remove = [
@@ -551,11 +540,11 @@ class KeyFindingsService:
                 "Data Points:",
                 "Rango temporal:",
                 "Time range:",
-                "TS:"
+                "TS:",
             ]
 
             filtered_lines = []
-            for line in principal_findings_narrative.split('\n'):
+            for line in principal_findings_narrative.split("\n"):
                 should_remove = False
                 for remove_pattern in lines_to_remove:
                     if remove_pattern in line:
@@ -564,27 +553,56 @@ class KeyFindingsService:
                 if not should_remove:
                     filtered_lines.append(line)
 
-            principal_findings_narrative = '\n'.join(filtered_lines)
+            principal_findings_narrative = "\n".join(filtered_lines)
 
             # Clean up any extra blank lines
-            principal_findings_narrative = '\n'.join([line for line in principal_findings_narrative.split('\n') if line.strip()])
+            principal_findings_narrative = "\n".join(
+                [
+                    line
+                    for line in principal_findings_narrative.split("\n")
+                    if line.strip()
+                ]
+            )
 
             # For single-source, PCA and heatmap should be empty or contain placeholder
             pca_analysis_content = content.get("pca_insights", "")
             heatmap_analysis_content = content.get("heatmap_analysis", "")
 
             # If PCA contains placeholder text, make it empty for single-source
-            if pca_analysis_content and "No PCA analysis available" in str(pca_analysis_content):
+            if pca_analysis_content and "No PCA analysis available" in str(
+                pca_analysis_content
+            ):
                 pca_analysis_content = ""
 
             # If heatmap contains placeholder text, make it empty for single-source
-            if heatmap_analysis_content and "No heatmap analysis available" in str(heatmap_analysis_content):
+            if heatmap_analysis_content and "No heatmap analysis available" in str(
+                heatmap_analysis_content
+            ):
                 heatmap_analysis_content = ""
 
             # Log the final single-source content structure
             pca_str = str(pca_analysis_content) if pca_analysis_content else ""
-            heatmap_str = str(heatmap_analysis_content) if heatmap_analysis_content else ""
-            logging.info(f"🔧 Single-source content structure - principal_findings length: {len(principal_findings_narrative)}, pca_analysis: '{pca_str[:50]}...', heatmap_analysis: '{heatmap_str[:50]}...'")
+            heatmap_str = (
+                str(heatmap_analysis_content) if heatmap_analysis_content else ""
+            )
+            logging.info(
+                f"🔧 Single-source content structure - principal_findings length: {len(principal_findings_narrative)}, pca_analysis: '{pca_str[:50]}...', heatmap_analysis: '{heatmap_str[:50]}...'"
+            )
+
+            # Calculate confidence score
+            confidence_score = self._calculate_confidence_score_single_source(content)
+            logging.info(f"📊 Confidence score: {confidence_score}")
+
+            # OVERRIDE AI-generated values with correct system values
+            system_model_used = ai_result["model_used"]  # Actual model from system
+            system_data_points = analysis_data.get(
+                "data_points_used", 240
+            )  # Actual data points from analysis
+            system_response_time = ai_result["response_time_ms"]  # Actual response time
+
+            logging.info(
+                f"🔧 System values - Model: {system_model_used}, Data points: {system_data_points}, Response time: {system_response_time}ms"
+            )
 
             report_data = {
                 "tool_name": tool_name,
@@ -592,11 +610,11 @@ class KeyFindingsService:
                 "language": language,
                 "executive_summary": content.get("executive_summary", ""),
                 "principal_findings": principal_findings_narrative,  # ✅ Combined narrative
-                "pca_analysis": pca_analysis_content,               # ✅ Empty or placeholder for single-source
-                "heatmap_analysis": heatmap_analysis_content,       # ✅ Empty or placeholder for single-source
-                "temporal_analysis": "",                            # ✅ Empty (moved to principal_findings)
-                "seasonal_analysis": "",                            # ✅ Empty (moved to principal_findings)
-                "fourier_analysis": "",                             # ✅ Empty (moved to principal_findings)
+                "pca_analysis": pca_analysis_content,  # ✅ Empty or placeholder for single-source
+                "heatmap_analysis": heatmap_analysis_content,  # ✅ Empty or placeholder for single-source
+                "temporal_analysis": "",  # ✅ Empty (moved to principal_findings)
+                "seasonal_analysis": "",  # ✅ Empty (moved to principal_findings)
+                "fourier_analysis": "",  # ✅ Empty (moved to principal_findings)
                 "strategic_synthesis": content.get("strategic_synthesis", ""),
                 "conclusions": content.get("conclusions", ""),
                 "model_used": system_model_used,  # ✅ Use system model, NOT AI-generated
@@ -611,18 +629,8 @@ class KeyFindingsService:
 
             logging.info(f"📋 Report data prepared: {len(report_data)} fields")
 
-            # Simplified architecture: Return report data directly without secondary caching
+            # Simplified architecture: Return report data directly without caching
             response_time_ms = int((time.time() - start_time) * 1000)
-
-            # Log model performance
-            self.kf_db_manager.log_model_performance(
-                ai_result["model_used"],
-                ai_result["response_time_ms"],
-                ai_result["token_count"],
-                True,
-                None,
-                None,  # User satisfaction to be provided later
-            )
 
             logging.info(
                 f"Generated single source analysis for {tool_name} + {len(selected_sources)} sources in {response_time_ms}ms"
@@ -649,7 +657,10 @@ class KeyFindingsService:
             }
 
     async def _generate_ai_analysis(
-        self, analysis_data: Dict[str, Any], language: str, is_single_source: bool = False
+        self,
+        analysis_data: Dict[str, Any],
+        language: str,
+        is_single_source: bool = False,
     ) -> Dict[str, Any]:
         """
         Generate AI analysis using prompt engineering.
@@ -1170,30 +1181,31 @@ class KeyFindingsService:
             logging.error(f"Confidence score calculation failed: {e}")
             return 0.5
 
-    def _get_precomputed_findings(
+    def _get_precomputed_findings_direct(
         self, tool_name: str, selected_sources: list, language: str = "es"
     ):
-        """Get precomputed findings from database as fallback."""
+        """Get precomputed findings directly from database - simplified approach."""
         try:
             # Convert tool name to Spanish (database stores Spanish names)
             from translations import get_tool_name
-            spanish_tool_name = get_tool_name(tool_name, 'es')
+
+            spanish_tool_name = get_tool_name(tool_name, "es")
 
             # Convert source IDs to display names (database stores display names, not IDs)
             # Handle both numeric IDs and string source IDs
             source_mapping = {
                 # String source IDs to display names
-                'google_trends': 'Google Trends',
-                'google_books': 'Google Books',
-                'bain_usability': 'Bain Usability',
-                'bain_satisfaction': 'Bain Satisfaction',
-                'crossref': 'Crossref',
+                "google_trends": "Google Trends",
+                "google_books": "Google Books",
+                "bain_usability": "Bain Usability",
+                "bain_satisfaction": "Bain Satisfaction",
+                "crossref": "Crossref",
                 # Numeric IDs to display names
-                1: 'Google Trends',
-                2: 'Google Books',
-                3: 'Bain Usability',
-                5: 'Bain Satisfaction',
-                4: 'Crossref'
+                1: "Google Trends",
+                2: "Google Books",
+                3: "Bain Usability",
+                5: "Bain Satisfaction",
+                4: "Crossref",
             }
 
             # Convert source IDs to display names and sort by numeric ID for consistency
@@ -1202,13 +1214,17 @@ class KeyFindingsService:
             for source_id in selected_sources:
                 display_name = source_mapping.get(source_id, str(source_id))
                 # Get numeric ID for sorting (handle both int and string IDs)
-                numeric_id = source_id if isinstance(source_id, int) else {
-                    'google_trends': 1,
-                    'google_books': 2,
-                    'bain_usability': 3,
-                    'crossref': 4,
-                    'bain_satisfaction': 5
-                }.get(source_id, 999)  # Default to high number for unknown sources
+                numeric_id = (
+                    source_id
+                    if isinstance(source_id, int)
+                    else {
+                        "google_trends": 1,
+                        "google_books": 2,
+                        "bain_usability": 3,
+                        "crossref": 4,
+                        "bain_satisfaction": 5,
+                    }.get(source_id, 999)
+                )  # Default to high number for unknown sources
                 source_display_pairs.append((numeric_id, display_name))
 
             # Sort by numeric ID and extract display names
@@ -1217,8 +1233,12 @@ class KeyFindingsService:
             sources_text = ", ".join(display_sources)
 
             # Debug logging to see what we're querying
-            logging.info(f"🔍 DEBUG: _get_precomputed_findings query parameters:")
-            logging.info(f"🔍 DEBUG: tool_name='{tool_name}' -> spanish_tool_name='{spanish_tool_name}'")
+            logging.info(
+                f"🔍 DEBUG: _get_precomputed_findings_direct query parameters:"
+            )
+            logging.info(
+                f"🔍 DEBUG: tool_name='{tool_name}' -> spanish_tool_name='{spanish_tool_name}'"
+            )
             logging.info(f"🔍 DEBUG: selected_sources={selected_sources}")
             logging.info(f"🔍 DEBUG: display_sources={display_sources}")
             logging.info(f"🔍 DEBUG: sources_text='{sources_text}'")
@@ -1270,21 +1290,35 @@ class KeyFindingsService:
                 conn_check.close()
 
                 if available_combinations:
-                    logging.info(f"🔍 DEBUG: Available combinations for {spanish_tool_name} ({language}):")
+                    logging.info(
+                        f"🔍 DEBUG: Available combinations for {spanish_tool_name} ({language}):"
+                    )
                     for combo in available_combinations:
-                        logging.info(f"🔍 DEBUG:   Sources: {combo[1]} (count: {combo[3]})")
+                        logging.info(
+                            f"🔍 DEBUG:   Sources: {combo[1]} (count: {combo[3]})"
+                        )
                 else:
-                    logging.info(f"🔍 DEBUG: No combinations found for {spanish_tool_name} ({language})")
+                    logging.info(
+                        f"🔍 DEBUG: No combinations found for {spanish_tool_name} ({language})"
+                    )
 
             if not result:
                 return None
 
             # Debug the actual content lengths
             logging.info(f"🔍 DEBUG: Database result field lengths:")
-            logging.info(f"  result[0] (executive_summary): {len(str(result[0] or ''))}")
-            logging.info(f"  result[1] (principal_findings): {len(str(result[1] or ''))}")
-            logging.info(f"  result[2] (temporal_analysis): {len(str(result[2] or ''))}")
-            logging.info(f"  result[3] (seasonal_analysis): {len(str(result[3] or ''))}")
+            logging.info(
+                f"  result[0] (executive_summary): {len(str(result[0] or ''))}"
+            )
+            logging.info(
+                f"  result[1] (principal_findings): {len(str(result[1] or ''))}"
+            )
+            logging.info(
+                f"  result[2] (temporal_analysis): {len(str(result[2] or ''))}"
+            )
+            logging.info(
+                f"  result[3] (seasonal_analysis): {len(str(result[3] or ''))}"
+            )
             logging.info(f"  result[4] (fourier_analysis): {len(str(result[4] or ''))}")
 
             response_dict = {
@@ -1310,11 +1344,21 @@ class KeyFindingsService:
 
             # Debug the response dictionary
             logging.info(f"🔍 DEBUG: Response dictionary field lengths:")
-            logging.info(f"  executive_summary: {len(str(response_dict['executive_summary']))}")
-            logging.info(f"  principal_findings: {len(str(response_dict['principal_findings']))}")
-            logging.info(f"  temporal_analysis: {len(str(response_dict['temporal_analysis']))}")
-            logging.info(f"  seasonal_analysis: {len(str(response_dict['seasonal_analysis']))}")
-            logging.info(f"  fourier_analysis: {len(str(response_dict['fourier_analysis']))}")
+            logging.info(
+                f"  executive_summary: {len(str(response_dict['executive_summary']))}"
+            )
+            logging.info(
+                f"  principal_findings: {len(str(response_dict['principal_findings']))}"
+            )
+            logging.info(
+                f"  temporal_analysis: {len(str(response_dict['temporal_analysis']))}"
+            )
+            logging.info(
+                f"  seasonal_analysis: {len(str(response_dict['seasonal_analysis']))}"
+            )
+            logging.info(
+                f"  fourier_analysis: {len(str(response_dict['fourier_analysis']))}"
+            )
 
             return response_dict
 
@@ -1324,31 +1368,25 @@ class KeyFindingsService:
 
     def get_performance_metrics(self) -> Dict[str, Any]:
         """
-        Get comprehensive performance metrics.
+        Get simplified performance metrics.
 
         Returns:
             Performance metrics dictionary
         """
-        # Calculate cache hit rate
+        # Calculate precomputed hit rate
         total_requests = self.performance_metrics["total_requests"]
-        cache_hit_rate = (
-            (self.performance_metrics["cache_hits"] / total_requests * 100)
+        precomputed_hit_rate = (
+            (self.performance_metrics["precomputed_hits"] / total_requests * 100)
             if total_requests > 0
             else 0
         )
 
-        # Get database statistics
-        db_stats = self.kf_db_manager.get_cache_stats()
-
-        # Get AI service performance
-        ai_performance = self.ai_service.get_performance_stats()
-
         return {
             "service_metrics": {
                 "total_requests": total_requests,
-                "cache_hits": self.performance_metrics["cache_hits"],
-                "cache_misses": self.performance_metrics["cache_misses"],
-                "cache_hit_rate": round(cache_hit_rate, 2),
+                "precomputed_hits": self.performance_metrics["precomputed_hits"],
+                "live_ai_requests": self.performance_metrics["live_ai_requests"],
+                "precomputed_hit_rate": round(precomputed_hit_rate, 2),
                 "error_count": self.performance_metrics["error_count"],
                 "error_rate": round(
                     self.performance_metrics["error_count"] / total_requests * 100, 2
@@ -1356,217 +1394,15 @@ class KeyFindingsService:
                 if total_requests > 0
                 else 0,
             },
-            "database_metrics": db_stats,
-            "ai_performance": ai_performance,
-            "database_size_mb": round(
-                self.kf_db_manager.get_database_size() / 1024 / 1024, 2
-            ),
+            "ai_performance": self.ai_service.get_performance_stats(),
         }
-
-    def update_user_feedback(
-        self, tool_name: str, selected_sources: List[str], language: str, rating: int, feedback: str = None
-    ):
-        """
-        Update user feedback for a report.
-
-        Args:
-            tool_name: Tool name for identification
-            selected_sources: Data sources for identification
-            language: Analysis language
-            rating: User rating (1-5)
-            feedback: Optional user feedback text
-        """
-        try:
-            # Get current report
-            report = self.kf_db_manager.get_cached_report(scenario_hash)
-            if not report:
-                logging.warning(f"Report not found for feedback: {scenario_hash}")
-                return
-
-            # Update report with feedback
-            with self.kf_db_manager.get_connection() as conn:
-                conn.execute(
-                    """
-                    UPDATE key_findings_reports 
-                    SET user_rating = ?, user_feedback = ?
-                    WHERE scenario_hash = ?
-                """,
-                    (rating, feedback, scenario_hash),
-                )
-
-            # Log model performance with user satisfaction
-            model_used = report.get("model_used")
-            if model_used:
-                self.kf_db_manager.log_model_performance(
-                    model_used,
-                    0,  # No response time for feedback
-                    0,  # No token count for feedback
-                    True,
-                    None,
-                    rating,
-                )
-
-            logging.info(
-                f"Updated user feedback for scenario {scenario_hash[:8]}... Rating: {rating}"
-            )
-
-        except Exception as e:
-            logging.error(f"Failed to update user feedback: {e}")
-
-    def cleanup_old_cache(self, days_to_keep: int = 90) -> Dict[str, int]:
-        """
-        Clean up old cache entries.
-
-        Args:
-            days_to_keep: Number of days to keep cache entries
-
-        Returns:
-            Dictionary with cleanup results
-        """
-        try:
-            return self.kf_db_manager.cleanup_old_cache(days_to_keep)
-        except Exception as e:
-            logging.error(f"Cache cleanup failed: {e}")
-            return {"error": str(e)}
-
-    def export_report(
-        self, tool_name: str, selected_sources: List[str], language: str, format_type: str = "json"
-    ) -> Dict[str, Any]:
-        """
-        Export a report in specified format.
-
-        Args:
-            tool_name: Tool name for identification
-            selected_sources: Data sources for identification
-            language: Analysis language
-            format_type: Export format ('json', 'pdf', 'csv')
-
-        Returns:
-            Export result with file path or content
-        """
-        try:
-            # Get report data
-            report = self.kf_db_manager.get_cached_report(scenario_hash)
-            if not report:
-                return {"success": False, "error": "Report not found"}
-
-            if format_type == "json":
-                # Export as JSON
-                export_data = {
-                    "report": report,
-                    "export_timestamp": datetime.now().isoformat(),
-                    "export_format": "json",
-                }
-
-                return {
-                    "success": True,
-                    "content": json.dumps(export_data, indent=2, ensure_ascii=False),
-                    "filename": f"key_findings_{scenario_hash[:8]}.json",
-                }
-
-            elif format_type == "csv":
-                # Export findings as CSV
-                findings = report.get("principal_findings", [])
-                if findings:
-                    df = pd.DataFrame(findings)
-                    csv_content = df.to_csv(index=False)
-
-                    return {
-                        "success": True,
-                        "content": csv_content,
-                        "filename": f"key_findings_{scenario_hash[:8]}.csv",
-                    }
-                else:
-                    return {"success": False, "error": "No findings to export"}
-
-            elif format_type == "pdf":
-                # PDF export would require additional dependencies
-                return {"success": False, "error": "PDF export not implemented yet"}
-
-            else:
-                return {"success": False, "error": f"Unsupported format: {format_type}"}
-
-        except Exception as e:
-            logging.error(f"Report export failed: {e}")
-            return {"success": False, "error": str(e)}
-
-    def verify_service_health(self) -> Dict[str, Any]:
-        """
-        Verify service health and connectivity.
-
-        Returns:
-            Health check results
-        """
-        health_status = {
-            "overall_status": "healthy",
-            "timestamp": datetime.now().isoformat(),
-            "components": {},
-        }
-
-        try:
-            # Check database connectivity
-            db_healthy = self.kf_db_manager.verify_persistence()
-            health_status["components"]["database"] = {
-                "status": "healthy" if db_healthy else "unhealthy",
-                "details": "Database accessible and schema valid"
-                if db_healthy
-                else "Database connection failed",
-            }
-
-            # Check AI service availability
-            try:
-                # This would be an async call in a real implementation
-                # For now, just check if API key is configured
-                api_key_configured = bool(self.ai_service.api_key)
-                health_status["components"]["ai_service"] = {
-                    "status": "healthy" if api_key_configured else "unhealthy",
-                    "details": "API key configured"
-                    if api_key_configured
-                    else "API key not configured",
-                }
-            except Exception as e:
-                health_status["components"]["ai_service"] = {
-                    "status": "unhealthy",
-                    "details": f"AI service error: {str(e)}",
-                }
-
-            # Check data aggregator
-            try:
-                # Test with a simple query
-                keywords = self.db_manager.get_keywords_list()
-                health_status["components"]["data_aggregator"] = {
-                    "status": "healthy",
-                    "details": f"Data accessible, {len(keywords)} keywords available",
-                }
-            except Exception as e:
-                health_status["components"]["data_aggregator"] = {
-                    "status": "unhealthy",
-                    "details": f"Data aggregator error: {str(e)}",
-                }
-
-            # Determine overall status
-            component_statuses = [
-                comp["status"] for comp in health_status["components"].values()
-            ]
-            if all(status == "healthy" for status in component_statuses):
-                health_status["overall_status"] = "healthy"
-            elif any(status == "healthy" for status in component_statuses):
-                health_status["overall_status"] = "degraded"
-            else:
-                health_status["overall_status"] = "unhealthy"
-
-        except Exception as e:
-            health_status["overall_status"] = "unhealthy"
-            health_status["error"] = str(e)
-
-        return health_status
 
     def reset_performance_metrics(self):
         """Reset performance metrics."""
         self.performance_metrics = {
             "total_requests": 0,
-            "cache_hits": 0,
-            "cache_misses": 0,
+            "precomputed_hits": 0,
+            "live_ai_requests": 0,
             "avg_response_time_ms": 0,
             "error_count": 0,
         }
@@ -1578,14 +1414,18 @@ _key_findings_service = None
 
 
 def get_key_findings_service(
-    db_manager, api_key: str = None, config: Dict[str, Any] = None
+    db_manager,
+    groq_api_key: str = None,
+    openrouter_api_key: str = None,
+    config: Dict[str, Any] = None,
 ) -> KeyFindingsService:
     """
     Get or create global Key Findings service instance.
 
     Args:
         db_manager: Database manager instance
-        api_key: OpenRouter API key (optional)
+        groq_api_key: Groq API key (optional)
+        openrouter_api_key: OpenRouter API key (optional)
         config: Configuration dictionary (optional)
 
     Returns:
@@ -1594,7 +1434,9 @@ def get_key_findings_service(
     global _key_findings_service
 
     if _key_findings_service is None:
-        _key_findings_service = KeyFindingsService(db_manager, api_key, config)
+        _key_findings_service = KeyFindingsService(
+            db_manager, groq_api_key, openrouter_api_key, config
+        )
 
     return _key_findings_service
 

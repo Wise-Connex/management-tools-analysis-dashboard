@@ -11,6 +11,7 @@ from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 import time
 import re
+import json
 
 # Import database and utility functions
 from fix_source_mapping import map_display_names_to_source_ids
@@ -80,7 +81,9 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                     if selected_tool
                     else "Herramienta"
                 )
-                sources_str = ", ".join(selected_sources) if selected_sources else "Fuentes"
+                sources_str = (
+                    ", ".join(selected_sources) if selected_sources else "Fuentes"
+                )
                 dynamic_title = f"🧠 Hallazgos para {tool_display_name} ({sources_str})"
                 # Return empty content to clear modal and restore key findings
                 # Also trigger content_ready to reset button state
@@ -94,7 +97,9 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                     if selected_tool
                     else "Herramienta"
                 )
-                sources_str = ", ".join(selected_sources) if selected_sources else "Fuentes"
+                sources_str = (
+                    ", ".join(selected_sources) if selected_sources else "Fuentes"
+                )
                 dynamic_title = f"🧠 Hallazgos para {tool_display_name} ({sources_str})"
                 # Also trigger content_ready to reset button state
                 return False, "", dynamic_title, True, None
@@ -112,7 +117,9 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                     sources_str = (
                         ", ".join(selected_sources) if selected_sources else "Fuentes"
                     )
-                    dynamic_title = f"🧠 Hallazgos para {tool_display_name} ({sources_str})"
+                    dynamic_title = (
+                        f"🧠 Hallazgos para {tool_display_name} ({sources_str})"
+                    )
                     return (
                         True,
                         html.Div(
@@ -146,7 +153,9 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                             else "Herramienta"
                         )
                         sources_str = (
-                            ", ".join(selected_sources) if selected_sources else "Fuentes"
+                            ", ".join(selected_sources)
+                            if selected_sources
+                            else "Fuentes"
                         )
                         dynamic_title = (
                             f"🧠 Hallazgos para {tool_display_name} ({sources_str})"
@@ -169,39 +178,17 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
 
                     print("✅ Key Findings service is available")
 
-                    # Show loading state
-                    loading_content = html.Div(
-                        [
-                            html.H4(
-                                "🧠 Key Findings - Análisis", className="text-primary mb-3"
-                            ),
-                            html.Div(
-                                [
-                                    html.H5(
-                                        "Generando Análisis...", className="text-info mb-3"
-                                    ),
-                                    html.P(
-                                        "Procesando datos multi-fuente y generando insights...",
-                                        className="text-muted mb-3",
-                                    ),
-                                    dbc.Spinner(size="sm", color="primary"),
-                                    html.P(
-                                        "Esto puede tomar unos momentos...",
-                                        className="text-muted mt-2",
-                                    ),
-                                ],
-                                style={"textAlign": "center", "padding": "40px"},
-                            ),
-                        ]
-                    )
-
                     # Create dynamic title with tool name and sources
                     tool_display_name = get_tool_name(selected_tool, language)
                     sources_str = ", ".join(selected_sources)
-                    dynamic_title = f"🧠 Hallazgos para {tool_display_name} ({sources_str})"
+                    dynamic_title = (
+                        f"🧠 Hallazgos para {tool_display_name} ({sources_str})"
+                    )
 
-                    # Return loading state immediately
-                    print("🔄 Returning loading state to user")
+                    # Skip loading state for precomputed data - go directly to content generation
+                    print(
+                        "🔄 Skipping loading state - using precomputed data for instant display"
+                    )
 
                     # Use the proper KeyFindingsService method which checks cache and precomputed findings
                     print(
@@ -215,8 +202,12 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
 
                     # Map display names to source IDs for database queries
                     # The service needs both: numeric IDs for database queries AND display names for analysis
-                    selected_source_ids = map_display_names_to_source_ids(selected_sources)
-                    print(f"🔍 Mapped sources: {selected_sources} -> {selected_source_ids}")
+                    selected_source_ids = map_display_names_to_source_ids(
+                        selected_sources
+                    )
+                    print(
+                        f"🔍 Mapped sources: {selected_sources} -> {selected_source_ids}"
+                    )
 
                     key_findings_result = run_async_in_sync_context(
                         key_findings_service.generate_key_findings,
@@ -233,14 +224,20 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                     prompt_time = 0  # Internal to service
 
                     analysis_time = time.time() - analysis_start
-                    print(f"✅ Key Findings generation completed in {analysis_time:.2f}s")
+                    print(
+                        f"✅ Key Findings generation completed in {analysis_time:.2f}s"
+                    )
 
                     # Extract metadata for analysis_data
                     # Try to get metadata from the result if available, otherwise use defaults
                     result_metadata = key_findings_result.get("metadata", {})
                     analysis_data = {
-                        "data_points_analyzed": result_metadata.get("data_points_analyzed", 0),
-                        "date_range_start": result_metadata.get("date_range_start", "N/A"),
+                        "data_points_analyzed": result_metadata.get(
+                            "data_points_analyzed", 0
+                        ),
+                        "date_range_start": result_metadata.get(
+                            "date_range_start", "N/A"
+                        ),
                         "date_range_end": result_metadata.get("date_range_end", "N/A"),
                     }
 
@@ -265,7 +262,9 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                             True,
                             html.Div(
                                 [
-                                    html.H4("Error de Análisis", className="text-danger"),
+                                    html.H4(
+                                        "Error de Análisis", className="text-danger"
+                                    ),
                                     html.P(
                                         f"Error al generar hallazgos clave: {error_msg}",
                                         className="text-muted",
@@ -371,8 +370,12 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                     # DEBUG: Check what values we actually have
                     print(f"🔍 DEBUG: ai_response keys: {list(ai_response.keys())}")
                     print(f"🔍 DEBUG: model_used from response: '{model_used}'")
-                    print(f"🔍 DEBUG: data_points_analyzed from response: '{ai_response.get('data_points_analyzed', 'MISSING')}'")
-                    print(f"🔍 DEBUG: response_time_ms from response: '{response_time_ms}'")
+                    print(
+                        f"🔍 DEBUG: data_points_analyzed from response: '{ai_response.get('data_points_analyzed', 'MISSING')}'"
+                    )
+                    print(
+                        f"🔍 DEBUG: response_time_ms from response: '{response_time_ms}'"
+                    )
 
                     print(
                         f"✅ AI analysis completed in {response_time_ms}ms using {model_used} ({token_count} tokens)"
@@ -403,7 +406,9 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                         # For single-source analysis, skip all parsing and return content as-is
                         # This prevents the extraction of individual sections from the combined principal_findings
                         if len(selected_sources) == 1:
-                            print(f"🔍 EXTRACT_TEXT_CONTENT: Single-source detected, returning content as-is")
+                            print(
+                                f"🔍 EXTRACT_TEXT_CONTENT: Single-source detected, returning content as-is"
+                            )
                             return content
 
                         if isinstance(content, str):
@@ -423,9 +428,9 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                             cleaned_content = cleaned_content.strip()
 
                             # Try direct JSON parsing first
-                            if cleaned_content.startswith("{") and cleaned_content.endswith(
-                                "}"
-                            ):
+                            if cleaned_content.startswith(
+                                "{"
+                            ) and cleaned_content.endswith("}"):
                                 try:
                                     import json
 
@@ -460,7 +465,9 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                                     cleaned_content,
                                 )
                                 if exec_summary_match:
-                                    return exec_summary_match.group(1).replace('\\"', '"')
+                                    return exec_summary_match.group(1).replace(
+                                        '\\"', '"'
+                                    )
 
                             # Pattern 2: Bullet point containing JSON fragment
                             if (
@@ -477,10 +484,14 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                                 import re
 
                                 exec_summary_match = re.search(
-                                    r'"executive_summary":\s*"(.*?)"', json_part, re.DOTALL
+                                    r'"executive_summary":\s*"(.*?)"',
+                                    json_part,
+                                    re.DOTALL,
                                 )
                                 if exec_summary_match:
-                                    return exec_summary_match.group(1).replace('\\"', '"')
+                                    return exec_summary_match.group(1).replace(
+                                        '\\"', '"'
+                                    )
 
                             # If direct parsing fails, try to extract from markdown sections
                             sections = extract_markdown_sections_from_content(
@@ -578,7 +589,9 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
 
                         # Save the last section
                         if current_section and section_content:
-                            sections[current_section] = "\n".join(section_content).strip()
+                            sections[current_section] = "\n".join(
+                                section_content
+                            ).strip()
 
                         return sections
 
@@ -589,10 +602,14 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                             start_marker = section_content.find("```json")
                             if start_marker != -1:
                                 start_json = section_content.find("{", start_marker)
-                                end_marker = section_content.find("```", start_marker + 7)
+                                end_marker = section_content.find(
+                                    "```", start_marker + 7
+                                )
                                 if end_marker != -1:
                                     end_json = (
-                                        section_content.rfind("}", start_marker, end_marker)
+                                        section_content.rfind(
+                                            "}", start_marker, end_marker
+                                        )
                                         + 1
                                     )
                                     if start_json != -1 and end_json > start_json:
@@ -655,7 +672,9 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                         cleaned_content = content
 
                         for original, replacement in mappings.items():
-                            cleaned_content = cleaned_content.replace(original, replacement)
+                            cleaned_content = cleaned_content.replace(
+                                original, replacement
+                            )
 
                         return cleaned_content
 
@@ -704,7 +723,9 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
 
                         # Save the last section
                         if current_section and section_content:
-                            sections[current_section] = "\n".join(section_content).strip()
+                            sections[current_section] = "\n".join(
+                                section_content
+                            ).strip()
 
                         return sections
 
@@ -715,10 +736,14 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                             start_marker = section_content.find("```json")
                             if start_marker != -1:
                                 start_json = section_content.find("{", start_marker)
-                                end_marker = section_content.find("```", start_marker + 7)
+                                end_marker = section_content.find(
+                                    "```", start_marker + 7
+                                )
                                 if end_marker != -1:
                                     end_json = (
-                                        section_content.rfind("}", start_marker, end_marker)
+                                        section_content.rfind(
+                                            "}", start_marker, end_marker
+                                        )
                                         + 1
                                     )
                                     if start_json != -1 and end_json > start_json:
@@ -757,7 +782,9 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                     )
 
                     # Clean up section headers in the content to ensure proper English display
-                    executive_summary = clean_section_headers(executive_summary, language)
+                    executive_summary = clean_section_headers(
+                        executive_summary, language
+                    )
                     principal_findings_raw = clean_section_headers(
                         principal_findings_raw, language
                     )
@@ -765,7 +792,9 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
 
                     # FILTER OUT heatmap and PCA content for single-source analysis
                     if len(selected_sources) == 1:
-                        print(f"🔍 FILTERING: Single-source detected, removing heatmap/PCA content from principal findings")
+                        print(
+                            f"🔍 FILTERING: Single-source detected, removing heatmap/PCA content from principal findings"
+                        )
 
                         # Import re module for regex operations
                         import re
@@ -775,53 +804,69 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                             r"🔥.*Análisis del Mapa de Calor.*",
                             r"🔥.*Heatmap Analysis.*",
                             r"Análisis del Mapa de Calor.*",
-                            r"Heatmap Analysis.*"
+                            r"Heatmap Analysis.*",
                         ]
 
                         for pattern in heatmap_patterns:
-                            principal_findings_raw = re.sub(pattern, '', principal_findings_raw, flags=re.IGNORECASE)
+                            principal_findings_raw = re.sub(
+                                pattern, "", principal_findings_raw, flags=re.IGNORECASE
+                            )
 
                         # Remove PCA analysis content
                         pca_patterns = [
                             r"📊.*Análisis de Componentes Principales.*",
                             r"📊.*Principal Component Analysis.*",
                             r"Análisis de Componentes Principales.*",
-                            r"Principal Component Analysis.*"
+                            r"Principal Component Analysis.*",
                         ]
 
                         for pattern in pca_patterns:
-                            principal_findings_raw = re.sub(pattern, '', principal_findings_raw, flags=re.IGNORECASE)
+                            principal_findings_raw = re.sub(
+                                pattern, "", principal_findings_raw, flags=re.IGNORECASE
+                            )
 
                         # Clean up any empty lines or sections that might result from filtering
-                        principal_findings_raw = re.sub(r'\n\s*\n\s*\n', '\n\n', principal_findings_raw)  # Remove excessive empty lines
+                        principal_findings_raw = re.sub(
+                            r"\n\s*\n\s*\n", "\n\n", principal_findings_raw
+                        )  # Remove excessive empty lines
                         principal_findings_raw = principal_findings_raw.strip()
 
-                        print(f"🔍 FILTERING: Filtered content length: {len(principal_findings_raw)}")
+                        print(
+                            f"🔍 FILTERING: Filtered content length: {len(principal_findings_raw)}"
+                        )
 
                     # Process principal findings to handle bullet points and formatting
                     principal_findings_content = []
                     if isinstance(principal_findings_raw, str):
                         # Split by bullet points and clean up
-                        lines = principal_findings_raw.split('\n')
+                        lines = principal_findings_raw.split("\n")
                         current_point = []
 
                         for line in lines:
                             line = line.strip()
                             if not line:
                                 if current_point:
-                                    principal_findings_content.append(' '.join(current_point))
+                                    principal_findings_content.append(
+                                        " ".join(current_point)
+                                    )
                                     current_point = []
                                 continue
 
                             # Check if it's a new bullet point
-                            if line.startswith('•') or line.startswith('-') or re.match(r'^\d+\.', line):
+                            if (
+                                line.startswith("•")
+                                or line.startswith("-")
+                                or re.match(r"^\d+\.", line)
+                            ):
                                 # Save previous point if exists
                                 if current_point:
-                                    principal_findings_content.append(' '.join(current_point))
+                                    principal_findings_content.append(
+                                        " ".join(current_point)
+                                    )
 
                                 # Start new point (remove bullet marker)
-                                line = re.sub(r'^[•\-]\s*', '', line)
-                                line = re.sub(r'^\d+\.\s*', '', line)
+                                line = re.sub(r"^[•\-]\s*", "", line)
+                                line = re.sub(r"^\d+\.\s*", "", line)
                                 current_point = [line]
                             else:
                                 # Continuation of current point
@@ -829,45 +874,45 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
 
                         # Add last point
                         if current_point:
-                            principal_findings_content.append(' '.join(current_point))
+                            principal_findings_content.append(" ".join(current_point))
                     else:
                         principal_findings_content = [str(principal_findings_raw)]
 
                     # Create modal content sections
                     modal_sections = []
 
-                    # Header section with dynamic title
+                    # Header section with dynamic title - use Spanish
                     modal_sections.append(
                         html.H4(
-                            f"🧠 Key Findings - {tool_display_name}",
+                            f"🧠 Hallazgos Principales - {tool_display_name}",
                             className="text-primary mb-3",
                         )
                     )
 
-                    # Add metadata section
-                    metadata_info = html.Div(
-                        [
-                            html.H6(
-                                f"Análisis Multi-Fuente: {', '.join(selected_sources)}",
-                                className="text-muted mb-2",
-                            ),
-                            html.P(
-                                [
-                                    html.Small(
-                                        f"Generated in {response_time_ms}ms using {model_used}",
-                                        className="text-info",
-                                    ),
-                                    html.Br(),
-                                    html.Small(
-                                        f"Analysis period: {analysis_data['date_range_start']} to {analysis_data['date_range_end']}",
-                                        className="text-muted",
-                                    ),
-                                ]
-                            ),
-                        ],
-                        className="border-bottom pb-2 mb-3",
-                    )
-                    modal_sections.append(metadata_info)
+                    # Skip metadata section for cleaner display - remove unwanted technical details
+                    # metadata_info = html.Div(
+                    #     [
+                    #         html.H6(
+                    #             f"Análisis Multi-Fuente: {', '.join(selected_sources)}",
+                    #             className="text-muted mb-2",
+                    #         ),
+                    #         html.P(
+                    #             [
+                    #                 html.Small(
+                    #                     f"Generated in {response_time_ms}ms using {model_used}",
+                    #                     className="text-info",
+                    #                 ),
+                    #                 html.Br(),
+                    #                 html.Small(
+                    #                     f"Analysis period: {analysis_data['date_range_start']} to {analysis_data['date_range_end']}",
+                    #                     className="text-muted",
+                    #                 ),
+                    #             ]
+                    #         ),
+                    #     ],
+                    #     className="border-bottom pb-2 mb-3",
+                    # )
+                    # modal_sections.append(metadata_info)
 
                     # Executive Summary Section
                     modal_sections.append(
@@ -933,32 +978,34 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                             )
                         )
 
-                    # Add technical metadata section
-                    modal_sections.append(
-                        html.Div(
-                            [
-                                html.H6(
-                                    "Technical Details",
-                                    className="text-muted mb-2",
-                                ),
-                                html.P(
-                                    [
-                                        html.Small(f"Tool: {selected_tool}"),
-                                        html.Br(),
-                                        html.Small(f"Sources: {len(selected_sources)} selected"),
-                                        html.Br(),
-                                        html.Small(f"Language: {language}"),
-                                        html.Br(),
-                                        html.Small(
-                                            f"Model: {model_used} ({token_count} tokens)"
-                                        ),
-                                    ],
-                                    className="text-muted small",
-                                ),
-                            ],
-                            className="border-top pt-2 mt-4",
-                        )
-                    )
+                    # Skip technical details section for cleaner display
+                    # modal_sections.append(
+                    #     html.Div(
+                    #         [
+                    #             html.H6(
+                    #                 "Technical Details",
+                    #                 className="text-muted mb-2",
+                    #             ),
+                    #             html.P(
+                    #                 [
+                    #                     html.Small(f"Tool: {selected_tool}"),
+                    #                     html.Br(),
+                    #                     html.Small(
+                    #                         f"Sources: {len(selected_sources)} selected"
+                    #                     ),
+                    #                     html.Br(),
+                    #                     html.Small(f"Language: {language}"),
+                    #                     html.Br(),
+                    #                     html.Small(
+                    #                         f"Model: {model_used} ({token_count} tokens)"
+                    #                     ),
+                    #                 ],
+                    #                 className="text-muted small",
+                    #             ),
+                    #         ],
+                    #         className="border-top pt-2 mt-4",
+                    #     )
+                    # )
 
                     # Create final modal content
                     final_modal_content = html.Div(
@@ -984,12 +1031,18 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                         if selected_tool
                         else "Herramienta"
                     )
-                    sources_str = ", ".join(selected_sources) if selected_sources else "Fuentes"
-                    dynamic_title = f"🧠 Hallazgos para {tool_display_name} ({sources_str})"
+                    sources_str = (
+                        ", ".join(selected_sources) if selected_sources else "Fuentes"
+                    )
+                    dynamic_title = (
+                        f"🧠 Hallazgos para {tool_display_name} ({sources_str})"
+                    )
 
                     error_content = html.Div(
                         [
-                            html.H4("Error Generating Key Findings", className="text-danger"),
+                            html.H4(
+                                "Error Generating Key Findings", className="text-danger"
+                            ),
                             html.P(
                                 f"An error occurred while generating the analysis: {str(e)}",
                                 className="text-muted mb-3",
@@ -1009,7 +1062,9 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
 
             # Default return case - generate title for consistency
             tool_display_name = (
-                get_tool_name(selected_tool, language) if selected_tool else "Herramienta"
+                get_tool_name(selected_tool, language)
+                if selected_tool
+                else "Herramienta"
             )
             sources_str = ", ".join(selected_sources) if selected_sources else "Fuentes"
             dynamic_title = f"🧠 Hallazgos para {tool_display_name} ({sources_str})"
