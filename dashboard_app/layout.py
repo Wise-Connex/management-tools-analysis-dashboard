@@ -30,6 +30,10 @@ def create_sidebar():
                                 placeholder="",  # Will be set by callback
                                 className="mb-2",
                                 style={"fontSize": "12px"},
+                                # Add defensive properties to handle extension conflicts
+                                clearable=False,
+                                searchable=True,
+                                multi=False,
                             ),
                             html.Div(
                                 id="keyword-validation",
@@ -221,29 +225,10 @@ def create_sidebar():
 
 
 def create_header():
-    """Create the header layout with logo and title."""
+    """Create the header layout with title and language selector."""
 
     header = html.Div(
         [
-            # Logo on the left
-            html.Div(
-                [
-                    html.A(
-                        html.Img(
-                            src="assets/logo-ulac.png",
-                            style={
-                                "height": "72px",  # Increased by 20% (60px * 1.2)
-                                "width": "auto",
-                                "maxWidth": "120px",  # Increased by 20% (100px * 1.2)
-                                "marginRight": "20px",
-                            },
-                        ),
-                        href="https://ulac.edu.ve/",
-                        target="_blank",
-                    )
-                ],
-                style={"display": "flex", "alignItems": "center", "flexShrink": 0},
-            ),
             # Language selector in top-right corner (flags with language codes)
             html.Div(
                 [
@@ -298,6 +283,9 @@ def create_header():
                         value="es",
                         clearable=False,
                         style={"width": "70px", "fontSize": "12px"},
+                        # Add defensive properties to handle extension conflicts
+                        searchable=False,
+                        multi=False,
                     )
                 ],
                 style={
@@ -359,6 +347,7 @@ def create_header():
             "marginBottom": "20px",
             "display": "flex",
             "alignItems": "center",
+            "justifyContent": "center",
         },
     )
 
@@ -505,7 +494,9 @@ def create_layout():
                                 style={"fontSize": "18px", "marginBottom": "10px"},
                             ),
                             dcc.Store(id="data-sources-store-v2", data=[]),
-                            dcc.Store(id="language-store", data="es"),  # Default to Spanish
+                            dcc.Store(
+                                id="language-store", data="es"
+                            ),  # Default to Spanish
                             dcc.Store(id="key-findings-button-state", data="idle"),
                             dcc.Store(
                                 id="key-findings-content-ready", data=False
