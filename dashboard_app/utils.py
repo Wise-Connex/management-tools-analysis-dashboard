@@ -750,7 +750,7 @@ def create_mean_analysis_figure(data, sources, language="es", tool_name=None):
             original_source_name = get_original_column_name(
                 row["Source"], translation_mapping
             )
-            bar_color = get_source_color(original_source_name)
+            bar_color = get_source_color(original_source_name, "db")
             print(
                 f"DEBUG: Bar color for {row['Source']} -> Original: {original_source_name} -> Color: {bar_color}"
             )
@@ -776,7 +776,7 @@ def create_mean_analysis_figure(data, sources, language="es", tool_name=None):
 
             # Get color using original database name for color mapping
             original_source_name = get_original_column_name(source, translation_mapping)
-            line_color = get_source_color(original_source_name)
+            line_color = get_source_color(original_source_name, "db")
             print(
                 f"DEBUG: Line color for {source} -> Original: {original_source_name} -> Color: {line_color}"
             )
