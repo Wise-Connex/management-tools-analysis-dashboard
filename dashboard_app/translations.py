@@ -286,6 +286,12 @@ TRANSLATIONS = {
         "executive_summary": "Resumen Ejecutivo",
         "principal_findings": "Hallazgos Principales",
         "heatmap_analysis": "Análisis del Mapa de Calor",
+        # Time Range Buttons
+        "all": "Todo",
+        "20_years": "20 años",
+        "15_years": "15 años",
+        "10_years": "10 años",
+        "5_years": "5 años",
     },
     "en": {
         # UI Labels and Buttons

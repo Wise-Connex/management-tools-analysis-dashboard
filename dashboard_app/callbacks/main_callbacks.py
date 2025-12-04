@@ -196,22 +196,22 @@ def register_main_callbacks(app):
                                             html.Div(
                                                 [
                                                     html.Button(
-                                                        get_text("all_data", language),
+                                                        get_text("all", language),
                                                         id="temporal-2d-all",
                                                         n_clicks=0,
                                                         className="btn btn-outline-primary btn-sm me-2",
                                                     ),
                                                     html.Button(
-                                                        "20Y",
+                                                        get_text("20_years", language),
                                                         id="temporal-2d-20y",
                                                         n_clicks=0,
                                                         className="btn btn-outline-secondary btn-sm me-2",
-                                                        title=language
+                                                        title="Últimos 20 años"
                                                         if language == "es"
                                                         else "Last 20 years",
                                                     ),
                                                     html.Button(
-                                                        "15Y",
+                                                        get_text("15_years", language),
                                                         id="temporal-2d-15y",
                                                         n_clicks=0,
                                                         className="btn btn-outline-secondary btn-sm me-2",
@@ -220,7 +220,7 @@ def register_main_callbacks(app):
                                                         else "Last 15 years",
                                                     ),
                                                     html.Button(
-                                                        "10Y",
+                                                        get_text("10_years", language),
                                                         id="temporal-2d-10y",
                                                         n_clicks=0,
                                                         className="btn btn-outline-secondary btn-sm me-2",
@@ -229,7 +229,7 @@ def register_main_callbacks(app):
                                                         else "Last 10 years",
                                                     ),
                                                     html.Button(
-                                                        "5Y",
+                                                        get_text("5_years", language),
                                                         id="temporal-2d-5y",
                                                         n_clicks=0,
                                                         className="btn btn-outline-secondary btn-sm me-2",
