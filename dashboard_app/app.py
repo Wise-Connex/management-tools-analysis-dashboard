@@ -1018,6 +1018,25 @@ app.clientside_callback(
     prevent_initial_call=True,
 )
 
+
+# Server-side callback to initialize button text based on language
+@app.callback(
+    Output("key-findings-button-text", "children"),
+    Input("language-store", "data"),
+    prevent_initial_call=True,
+)
+def update_key_findings_button_text(language):
+    """Update Key Findings button text based on selected language"""
+    try:
+        if language == "es":
+            return "Hallazgos principales"
+        else:
+            return "Key Findings"
+    except Exception as e:
+        print(f"❌ Error updating button text: {e}")
+        return "Key Findings"  # Default fallback
+
+
 # Additional clientside callback to reset button when modal is closed
 app.clientside_callback(
     """
@@ -1596,6 +1615,8 @@ def toggle_citation_modal(citation_clicks, close_clicks, language):
 def update_download_button_text(language):
     """Update download button text based on language"""
     return get_text("download_ris", language)
+
+
 
 
 # Copy citation callback moved to callbacks/ui_callbacks.py
