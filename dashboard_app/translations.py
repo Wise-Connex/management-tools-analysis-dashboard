@@ -454,7 +454,7 @@ TRANSLATIONS = {
         "doctoral_research_focus": "Analytical basis for Doctoral Research",
         "ontological_dichotomy": 'Ontological dichotomy in "Management Fads"',
         "management_tools": "Management tools: Contingent temporal dynamics and policontextual antinomies",
-        "principal_investigator": "Doctoral Candidate",
+        "principal_investigator": "Principal Researcher",
         "academic_tutor": "Academic Tutor",
         "solidum_consulting": "Solidum Consulting",
         "developer": "Developer",
