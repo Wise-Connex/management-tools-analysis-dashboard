@@ -688,7 +688,7 @@ def register_ui_callbacks(app):
                 target="_blank",
                 style={"color": "#495057", "textDecoration": "none"},
             ),
-            ") | " + get_text("academic_tutor", language) + ": ",
+            ") | " + get_text("developer", language) + ": ",
             html.A(
                 [
                     html.Img(
@@ -699,13 +699,20 @@ def register_ui_callbacks(app):
                             "marginRight": "3px",
                         },
                     ),
-                    html.B("Dra. Elizabeth Pereira"),
+                    html.B("Dimar Añez"),
                 ],
-                href="https://orcid.org/0000-0002-8264-7080",
+                href="https://orcid.org/0000-0002-7925-5078",
                 target="_blank",
                 style={"color": "#495057", "textDecoration": "none"},
             ),
-            " (" + get_text("ulac", language) + ")",
+            " (",
+            html.A(
+                "Wise Connex",
+                href="https://wiseconnex.com",
+                target="_blank",
+                style={"color": "#495057", "textDecoration": "none"},
+            ),
+            ")",
         ]
 
         return subtitle, title, credits_content

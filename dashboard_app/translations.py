@@ -78,6 +78,8 @@ TRANSLATIONS = {
         "cannot_regress_same": "No se puede hacer regresión de {var} contra sí mismo.",
         "select_different_vars": "Seleccione dos variables diferentes en el mapa de calor.",
         "correlation_heatmap_title": "Mapa de Calor de Correlación",
+        "heatmap_instructions": "Haga clic en las celdas del mapa de calor para ver los valores de correlación. Los colores más intensos indican correlaciones más fuertes.",
+        "regression_instructions": "Seleccione dos variables diferentes haciendo clic en el mapa de calor para ver el análisis de regresión y las ecuaciones polinomiales.",
         "temporal_3d_title": "Análisis Temporal 3D: {y_axis} vs {z_axis} ({frequency})",
         "temporal_3d_error": "Error en el análisis temporal 3D",
         "seasonal_title": "Análisis Estacional: {source}",
@@ -105,8 +107,6 @@ TRANSLATIONS = {
         "language_label": "Idioma:",
         "dashboard_label": "Dashboard:",
         "dashboard_name": "Herramientas de Análisis Gerencial",
-
-
         "multi_source": "Multi-Fuente",
         "single_source": "Fuente Única",
         "performance_info": "Las métricas de rendimiento se actualizan en tiempo real según los parámetros de análisis actuales.",
@@ -160,6 +160,7 @@ TRANSLATIONS = {
         "principal_investigator": "Investigador Principal",
         "academic_tutor": "Tutora Académica",
         "solidum_consulting": "Solidum Consulting",
+        "developer": "Desarrollador",
         "ulac": "ULAC",
         # Credits
         "dashboard_analysis": "Dashboard de Análisis de",
@@ -368,6 +369,8 @@ TRANSLATIONS = {
         "cannot_regress_same": "Cannot regress {var} against itself.",
         "select_different_vars": "Select two different variables on the heatmap.",
         "correlation_heatmap_title": "Correlation Heatmap",
+        "heatmap_instructions": "Click on heatmap cells to see correlation values. More intense colors indicate stronger correlations.",
+        "regression_instructions": "Select two different variables by clicking on the heatmap to see regression analysis and polynomial equations.",
         "temporal_3d_title": "Temporal 3D Analysis: {y_axis} vs {z_axis} ({frequency})",
         "temporal_3d_error": "Error in 3D temporal analysis",
         "seasonal_title": "Seasonal Analysis: {source}",
@@ -395,8 +398,6 @@ TRANSLATIONS = {
         "language_label": "Language:",
         "dashboard_name": "Management Tools Analysis",
         "dashboard_label": "Dashboard:",
-
-
         "multi_source": "Multi-Source",
         "single_source": "Single Source",
         "performance_info": "Performance metrics updated in real-time based on current analysis parameters.",
@@ -450,6 +451,7 @@ TRANSLATIONS = {
         "principal_investigator": "Doctoral Candidate",
         "academic_tutor": "Academic Tutor",
         "solidum_consulting": "Solidum Consulting",
+        "developer": "Developer",
         "ulac": "ULAC",
         # Credits
         "dashboard_analysis": "Analysis Dashboard of",
@@ -493,6 +495,8 @@ TRANSLATIONS = {
         "university": "Latin American and Caribbean University (ULAC)",
         "postgraduate_coordination": "General Postgraduate Coordination",
         "doctoral_program": "Doctorate in Management Sciences",
+        # Header credits
+        "developer": "Developer",
         # Source Notes Modal
         "source": "Source:",
         "doi": "DOI:",
