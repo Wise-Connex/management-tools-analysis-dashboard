@@ -368,12 +368,14 @@ def register_ui_callbacks(app):
         Output("key-findings-button-state", "data", allow_duplicate=True),
         Input("language-store", "data"),
         Input("generate-key-findings-btn", "n_clicks"),
+        Input("key-findings-modal", "is_open"),
+        Input("close-key-findings-modal", "n_clicks"),
         State("keyword-dropdown", "value"),
         State("data-sources-store-v2", "data"),
         prevent_initial_call=True,
     )
     def update_key_findings_button_text_and_state(
-        language, n_clicks, selected_tool, selected_sources
+        language, n_clicks, modal_is_open, close_clicks, selected_tool, selected_sources
     ):
         """Update key findings button text and manage state based on language and interactions"""
         ctx = dash.callback_context
@@ -398,6 +400,16 @@ def register_ui_callbacks(app):
         if trigger_id == "generate-key-findings-btn" and n_clicks:
             button_text = get_text("generating", language)
             return button_text, {"enabled": False, "text": button_text}
+
+        # Handle modal close - reset button to original text
+        if (
+            trigger_id == "key-findings-modal"
+            or trigger_id == "close-key-findings-modal"
+        ):
+            # Only reset if modal is being closed (not opened)
+            if modal_is_open is False:
+                button_text = get_text("key_findings", language)
+                return button_text, {"enabled": True, "text": button_text}
 
         # Default case
         button_text = get_text("key_findings", language)
