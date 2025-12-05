@@ -393,8 +393,7 @@ def create_key_findings_modal():
                         color="secondary",
                         className="me-2",
                     ),
-                    # Regenerate button removed - use regeneration API instead
-                    dbc.Button("Guardar", id="save-key-findings", color="success"),
+                    # Save button removed - no longer needed
                 ]
             ),
         ],

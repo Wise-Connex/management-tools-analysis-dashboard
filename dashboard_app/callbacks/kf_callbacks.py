@@ -399,6 +399,9 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                     print(
                         f"   - PCA analysis length: {len(ai_content.get('pca_analysis', ''))}"
                     )
+                    print(
+                        f"   - Heatmap analysis length: {len(ai_content.get('heatmap_analysis', ''))}"
+                    )
 
                     # Helper function to extract text content from AI response with robust parsing
                     def extract_text_content(content):
@@ -780,6 +783,9 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                     pca_analysis_raw = ai_content.get(
                         "pca_analysis", "No PCA analysis available"
                     )
+                    heatmap_analysis_raw = ai_content.get(
+                        "heatmap_analysis", "No heatmap analysis available"
+                    )
 
                     # Clean up section headers in the content to ensure proper English display
                     executive_summary = clean_section_headers(
@@ -789,6 +795,9 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                         principal_findings_raw, language
                     )
                     pca_analysis_raw = clean_section_headers(pca_analysis_raw, language)
+                    heatmap_analysis_raw = clean_section_headers(
+                        heatmap_analysis_raw, language
+                    )
 
                     # FILTER OUT heatmap and PCA content for single-source analysis
                     if len(selected_sources) == 1:
@@ -835,48 +844,8 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                             f"🔍 FILTERING: Filtered content length: {len(principal_findings_raw)}"
                         )
 
-                    # Process principal findings to handle bullet points and formatting
-                    principal_findings_content = []
-                    if isinstance(principal_findings_raw, str):
-                        # Split by bullet points and clean up
-                        lines = principal_findings_raw.split("\n")
-                        current_point = []
-
-                        for line in lines:
-                            line = line.strip()
-                            if not line:
-                                if current_point:
-                                    principal_findings_content.append(
-                                        " ".join(current_point)
-                                    )
-                                    current_point = []
-                                continue
-
-                            # Check if it's a new bullet point
-                            if (
-                                line.startswith("•")
-                                or line.startswith("-")
-                                or re.match(r"^\d+\.", line)
-                            ):
-                                # Save previous point if exists
-                                if current_point:
-                                    principal_findings_content.append(
-                                        " ".join(current_point)
-                                    )
-
-                                # Start new point (remove bullet marker)
-                                line = re.sub(r"^[•\-]\s*", "", line)
-                                line = re.sub(r"^\d+\.\s*", "", line)
-                                current_point = [line]
-                            else:
-                                # Continuation of current point
-                                current_point.append(line)
-
-                        # Add last point
-                        if current_point:
-                            principal_findings_content.append(" ".join(current_point))
-                    else:
-                        principal_findings_content = [str(principal_findings_raw)]
+                    # Use principal findings as-is (it's already a complete narrative with proper Spanish headers)
+                    principal_findings_content = principal_findings_raw
 
                     # Create modal content sections
                     modal_sections = []
@@ -914,44 +883,38 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                     # )
                     # modal_sections.append(metadata_info)
 
-                    # Executive Summary Section
-                    modal_sections.append(
-                        html.Div(
-                            [
-                                html.H5(
-                                    "📋 Executive Summary",
-                                    className="text-success mb-3",
-                                ),
-                                html.P(
-                                    executive_summary,
-                                    className="text-justify",
-                                    style={"lineHeight": "1.6"},
-                                ),
-                            ],
-                            className="mb-4",
+                    # Executive Summary Section - Display with proper formatting
+                    if executive_summary:
+                        modal_sections.append(
+                            html.Div(
+                                [
+                                    # Preserve line breaks and formatting from database
+                                    html.Div(
+                                        executive_summary,
+                                        className="text-justify executive-summary-content",
+                                        style={
+                                            "lineHeight": "1.6",
+                                            "whiteSpace": "pre-line",
+                                        },
+                                    ),
+                                ],
+                                className="mb-4",
+                            )
                         )
-                    )
 
-                    # Principal Findings Section
+                    # Principal Findings Section - Display with proper formatting (contains all 7 sections)
                     if principal_findings_content:
                         modal_sections.append(
                             html.Div(
                                 [
-                                    html.H5(
-                                        "🔍 Principal Findings",
-                                        className="text-info mb-3",
-                                    ),
-                                    html.Ul(
-                                        [
-                                            html.Li(
-                                                finding,
-                                                className="mb-2",
-                                                style={"lineHeight": "1.5"},
-                                            )
-                                            for finding in principal_findings_content
-                                            if finding and finding.strip()
-                                        ],
-                                        style={"paddingLeft": "20px"},
+                                    # Preserve line breaks and section formatting from database
+                                    html.Div(
+                                        principal_findings_content,
+                                        className="text-justify principal-findings-narrative",
+                                        style={
+                                            "lineHeight": "1.6",
+                                            "whiteSpace": "pre-line",
+                                        },
                                     ),
                                 ],
                                 className="mb-4",
@@ -970,7 +933,33 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                                     html.Div(
                                         pca_analysis_raw,
                                         className="text-justify",
-                                        style={"lineHeight": "1.6"},
+                                        style={
+                                            "lineHeight": "1.6",
+                                            "whiteSpace": "pre-line",
+                                        },
+                                        dangerously_allow_html=True,
+                                    ),
+                                ],
+                                className="mb-4",
+                            )
+                        )
+
+                    # Heatmap Analysis Section (only for multi-source analysis)
+                    if len(selected_sources) > 1 and heatmap_analysis_raw:
+                        modal_sections.append(
+                            html.Div(
+                                [
+                                    html.H5(
+                                        "🔥 Heatmap Analysis",
+                                        className="text-danger mb-3",
+                                    ),
+                                    html.Div(
+                                        heatmap_analysis_raw,
+                                        className="text-justify",
+                                        style={
+                                            "lineHeight": "1.6",
+                                            "whiteSpace": "pre-line",
+                                        },
                                         dangerously_allow_html=True,
                                     ),
                                 ],
@@ -1071,22 +1060,4 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
             return False, "", dynamic_title, False, None
 
         # Regenerate callback and function removed to fix JavaScript errors
-
-        @app.callback(
-            Output("save-key-findings", "children"),
-            Input("save-key-findings", "n_clicks"),
-            State("keyword-dropdown", "value"),
-            State("data-sources-store-v2", "data"),
-            prevent_initial_call=True,
-        )
-        def save_key_findings(save_clicks, selected_tool, selected_sources):
-            """Handle Key Findings save functionality"""
-            if not save_clicks:
-                return "Guardar"
-
-            try:
-                # Here you could implement export functionality
-                # For now, just show confirmation
-                return "✓ Guardado"
-            except Exception as e:
-                return "Error al guardar"
+        # Save functionality removed - no longer needed
