@@ -65,7 +65,6 @@ class KeyFindingsModal:
 
         # Interaction controls
         self.regenerate_btn_id = "key-findings-regenerate"
-        self.save_btn_id = "key-findings-save"
         self.rating_id = "key-findings-rating"
         self.feedback_id = "key-findings-feedback"
 
@@ -422,16 +421,6 @@ class KeyFindingsModal:
                             ],
                             id=self.regenerate_btn_id,
                             color="warning",
-                            size="lg",
-                            className="w-100 mb-2",
-                        ),
-                        dbc.Button(
-                            [
-                                html.I(className="fas fa-save me-2"),
-                                "Guardar en Biblioteca",
-                            ],
-                            id=self.save_btn_id,
-                            color="success",
                             size="lg",
                             className="w-100 mb-2",
                         ),
@@ -1426,25 +1415,15 @@ The patterns observed in the correlations suggest that the tool's success depend
                 Output("key-findings-toast", "is_open"),
                 Output("key-findings-toast", "children"),
             ],
-            [Input(self.save_btn_id, "n_clicks"), Input(self.rating_id, "value")],
+            Input(self.rating_id, "value"),
             [
                 State(self.feedback_id, "value"),
                 State("key-findings-current-report", "data"),
             ],
         )
-        def handle_interactions(save_clicks, rating, feedback, current_report):
-            """Handle save and rating interactions."""
-            ctx = dash.callback_context
-            if not ctx.triggered:
-                return False, ""
-
-            trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
-
-            if trigger_id == self.save_btn_id:
-                # Handle save functionality
-                return True, "Análisis guardado exitosamente"
-
-            if trigger_id == self.rating_id and rating and rating > 0:
+        def handle_rating_interaction(rating, feedback, current_report):
+            """Handle rating interactions only (save button removed)."""
+            if rating and rating > 0:
                 # Handle rating functionality
                 return True, f"Calificación de {rating} estrellas registrada"
 

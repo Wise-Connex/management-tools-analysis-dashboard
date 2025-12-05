@@ -844,8 +844,17 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                             f"🔍 FILTERING: Filtered content length: {len(principal_findings_raw)}"
                         )
 
-                    # Use principal findings as-is (it's already a complete narrative with proper Spanish headers)
-                    principal_findings_content = principal_findings_raw
+                    # Use individual sections instead of combined narrative to avoid duplication
+                    # For multi-source, we'll display each section separately with proper headers
+                    if len(selected_sources) > 1:
+                        print(
+                            f"🔍 MULTI-SOURCE: Using individual sections instead of combined narrative"
+                        )
+                        # For multi-source, we'll show sections individually, so clear the combined narrative
+                        principal_findings_content = ""
+                    else:
+                        # For single-source, use the combined narrative
+                        principal_findings_content = principal_findings_raw
 
                     # Create modal content sections
                     modal_sections = []
@@ -921,36 +930,108 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                             )
                         )
 
-                    # PCA Analysis Section (only for multi-source analysis)
-                    if len(selected_sources) > 1 and pca_analysis_raw:
+                    # Temporal Analysis Section (only for multi-source analysis)
+                    temporal_analysis_raw = ai_content.get(
+                        "temporal_analysis", "No temporal analysis available"
+                    )
+                    temporal_analysis_raw = clean_section_headers(
+                        temporal_analysis_raw, language
+                    )
+
+                    if len(selected_sources) > 1 and temporal_analysis_raw:
                         modal_sections.append(
                             html.Div(
                                 [
                                     html.H5(
-                                        "📊 PCA Analysis",
-                                        className="text-warning mb-3",
+                                        "⏰ Temporal Analysis"
+                                        if language == "en"
+                                        else "⏰ Análisis Temporal",
+                                        className="text-info mb-3",
                                     ),
                                     html.Div(
-                                        pca_analysis_raw,
+                                        temporal_analysis_raw,
                                         className="text-justify",
                                         style={
                                             "lineHeight": "1.6",
                                             "whiteSpace": "pre-line",
                                         },
-                                        dangerously_allow_html=True,
                                     ),
                                 ],
                                 className="mb-4",
                             )
                         )
 
-                    # Heatmap Analysis Section (only for multi-source analysis)
+                    # Seasonal Analysis Section (only for multi-source analysis)
+                    seasonal_analysis_raw = ai_content.get(
+                        "seasonal_analysis", "No seasonal analysis available"
+                    )
+                    seasonal_analysis_raw = clean_section_headers(
+                        seasonal_analysis_raw, language
+                    )
+
+                    if len(selected_sources) > 1 and seasonal_analysis_raw:
+                        modal_sections.append(
+                            html.Div(
+                                [
+                                    html.H5(
+                                        "🗓️ Seasonal Analysis"
+                                        if language == "en"
+                                        else "🗓️ Análisis Estacional",
+                                        className="text-success mb-3",
+                                    ),
+                                    html.Div(
+                                        seasonal_analysis_raw,
+                                        className="text-justify",
+                                        style={
+                                            "lineHeight": "1.6",
+                                            "whiteSpace": "pre-line",
+                                        },
+                                    ),
+                                ],
+                                className="mb-4",
+                            )
+                        )
+
+                    # Fourier Analysis Section (only for multi-source analysis)
+                    fourier_analysis_raw = ai_content.get(
+                        "fourier_analysis", "No Fourier analysis available"
+                    )
+                    fourier_analysis_raw = clean_section_headers(
+                        fourier_analysis_raw, language
+                    )
+
+                    if len(selected_sources) > 1 and fourier_analysis_raw:
+                        modal_sections.append(
+                            html.Div(
+                                [
+                                    html.H5(
+                                        "🔬 Fourier Analysis"
+                                        if language == "en"
+                                        else "🔬 Análisis de Fourier",
+                                        className="text-primary mb-3",
+                                    ),
+                                    html.Div(
+                                        fourier_analysis_raw,
+                                        className="text-justify",
+                                        style={
+                                            "lineHeight": "1.6",
+                                            "whiteSpace": "pre-line",
+                                        },
+                                    ),
+                                ],
+                                className="mb-4",
+                            )
+                        )
+
+                    # Heatmap Analysis Section (only for multi-source analysis) - MOVED TO END
                     if len(selected_sources) > 1 and heatmap_analysis_raw:
                         modal_sections.append(
                             html.Div(
                                 [
                                     html.H5(
-                                        "🔥 Heatmap Analysis",
+                                        "🔥 Heatmap Analysis"
+                                        if language == "en"
+                                        else "🔥 Análisis de Mapa de Calor",
                                         className="text-danger mb-3",
                                     ),
                                     html.Div(
@@ -960,7 +1041,111 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                                             "lineHeight": "1.6",
                                             "whiteSpace": "pre-line",
                                         },
-                                        dangerously_allow_html=True,
+                                    ),
+                                ],
+                                className="mb-4",
+                            )
+                        )
+
+                    # PCA Analysis Section (only for multi-source analysis) - MOVED TO END
+                    if len(selected_sources) > 1 and pca_analysis_raw:
+                        modal_sections.append(
+                            html.Div(
+                                [
+                                    html.H5(
+                                        "📊 PCA Analysis"
+                                        if language == "en"
+                                        else "📊 Análisis PCA",
+                                        className="text-warning mb-3",
+                                    ),
+                                    html.Div(
+                                        pca_analysis_raw,
+                                        className="text-justify",
+                                        style={
+                                            "lineHeight": "1.6",
+                                            "whiteSpace": "pre-line",
+                                        },
+                                    ),
+                                ],
+                                className="mb-4",
+                            )
+                        )
+
+                    # Conclusiones Section (Conclusions)
+                    conclusions_raw = ai_content.get(
+                        "conclusions", "No conclusions available"
+                    )
+                    conclusions_raw = clean_section_headers(conclusions_raw, language)
+
+                    if conclusions_raw:
+                        modal_sections.append(
+                            html.Div(
+                                [
+                                    html.H5(
+                                        "📝 Conclusions"
+                                        if language == "en"
+                                        else "📝 Conclusiones",
+                                        className="text-secondary mb-3",
+                                    ),
+                                    html.Div(
+                                        conclusions_raw,
+                                        className="text-justify",
+                                        style={
+                                            "lineHeight": "1.6",
+                                            "whiteSpace": "pre-line",
+                                        },
+                                    ),
+                                ],
+                                className="mb-4",
+                            )
+                        )
+                        modal_sections.append(
+                            html.Div(
+                                [
+                                    html.H5(
+                                        "🗓️ Seasonal Analysis"
+                                        if language == "en"
+                                        else "🗓️ Análisis Estacional",
+                                        className="text-success mb-3",
+                                    ),
+                                    html.Div(
+                                        seasonal_analysis_raw,
+                                        className="text-justify",
+                                        style={
+                                            "lineHeight": "1.6",
+                                            "whiteSpace": "pre-line",
+                                        },
+                                    ),
+                                ],
+                                className="mb-4",
+                            )
+                        )
+
+                    # Fourier Analysis Section (only for multi-source analysis)
+                    fourier_analysis_raw = ai_content.get(
+                        "fourier_analysis", "No Fourier analysis available"
+                    )
+                    fourier_analysis_raw = clean_section_headers(
+                        fourier_analysis_raw, language
+                    )
+
+                    if len(selected_sources) > 1 and fourier_analysis_raw:
+                        modal_sections.append(
+                            html.Div(
+                                [
+                                    html.H5(
+                                        "🔬 Fourier Analysis"
+                                        if language == "en"
+                                        else "🔬 Análisis de Fourier",
+                                        className="text-primary mb-3",
+                                    ),
+                                    html.Div(
+                                        fourier_analysis_raw,
+                                        className="text-justify",
+                                        style={
+                                            "lineHeight": "1.6",
+                                            "whiteSpace": "pre-line",
+                                        },
                                     ),
                                 ],
                                 className="mb-4",
