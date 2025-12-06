@@ -400,6 +400,9 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                         f"   - PCA analysis length: {len(ai_content.get('pca_analysis', ''))}"
                     )
                     print(
+                        f"   - Conclusions length: {len(ai_content.get('conclusions', ''))}"
+                    )
+                    print(
                         f"   - Heatmap analysis length: {len(ai_content.get('heatmap_analysis', ''))}"
                     )
 
@@ -681,97 +684,119 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
 
                         return cleaned_content
 
-                    def extract_markdown_sections_from_content(content):
-                        """Extract content from markdown sections with emoji headers."""
-                        sections = {}
+                    # Unified styling constants for standardized section design
+                    SECTION_TITLE_STYLE = {
+                        "fontSize": "1.25rem",  # Bigger than normal text
+                        "fontWeight": "600",  # Semi-bold
+                        "borderBottom": "2px solid #0d6efd",  # Unified blue color
+                        "paddingBottom": "0.5rem",
+                        "marginTop": "1.5rem",
+                        "color": "#0d6efd",  # Unified blue color
+                    }
 
-                        section_patterns = {
-                            "executive_summary": [
-                                "📋 Resumen Ejecutivo",
-                                "📋 Executive Summary",
-                            ],
-                            "principal_findings": [
-                                "🔍 Hallazgos Principales",
-                                "🔍 Principal Findings",
-                            ],
-                            "pca_analysis": ["📊 Análisis PCA", "📊 PCA Analysis"],
+                    SECTION_CONTENT_STYLE = {
+                        "fontSize": "0.95rem",  # Reduced from default for better readability
+                        "lineHeight": "1.6",
+                        "whiteSpace": "pre-line",
+                        "color": "#495057",  # Dark gray for improved readability
+                        "padding": "0.5rem 0",
+                    }
+
+                    # Unified styling constants for standardized section design
+                    SECTION_TITLE_STYLE = {
+                        "fontSize": "1.25rem",  # Bigger than normal text
+                        "fontWeight": "600",  # Semi-bold
+                        "borderBottom": "2px solid #0d6efd",  # Unified blue color
+                        "paddingBottom": "0.5rem",
+                        "marginTop": "1.5rem",
+                        "color": "#0d6efd",  # Unified blue color
+                    }
+
+                    SECTION_CONTENT_STYLE = {
+                        "fontSize": "0.95rem",  # Reduced from default for better readability
+                        "lineHeight": "1.6",
+                        "whiteSpace": "pre-line",
+                        "color": "#495057",  # Dark gray for improved readability
+                        "padding": "0.5rem 0",
+                    }
+
+                    def create_section_title(
+                        emoji_en, emoji_es, text_en, text_es, language
+                    ):
+                        """Create standardized section title with language support and unified styling."""
+                        title_text = (
+                            f"{emoji_en} {text_en}"
+                            if language == "en"
+                            else f"{emoji_es} {text_es}"
+                        )
+                        return html.H5(
+                            title_text,
+                            className="section-title mb-3",
+                            style=SECTION_TITLE_STYLE,
+                        )
+
+                    def create_section_content(content):
+                        """Create standardized content section with unified styling."""
+                        return html.Div(
+                            content,
+                            className="text-justify section-content",
+                            style=SECTION_CONTENT_STYLE,
+                        )
+
+                    def clean_redundant_subtitles(content, section_type, language):
+                        """Remove redundant subtitles that duplicate section headers."""
+                        if not content or not isinstance(content, str):
+                            return content
+
+                        # Define redundant subtitle patterns to remove
+                        redundant_patterns = {
+                            "executive_summary": {
+                                "es": [
+                                    r"🎯\s*ANÁLISIS MULTI-FUENTE ESTRATÉGICO DE [^\n]+\s*-\s*SÍNTESIS COMPLETA\s*\d{4}\s*\n",
+                                    r"🎯\s*ANÁLISIS MULTI-FUENTE ESTRATÉGICO DE [^\n]+\s*-\s*SÍNTESIS COMPLETA\s*\d{4}",
+                                    r"ANÁLISIS MULTI-FUENTE ESTRATÉGICO DE [^\n]+\s*-\s*SÍNTESIS COMPLETA\s*\d{4}",
+                                ],
+                                "en": [
+                                    r"🎯\s*MULTI-SOURCE STRATEGIC ANALYSIS OF [^\n]+\s*-\s*COMPLETE SYNTHESIS\s*\d{4}\s*\n",
+                                    r"🎯\s*MULTI-SOURCE STRATEGIC ANALYSIS OF [^\n]+\s*-\s*COMPLETE SYNTHESIS\s*\d{4}",
+                                    r"MULTI-SOURCE STRATEGIC ANALYSIS OF [^\n]+\s*-\s*COMPLETE SYNTHESIS\s*\d{4}",
+                                ],
+                            },
+                            "principal_findings": {
+                                "es": [
+                                    r"🔍\s*HALLAZGOS PRINCIPALES\s*-\s*ANÁLISIS MULTI-FUENTE DE [^\n]+\s*\n",
+                                    r"🔍\s*HALLAZGOS PRINCIPALES\s*-\s*ANÁLISIS MULTI-FUENTE DE [^\n]+",
+                                    r"HALLAZGOS PRINCIPALES\s*-\s*ANÁLISIS MULTI-FUENTE DE [^\n]+",
+                                ],
+                                "en": [
+                                    r"🔍\s*PRINCIPAL FINDINGS\s*-\s*MULTI-SOURCE ANALYSIS OF [^\n]+\s*\n",
+                                    r"🔍\s*PRINCIPAL FINDINGS\s*-\s*MULTI-SOURCE ANALYSIS OF [^\n]+",
+                                    r"PRINCIPAL FINDINGS\s*-\s*MULTI-SOURCE ANALYSIS OF [^\n]+",
+                                ],
+                            },
                         }
 
-                        lines = content.split("\n")
-                        current_section = None
-                        section_content = []
+                        import re
 
-                        for line in lines:
-                            line = line.strip()
+                        # Get patterns for the specific section type and language
+                        patterns = redundant_patterns.get(section_type, {}).get(
+                            language, []
+                        )
 
-                            # Check if this line starts a new section
-                            section_started = False
-                            for section_key, patterns in section_patterns.items():
-                                if any(pattern in line for pattern in patterns):
-                                    # Save previous section if exists
-                                    if current_section and section_content:
-                                        sections[current_section] = "\n".join(
-                                            section_content
-                                        ).strip()
-                                        section_content = []
+                        cleaned_content = content
+                        for pattern in patterns:
+                            # Remove the pattern and any leading/trailing whitespace from the match
+                            cleaned_content = re.sub(
+                                pattern, "", cleaned_content, flags=re.IGNORECASE
+                            )
 
-                                    current_section = section_key
-                                    section_content = []
-                                    section_started = True
-                                    break
+                        # Clean up any extra whitespace that might have been left
+                        cleaned_content = re.sub(
+                            r"\n\s*\n\s*\n", "\n\n", cleaned_content
+                        )
+                        cleaned_content = cleaned_content.strip()
 
-                            if not section_started and current_section:
-                                # Continue accumulating content for current section
-                                section_content.append(line)
-
-                        # Save the last section
-                        if current_section and section_content:
-                            sections[current_section] = "\n".join(
-                                section_content
-                            ).strip()
-
-                        return sections
-
-                    def extract_json_from_section_content(section_content):
-                        """Extract JSON object from section content."""
-                        # First, try to extract from markdown code blocks
-                        if "```json" in section_content:
-                            start_marker = section_content.find("```json")
-                            if start_marker != -1:
-                                start_json = section_content.find("{", start_marker)
-                                end_marker = section_content.find(
-                                    "```", start_marker + 7
-                                )
-                                if end_marker != -1:
-                                    end_json = (
-                                        section_content.rfind(
-                                            "}", start_marker, end_marker
-                                        )
-                                        + 1
-                                    )
-                                    if start_json != -1 and end_json > start_json:
-                                        json_str = section_content[start_json:end_json]
-                                        try:
-                                            import json
-
-                                            return json.loads(json_str)
-                                        except json.JSONDecodeError:
-                                            pass
-
-                        # Fallback: Find JSON boundaries directly
-                        start_idx = section_content.find("{")
-                        end_idx = section_content.rfind("}") + 1
-
-                        if start_idx != -1 and end_idx > start_idx:
-                            json_str = section_content[start_idx:end_idx]
-                            try:
-                                import json
-
-                                return json.loads(json_str)
-                            except json.JSONDecodeError:
-                                pass
-
-                        return None
+                        return cleaned_content
 
                     # Extract text content from AI response
                     executive_summary = extract_text_content(
@@ -850,8 +875,8 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                         print(
                             f"🔍 MULTI-SOURCE: Using individual sections instead of combined narrative"
                         )
-                        # For multi-source, we'll show sections individually, so clear the combined narrative
-                        principal_findings_content = ""
+                        # For multi-source, show principal findings (main points) + individual sections
+                        principal_findings_content = principal_findings_raw
                     else:
                         # For single-source, use the combined narrative
                         principal_findings_content = principal_findings_raw
@@ -859,72 +884,45 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                     # Create modal content sections
                     modal_sections = []
 
-                    # Header section with dynamic title - use Spanish
-                    modal_sections.append(
-                        html.H4(
-                            f"🧠 Hallazgos Principales - {tool_display_name}",
-                            className="text-primary mb-3",
-                        )
-                    )
-
-                    # Skip metadata section for cleaner display - remove unwanted technical details
-                    # metadata_info = html.Div(
-                    #     [
-                    #         html.H6(
-                    #             f"Análisis Multi-Fuente: {', '.join(selected_sources)}",
-                    #             className="text-muted mb-2",
-                    #         ),
-                    #         html.P(
-                    #             [
-                    #                 html.Small(
-                    #                     f"Generated in {response_time_ms}ms using {model_used}",
-                    #                     className="text-info",
-                    #                 ),
-                    #                 html.Br(),
-                    #                 html.Small(
-                    #                     f"Analysis period: {analysis_data['date_range_start']} to {analysis_data['date_range_end']}",
-                    #                     className="text-muted",
-                    #                 ),
-                    #             ]
-                    #         ),
-                    #     ],
-                    #     className="border-bottom pb-2 mb-3",
-                    # )
-                    # modal_sections.append(metadata_info)
-
-                    # Executive Summary Section - Display with proper formatting
+                    # 1. Executive Summary Section - Display with proper formatting
                     if executive_summary:
+                        # Clean up redundant subtitles from the content
+                        cleaned_executive_summary = clean_redundant_subtitles(
+                            executive_summary, "executive_summary", language
+                        )
                         modal_sections.append(
                             html.Div(
                                 [
-                                    # Preserve line breaks and formatting from database
-                                    html.Div(
-                                        executive_summary,
-                                        className="text-justify executive-summary-content",
-                                        style={
-                                            "lineHeight": "1.6",
-                                            "whiteSpace": "pre-line",
-                                        },
+                                    create_section_title(
+                                        "📋",
+                                        "📋",
+                                        "Executive Summary",
+                                        "Resumen Ejecutivo",
+                                        language,
                                     ),
+                                    create_section_content(cleaned_executive_summary),
                                 ],
                                 className="mb-4",
                             )
                         )
 
-                    # Principal Findings Section - Display with proper formatting (contains all 7 sections)
+                    # 2. Principal Findings Section - Display with proper formatting (main 5 points for multi-source)
                     if principal_findings_content:
+                        # Clean up redundant subtitles from the content
+                        cleaned_principal_findings = clean_redundant_subtitles(
+                            principal_findings_content, "principal_findings", language
+                        )
                         modal_sections.append(
                             html.Div(
                                 [
-                                    # Preserve line breaks and section formatting from database
-                                    html.Div(
-                                        principal_findings_content,
-                                        className="text-justify principal-findings-narrative",
-                                        style={
-                                            "lineHeight": "1.6",
-                                            "whiteSpace": "pre-line",
-                                        },
+                                    create_section_title(
+                                        "🎯",
+                                        "🎯",
+                                        "Principal Findings",
+                                        "Hallazgos Principales",
+                                        language,
                                     ),
+                                    create_section_content(cleaned_principal_findings),
                                 ],
                                 className="mb-4",
                             )
@@ -942,20 +940,14 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                         modal_sections.append(
                             html.Div(
                                 [
-                                    html.H5(
-                                        "⏰ Temporal Analysis"
-                                        if language == "en"
-                                        else "⏰ Análisis Temporal",
-                                        className="text-info mb-3",
+                                    create_section_title(
+                                        "📈",
+                                        "📈",
+                                        "Temporal Analysis",
+                                        "Análisis Temporal",
+                                        language,
                                     ),
-                                    html.Div(
-                                        temporal_analysis_raw,
-                                        className="text-justify",
-                                        style={
-                                            "lineHeight": "1.6",
-                                            "whiteSpace": "pre-line",
-                                        },
-                                    ),
+                                    create_section_content(temporal_analysis_raw),
                                 ],
                                 className="mb-4",
                             )
@@ -973,20 +965,14 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                         modal_sections.append(
                             html.Div(
                                 [
-                                    html.H5(
-                                        "🗓️ Seasonal Analysis"
-                                        if language == "en"
-                                        else "🗓️ Análisis Estacional",
-                                        className="text-success mb-3",
+                                    create_section_title(
+                                        "🌊",
+                                        "🌊",
+                                        "Seasonal Analysis",
+                                        "Análisis Estacional",
+                                        language,
                                     ),
-                                    html.Div(
-                                        seasonal_analysis_raw,
-                                        className="text-justify",
-                                        style={
-                                            "lineHeight": "1.6",
-                                            "whiteSpace": "pre-line",
-                                        },
-                                    ),
+                                    create_section_content(seasonal_analysis_raw),
                                 ],
                                 className="mb-4",
                             )
@@ -1004,20 +990,14 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                         modal_sections.append(
                             html.Div(
                                 [
-                                    html.H5(
-                                        "🔬 Fourier Analysis"
-                                        if language == "en"
-                                        else "🔬 Análisis de Fourier",
-                                        className="text-primary mb-3",
+                                    create_section_title(
+                                        "⚡",
+                                        "⚡",
+                                        "Fourier Analysis",
+                                        "Análisis de Fourier",
+                                        language,
                                     ),
-                                    html.Div(
-                                        fourier_analysis_raw,
-                                        className="text-justify",
-                                        style={
-                                            "lineHeight": "1.6",
-                                            "whiteSpace": "pre-line",
-                                        },
-                                    ),
+                                    create_section_content(fourier_analysis_raw),
                                 ],
                                 className="mb-4",
                             )
@@ -1028,20 +1008,14 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                         modal_sections.append(
                             html.Div(
                                 [
-                                    html.H5(
-                                        "🔥 Heatmap Analysis"
-                                        if language == "en"
-                                        else "🔥 Análisis de Mapa de Calor",
-                                        className="text-danger mb-3",
+                                    create_section_title(
+                                        "🌡️",
+                                        "🌡️",
+                                        "Heatmap Analysis",
+                                        "Análisis de Mapa de Calor",
+                                        language,
                                     ),
-                                    html.Div(
-                                        heatmap_analysis_raw,
-                                        className="text-justify",
-                                        style={
-                                            "lineHeight": "1.6",
-                                            "whiteSpace": "pre-line",
-                                        },
-                                    ),
+                                    create_section_content(heatmap_analysis_raw),
                                 ],
                                 className="mb-4",
                             )
@@ -1052,20 +1026,14 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                         modal_sections.append(
                             html.Div(
                                 [
-                                    html.H5(
-                                        "📊 PCA Analysis"
-                                        if language == "en"
-                                        else "📊 Análisis PCA",
-                                        className="text-warning mb-3",
+                                    create_section_title(
+                                        "📊",
+                                        "📊",
+                                        "PCA Analysis",
+                                        "Análisis PCA",
+                                        language,
                                     ),
-                                    html.Div(
-                                        pca_analysis_raw,
-                                        className="text-justify",
-                                        style={
-                                            "lineHeight": "1.6",
-                                            "whiteSpace": "pre-line",
-                                        },
-                                    ),
+                                    create_section_content(pca_analysis_raw),
                                 ],
                                 className="mb-4",
                             )
@@ -1081,72 +1049,14 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                         modal_sections.append(
                             html.Div(
                                 [
-                                    html.H5(
-                                        "📝 Conclusions"
-                                        if language == "en"
-                                        else "📝 Conclusiones",
-                                        className="text-secondary mb-3",
+                                    create_section_title(
+                                        "✅",
+                                        "✅",
+                                        "Conclusions",
+                                        "Conclusiones",
+                                        language,
                                     ),
-                                    html.Div(
-                                        conclusions_raw,
-                                        className="text-justify",
-                                        style={
-                                            "lineHeight": "1.6",
-                                            "whiteSpace": "pre-line",
-                                        },
-                                    ),
-                                ],
-                                className="mb-4",
-                            )
-                        )
-                        modal_sections.append(
-                            html.Div(
-                                [
-                                    html.H5(
-                                        "🗓️ Seasonal Analysis"
-                                        if language == "en"
-                                        else "🗓️ Análisis Estacional",
-                                        className="text-success mb-3",
-                                    ),
-                                    html.Div(
-                                        seasonal_analysis_raw,
-                                        className="text-justify",
-                                        style={
-                                            "lineHeight": "1.6",
-                                            "whiteSpace": "pre-line",
-                                        },
-                                    ),
-                                ],
-                                className="mb-4",
-                            )
-                        )
-
-                    # Fourier Analysis Section (only for multi-source analysis)
-                    fourier_analysis_raw = ai_content.get(
-                        "fourier_analysis", "No Fourier analysis available"
-                    )
-                    fourier_analysis_raw = clean_section_headers(
-                        fourier_analysis_raw, language
-                    )
-
-                    if len(selected_sources) > 1 and fourier_analysis_raw:
-                        modal_sections.append(
-                            html.Div(
-                                [
-                                    html.H5(
-                                        "🔬 Fourier Analysis"
-                                        if language == "en"
-                                        else "🔬 Análisis de Fourier",
-                                        className="text-primary mb-3",
-                                    ),
-                                    html.Div(
-                                        fourier_analysis_raw,
-                                        className="text-justify",
-                                        style={
-                                            "lineHeight": "1.6",
-                                            "whiteSpace": "pre-line",
-                                        },
-                                    ),
+                                    create_section_content(conclusions_raw),
                                 ],
                                 className="mb-4",
                             )
@@ -1191,13 +1101,23 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                     return True, final_modal_content, dynamic_title, True, None
 
                 except Exception as e:
-                    total_error_time = time.time() - data_collection_start
-                    print(
-                        f"❌ Error generating Key Findings after {total_error_time:.2f}s: {e}"
-                    )
+                    print(f"❌ Error generating Key Findings: {e}")
                     import traceback
 
                     traceback.print_exc()
+
+                    # Generate title even for error case
+                    tool_display_name = (
+                        get_tool_name(selected_tool, language)
+                        if selected_tool
+                        else "Herramienta"
+                    )
+                    sources_str = (
+                        ", ".join(selected_sources) if selected_sources else "Fuentes"
+                    )
+                    dynamic_title = (
+                        f"🧠 Hallazgos para {tool_display_name} ({sources_str})"
+                    )
 
                     # Generate title even for error case
                     tool_display_name = (
@@ -1223,10 +1143,6 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                             ),
                             html.P(
                                 "Please try again. If the problem persists, check your internet connection and try selecting different data sources.",
-                                className="text-muted small",
-                            ),
-                            html.P(
-                                f"Time elapsed: {total_error_time:.2f}s",
                                 className="text-muted small",
                             ),
                         ]

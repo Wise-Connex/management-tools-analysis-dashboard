@@ -20,11 +20,15 @@ from dataclasses import dataclass
 import os
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
 
 @dataclass
 class AIModelConfig:
     """Configuration for AI models."""
+
     name: str
     provider: str  # 'groq' or 'openrouter'
     max_tokens: int
@@ -32,163 +36,174 @@ class AIModelConfig:
     timeout: int = 30
     cost_per_1k_tokens: float = 0.001
 
+
 class UnifiedAIService:
     """
     Unified service for interacting with multiple AI providers.
-    
+
     Primary provider: Groq
     Fallback provider: OpenRouter
-    
+
     Provides robust AI analysis with multiple model options, retry logic,
     and performance monitoring.
     """
 
-    def __init__(self, groq_api_key: str = None, openrouter_api_key: str = None, config: Dict[str, Any] = None):
+    def __init__(
+        self,
+        groq_api_key: str = None,
+        openrouter_api_key: str = None,
+        config: Dict[str, Any] = None,
+    ):
         """
         Initialize Unified AI service.
-        
+
         Args:
             groq_api_key: Groq API key
             openrouter_api_key: OpenRouter API key
             config: Configuration dictionary with model settings
         """
-        self.groq_api_key = groq_api_key or os.getenv('GROQ_API_KEY')
-        self.openrouter_api_key = openrouter_api_key or os.getenv('OPENROUTER_API_KEY')
-        
+        self.groq_api_key = groq_api_key or os.getenv("GROQ_API_KEY")
+        self.openrouter_api_key = openrouter_api_key or os.getenv("OPENROUTER_API_KEY")
+
         # Base URLs
         self.groq_base_url = "https://api.groq.com/openai/v1"
         self.openrouter_base_url = "https://openrouter.ai/api/v1"
-        
+
         # Default configuration
         default_config = {
-            'primary_provider': 'groq',
-            'fallback_provider': 'openrouter',
-            'timeout': 15,
-            'max_retries': 2,
-            'retry_delay': 0.5,
-            'max_tokens': 4000,
-            'temperature': 0.7
+            "primary_provider": "groq",
+            "fallback_provider": "openrouter",
+            "timeout": 15,
+            "max_retries": 2,
+            "retry_delay": 0.5,
+            "max_tokens": 4000,
+            "temperature": 0.7,
         }
-        
+
         # Merge with provided config
         self.config = {**default_config, **(config or {})}
-        
+
         # Groq models (primary) - meta-llama/llama-guard-4-12b is now the default model
         # Order: default model first → alternative models
         self.groq_models = [
-            'moonshotai/kimi-k2-instruct',                   # Good quality (0.97) + moderate speed (3.5s)            
-            'meta-llama/llama-4-scout-17b-16e-instruct',     # Fastest (1.6s) + highest quality (0.97)
-            'openai/gpt-oss-120b'                            # Slowest (4.7s) + good quality (0.94)
+            "moonshotai/kimi-k2-instruct",  # Good quality (0.97) + moderate speed (3.5s)
+            "meta-llama/llama-4-scout-17b-16e-instruct",  # Fastest (1.6s) + highest quality (0.97)
+            "openai/gpt-oss-120b",  # Slowest (4.7s) + good quality (0.94)
         ]
-        
+
         # OpenRouter models (fallback)
         self.openrouter_models = [
-            'nvidia/nemotron-nano-9b-v2:free',
-            'openai/gpt-oss-20b:free',
-            'mistralai/mistral-small-3.2-24b-instruct:free',
-            'cognitivecomputations/dolphin-mistral-24b-venice-edition:free',
-            'google/gemma-3-27b-it:free'
+            "nvidia/nemotron-nano-9b-v2:free",
+            "openai/gpt-oss-20b:free",
+            "mistralai/mistral-small-3.2-24b-instruct:free",
+            "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
+            "google/gemma-3-27b-it:free",
         ]
-        
+
         # Model configurations
         self.model_configs = {
             # Groq models
-            'meta-llama/llama-4-maverick-17b-128e-instruct': AIModelConfig(
-                name='meta-llama/llama-4-maverick-17b-128e-instruct',
-                provider='groq',
+            "meta-llama/llama-4-maverick-17b-128e-instruct": AIModelConfig(
+                name="meta-llama/llama-4-maverick-17b-128e-instruct",
+                provider="groq",
                 max_tokens=4000,
                 temperature=0.7,
                 timeout=15,
-                cost_per_1k_tokens=0.0
+                cost_per_1k_tokens=0.0,
             ),
-            'meta-llama/llama-guard-4-12b': AIModelConfig(
-                name='meta-llama/llama-guard-4-12b',
-                provider='groq',
+            "meta-llama/llama-guard-4-12b": AIModelConfig(
+                name="meta-llama/llama-guard-4-12b",
+                provider="groq",
                 max_tokens=4000,
                 temperature=0.7,
                 timeout=12,
-                cost_per_1k_tokens=0.0
+                cost_per_1k_tokens=0.0,
             ),
-            'openai/gpt-oss-120b': AIModelConfig(
-                name='openai/gpt-oss-120b',
-                provider='groq',
+            "openai/gpt-oss-120b": AIModelConfig(
+                name="openai/gpt-oss-120b",
+                provider="groq",
                 max_tokens=4000,
                 temperature=0.7,
                 timeout=12,
-                cost_per_1k_tokens=0.0
+                cost_per_1k_tokens=0.0,
             ),
-            'meta-llama/llama-4-scout-17b-16e-instruct': AIModelConfig(
-                name='meta-llama/llama-4-scout-17b-16e-instruct',
-                provider='groq',
+            "meta-llama/llama-4-scout-17b-16e-instruct": AIModelConfig(
+                name="meta-llama/llama-4-scout-17b-16e-instruct",
+                provider="groq",
                 max_tokens=4000,
                 temperature=0.7,
                 timeout=10,
-                cost_per_1k_tokens=0.0
+                cost_per_1k_tokens=0.0,
             ),
-            'llama-3.3-70b-versatile': AIModelConfig(
-                name='llama-3.3-70b-versatile',
-                provider='groq',
+            "llama-3.3-70b-versatile": AIModelConfig(
+                name="llama-3.3-70b-versatile",
+                provider="groq",
                 max_tokens=4000,
                 temperature=0.7,
                 timeout=15,
-                cost_per_1k_tokens=0.0
+                cost_per_1k_tokens=0.0,
             ),
-            'moonshotai/kimi-k2-instruct': AIModelConfig(
-                name='moonshotai/kimi-k2-instruct',
-                provider='groq',
+            "moonshotai/kimi-k2-instruct": AIModelConfig(
+                name="moonshotai/kimi-k2-instruct",
+                provider="groq",
                 max_tokens=6000,  # Increased from 4000 to allow for complete 8-section responses
                 temperature=0.7,
                 timeout=30,  # Increased from 20 to 30 seconds for Kimi K2 (can be slow with long responses)
-                cost_per_1k_tokens=0.0
+                cost_per_1k_tokens=0.0,
             ),
             # OpenRouter models
-            'nvidia/nemotron-nano-9b-v2:free': AIModelConfig(
-                name='nvidia/nemotron-nano-9b-v2:free',
-                provider='openrouter',
+            "nvidia/nemotron-nano-9b-v2:free": AIModelConfig(
+                name="nvidia/nemotron-nano-9b-v2:free",
+                provider="openrouter",
                 max_tokens=2000,
                 temperature=0.7,
                 timeout=6,
-                cost_per_1k_tokens=0.0
+                cost_per_1k_tokens=0.0,
             ),
-            'openai/gpt-oss-20b:free': AIModelConfig(
-                name='openai/gpt-oss-20b:free',
-                provider='openrouter',
+            "openai/gpt-oss-20b:free": AIModelConfig(
+                name="openai/gpt-oss-20b:free",
+                provider="openrouter",
                 max_tokens=2000,
                 temperature=0.7,
                 timeout=8,
-                cost_per_1k_tokens=0.0
+                cost_per_1k_tokens=0.0,
             ),
-            'mistralai/mistral-small-3.2-24b-instruct:free': AIModelConfig(
-                name='mistralai/mistral-small-3.2-24b-instruct:free',
-                provider='openrouter',
+            "mistralai/mistral-small-3.2-24b-instruct:free": AIModelConfig(
+                name="mistralai/mistral-small-3.2-24b-instruct:free",
+                provider="openrouter",
                 max_tokens=2000,
                 temperature=0.7,
                 timeout=8,
-                cost_per_1k_tokens=0.0
+                cost_per_1k_tokens=0.0,
             ),
-            'cognitivecomputations/dolphin-mistral-24b-venice-edition:free': AIModelConfig(
-                name='cognitivecomputations/dolphin-mistral-24b-venice-edition:free',
-                provider='openrouter',
+            "cognitivecomputations/dolphin-mistral-24b-venice-edition:free": AIModelConfig(
+                name="cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
+                provider="openrouter",
                 max_tokens=2000,
                 temperature=0.7,
                 timeout=10,
-                cost_per_1k_tokens=0.0
+                cost_per_1k_tokens=0.0,
             ),
-            'google/gemma-3-27b-it:free': AIModelConfig(
-                name='google/gemma-3-27b-it:free',
-                provider='openrouter',
+            "google/gemma-3-27b-it:free": AIModelConfig(
+                name="google/gemma-3-27b-it:free",
+                provider="openrouter",
                 max_tokens=2000,
                 temperature=0.7,
                 timeout=12,
-                cost_per_1k_tokens=0.0
-            )
+                cost_per_1k_tokens=0.0,
+            ),
         }
-        
+
         # Performance tracking
         self.performance_stats = {}
 
-    async def generate_analysis(self, prompt: str, model: str = None,
-                               language: str = 'es', is_single_source: bool = False) -> Dict[str, Any]:
+    async def generate_analysis(
+        self,
+        prompt: str,
+        model: str = None,
+        language: str = "es",
+        is_single_source: bool = False,
+    ) -> Dict[str, Any]:
         """
         Generate AI analysis with provider fallback.
 
@@ -202,120 +217,167 @@ class UnifiedAIService:
             Dictionary containing analysis results and metadata
         """
         start_time = time.time()
-        logging.info(f"🚀 Starting AI analysis generation - prompt length: {len(prompt)} characters")
-        
+        logging.info(
+            f"🚀 Starting AI analysis generation - prompt length: {len(prompt)} characters"
+        )
+
         # Determine provider and model order
         if model and model in self.model_configs:
             model_config = self.model_configs[model]
-            if model_config.provider == 'groq':
-                providers_to_try = [('groq', [model] + [m for m in self.groq_models if m != model])]
-                providers_to_try.append(('openrouter', self.openrouter_models))
+            if model_config.provider == "groq":
+                providers_to_try = [
+                    ("groq", [model] + [m for m in self.groq_models if m != model])
+                ]
+                providers_to_try.append(("openrouter", self.openrouter_models))
             else:
-                providers_to_try = [('openrouter', [model] + [m for m in self.openrouter_models if m != model])]
+                providers_to_try = [
+                    (
+                        "openrouter",
+                        [model] + [m for m in self.openrouter_models if m != model],
+                    )
+                ]
         else:
             # Default: try Groq first, then OpenRouter
             providers_to_try = [
-                ('groq', self.groq_models),
-                ('openrouter', self.openrouter_models)
+                ("groq", self.groq_models),
+                ("openrouter", self.openrouter_models),
             ]
-        
+
         last_error = None
         successful_provider = None
         successful_model = None
         response_content = None
         token_count = 0
-        
+
         # Show prompt details before starting
         prompt_preview = prompt[:200] + "..." if len(prompt) > 200 else prompt
         logging.info(f"📝 Prompt preview: {prompt_preview}")
 
         # Try each provider and models in order
         for provider_idx, (provider, models_to_try) in enumerate(providers_to_try):
-            logging.info(f"🔄 Trying provider: {provider} (attempt {provider_idx + 1}/{len(providers_to_try)})")
-            
+            logging.info(
+                f"🔄 Trying provider: {provider} (attempt {provider_idx + 1}/{len(providers_to_try)})"
+            )
+
             # Check if API key is available for this provider
-            if provider == 'groq' and not self.groq_api_key:
-                logging.warning("⚠️ Groq API key not available, skipping to next provider")
+            if provider == "groq" and not self.groq_api_key:
+                logging.warning(
+                    "⚠️ Groq API key not available, skipping to next provider"
+                )
                 continue
-            elif provider == 'openrouter' and not self.openrouter_api_key:
-                logging.warning("⚠️ OpenRouter API key not available, skipping to next provider")
+            elif provider == "openrouter" and not self.openrouter_api_key:
+                logging.warning(
+                    "⚠️ OpenRouter API key not available, skipping to next provider"
+                )
                 continue
-            
+
             for i, attempt_model in enumerate(models_to_try):
                 model_start_time = time.time()
-                logging.info(f"🔄 Attempting analysis with model: {attempt_model} (attempt {i+1}/{len(models_to_try)})")
+                logging.info(
+                    f"🔄 Attempting analysis with model: {attempt_model} (attempt {i + 1}/{len(models_to_try)})"
+                )
 
                 try:
                     logging.info(f"📡 Sending request to {provider}/{attempt_model}...")
-                    result = await self._call_model(prompt, attempt_model, provider, language, is_single_source)
+                    result = await self._call_model(
+                        prompt, attempt_model, provider, language, is_single_source
+                    )
 
-                    if result and 'choices' in result and len(result['choices']) > 0:
-                        response_content = result['choices'][0]['message']['content']
-                        token_count = result.get('usage', {}).get('total_tokens', 0)
+                    if result and "choices" in result and len(result["choices"]) > 0:
+                        response_content = result["choices"][0]["message"]["content"]
+                        token_count = result.get("usage", {}).get("total_tokens", 0)
                         successful_provider = provider
                         successful_model = attempt_model
                         model_time = time.time() - model_start_time
 
                         # Show response preview
-                        response_preview = response_content[:100] + "..." if len(response_content) > 100 else response_content
-                        logging.info(f"✅ Model {attempt_model} ({provider}) succeeded in {model_time:.2f}s with {token_count} tokens")
+                        response_preview = (
+                            response_content[:100] + "..."
+                            if len(response_content) > 100
+                            else response_content
+                        )
+                        logging.info(
+                            f"✅ Model {attempt_model} ({provider}) succeeded in {model_time:.2f}s with {token_count} tokens"
+                        )
                         logging.info(f"📥 Response preview: {response_preview}")
                         break
                     else:
                         model_time = time.time() - model_start_time
-                        logging.warning(f"⚠️ Model {attempt_model} ({provider}) returned invalid response after {model_time:.2f}s")
+                        logging.warning(
+                            f"⚠️ Model {attempt_model} ({provider}) returned invalid response after {model_time:.2f}s"
+                        )
 
                 except Exception as e:
                     model_time = time.time() - model_start_time
                     last_error = e
-                    logging.warning(f"❌ Model {attempt_model} ({provider}) failed after {model_time:.2f}s: {e}")
+                    logging.warning(
+                        f"❌ Model {attempt_model} ({provider}) failed after {model_time:.2f}s: {e}"
+                    )
                     continue
-            
+
             # If we got a successful response from this provider, break
             if successful_provider:
                 break
-        
+
         # Calculate performance metrics
         response_time_ms = int((time.time() - start_time) * 1000)
         success = response_content is not None
-        
+
         # Log performance
-        self._log_performance(successful_model or "unknown", response_time_ms, 
-                            token_count, success, str(last_error) if last_error else None)
-        
+        self._log_performance(
+            successful_model or "unknown",
+            response_time_ms,
+            token_count,
+            success,
+            str(last_error) if last_error else None,
+        )
+
         if not success:
-            raise Exception(f"All providers and models failed. Last error: {last_error}")
-        
+            raise Exception(
+                f"All providers and models failed. Last error: {last_error}"
+            )
+
         # Parse and validate response
-        logging.info(f"🔍 Parsing AI response from {successful_model} ({successful_provider}) ({len(response_content)} characters)")
+        logging.info(
+            f"🔍 Parsing AI response from {successful_model} ({successful_provider}) ({len(response_content)} characters)"
+        )
+
         try:
-            parsed_response = self._parse_ai_response(response_content, is_single_source=is_single_source)
-            logging.info(f"✅ Response parsed successfully - findings: {len(parsed_response.get('principal_findings', []))}")
+            parsed_response = self._parse_ai_response(
+                response_content, is_single_source=is_single_source
+            )
+
+            # CRITICAL: Validate complete response before accepting
+            if not self._validate_complete_response(parsed_response, is_single_source):
+                logging.error("❌ AI response missing required sections - rejecting")
+                raise ValueError("Incomplete AI response - missing required sections")
+
+            logging.info(
+                f"✅ Response parsed successfully - findings: {len(parsed_response.get('principal_findings', []))}"
+            )
         except Exception as e:
             logging.error(f"❌ Failed to parse AI response: {e}")
-            # Return raw response if parsing fails
-            parsed_response = {
-                'principal_findings': [{
-                    'bullet_point': response_content[:200] + "..." if len(response_content) > 200 else response_content,
-                    'reasoning': "Raw AI response due to parsing error",
-                    'data_source': ["AI Analysis"],
-                    'confidence': "medium"
-                }],
-                'pca_insights': {},
-                'executive_summary': response_content[:500] + "..." if len(response_content) > 500 else response_content
-            }
-        
+            # CRITICAL: Do not return incomplete response - raise error instead
+            raise ValueError(f"AI response parsing failed: {e}")
+
         return {
-            'content': parsed_response,
-            'model_used': successful_model,
-            'provider_used': successful_provider,
-            'response_time_ms': response_time_ms,
-            'token_count': token_count,
-            'success': success,
-            'language': language
+            "content": parsed_response,
+            "model_used": successful_model,
+            "provider_used": successful_provider,
+            "response_time_ms": response_time_ms,
+            "token_count": token_count,
+            "success": success,
+            "language": language,
         }
 
-    async def _call_model(self, prompt: str, model: str, provider: str, language: str, is_single_source: bool = False) -> Dict[str, Any]:
+    async def _call_model(
+        self,
+        prompt: str,
+        model: str,
+        provider: str,
+        language: str,
+        is_single_source: bool = False,
+    ) -> Dict[str, Any]:
         """
         Call specific AI model with retry logic.
 
@@ -332,14 +394,16 @@ class UnifiedAIService:
         model_config = self.model_configs.get(model)
         if not model_config:
             raise ValueError(f"Model configuration not found for {model}")
-        
-        logging.info(f"📡 Calling model {model} via {provider} with timeout {model_config.timeout}s and {model_config.max_tokens} max tokens")
-        
+
+        logging.info(
+            f"📡 Calling model {model} via {provider} with timeout {model_config.timeout}s and {model_config.max_tokens} max tokens"
+        )
+
         # Set up headers and payload based on provider
-        if provider == 'groq':
+        if provider == "groq":
             headers = {
                 "Authorization": f"Bearer {self.groq_api_key}",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
             }
             base_url = self.groq_base_url
         else:  # openrouter
@@ -347,81 +411,527 @@ class UnifiedAIService:
                 "Authorization": f"Bearer {self.openrouter_api_key}",
                 "Content-Type": "application/json",
                 "HTTP-Referer": "https://management-tools-analysis.com",
-                "X-Title": "Management Tools Analysis Dashboard"
+                "X-Title": "Management Tools Analysis Dashboard",
             }
             base_url = self.openrouter_base_url
-        
+
         payload = {
             "model": model,
             "messages": [
                 {
                     "role": "system",
-                    "content": self._get_system_prompt(language, is_single_source)
+                    "content": self._get_system_prompt(language, is_single_source),
                 },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
+                {"role": "user", "content": prompt},
             ],
             "max_tokens": model_config.max_tokens,
             "temperature": model_config.temperature,
-            "top_p": 0.9
+            "top_p": 0.9,
         }
-        
+
         # Show request details
         logging.info(f"📤 API Request: {model} -> {base_url}/chat/completions")
-        logging.info(f"📊 Payload: model={payload['model']}, max_tokens={payload['max_tokens']}, temp={payload['temperature']}")
+        logging.info(
+            f"📊 Payload: model={payload['model']}, max_tokens={payload['max_tokens']}, temp={payload['temperature']}"
+        )
 
         # Retry logic
-        for attempt in range(self.config['max_retries']):
+        for attempt in range(self.config["max_retries"]):
             request_start = time.time()
             try:
                 timeout = aiohttp.ClientTimeout(total=model_config.timeout)
-                logging.info(f"⏱️ Attempt {attempt + 1}/{self.config['max_retries']} for {model} via {provider} (timeout: {model_config.timeout}s)")
+                logging.info(
+                    f"⏱️ Attempt {attempt + 1}/{self.config['max_retries']} for {model} via {provider} (timeout: {model_config.timeout}s)"
+                )
 
                 async with aiohttp.ClientSession(timeout=timeout) as session:
                     async with session.post(
-                        f"{base_url}/chat/completions",
-                        headers=headers,
-                        json=payload
+                        f"{base_url}/chat/completions", headers=headers, json=payload
                     ) as response:
                         request_time = time.time() - request_start
-                        logging.info(f"🌐 HTTP {response.status} in {request_time:.2f}s for {model} via {provider}")
+                        logging.info(
+                            f"🌐 HTTP {response.status} in {request_time:.2f}s for {model} via {provider}"
+                        )
 
                         if response.status == 200:
                             response_start = time.time()
                             result = await response.json()
                             response_time = time.time() - response_start
-                            logging.info(f"📥 JSON parsed in {response_time:.2f}s for {model} via {provider}")
+                            logging.info(
+                                f"📥 JSON parsed in {response_time:.2f}s for {model} via {provider}"
+                            )
                             return result
-                        elif response.status == 429:
-                            # Rate limited
-                            logging.warning(f"🚦 Rate limited for {model} via {provider}, waiting {self.config['retry_delay']}s")
-                            await asyncio.sleep(self.config['retry_delay'])
-                            continue
                         else:
                             error_text = await response.text()
-                            logging.error(f"❌ API error {response.status} for {model} via {provider}: {error_text}")
-                            raise Exception(f"API error {response.status}: {error_text}")
+                            logging.warning(
+                                f"⚠️ HTTP {response.status} for {model} via {provider}: {error_text[:200]}"
+                            )
+                            if attempt < self.config["max_retries"] - 1:
+                                await asyncio.sleep(2**attempt)  # Exponential backoff
+                            else:
+                                raise Exception(f"HTTP {response.status}: {error_text}")
 
             except asyncio.TimeoutError:
-                request_time = time.time() - request_start
-                logging.warning(f"⏰ Timeout for model {model} via {provider} after {request_time:.2f}s (attempt {attempt + 1})")
-                if attempt < self.config['max_retries'] - 1:
-                    await asyncio.sleep(self.config['retry_delay'])
-                    continue
+                logging.warning(
+                    f"⏰ Timeout on attempt {attempt + 1} for {model} via {provider}"
+                )
+                if attempt < self.config["max_retries"] - 1:
+                    await asyncio.sleep(2**attempt)
                 else:
-                    raise
+                    raise Exception(
+                        f"Timeout after {self.config['max_retries']} attempts"
+                    )
+
             except Exception as e:
-                request_time = time.time() - request_start
-                logging.error(f"💥 Exception for {model} via {provider} after {request_time:.2f}s (attempt {attempt + 1}): {e}")
-                if attempt < self.config['max_retries'] - 1:
-                    await asyncio.sleep(self.config['retry_delay'])
-                    continue
+                logging.error(
+                    f"❌ Error on attempt {attempt + 1} for {model} via {provider}: {e}"
+                )
+                if attempt < self.config["max_retries"] - 1:
+                    await asyncio.sleep(2**attempt)
                 else:
-                    raise
-        
-        raise Exception(f"Model {model} via {provider} failed after {self.config['max_retries']} attempts")
+                    raise e
+
+        raise Exception(f"All retry attempts failed for {model} via {provider}")
+
+    def _enhance_prompt_for_retry(
+        self,
+        original_response: str,
+        is_single_source: bool,
+        missing_sections: Dict[str, Any],
+    ) -> str:
+        """
+        Enhance prompt for retry when sections are missing.
+
+        Args:
+            original_response: Previous AI response
+            is_single_source: Whether this is single-source analysis
+            missing_sections: Response with missing sections identified
+
+        Returns:
+            Enhanced prompt for retry
+        """
+        missing_list = []
+        required_sections = [
+            "executive_summary",
+            "principal_findings",
+            "temporal_analysis",
+            "fourier_analysis",
+            "strategic_synthesis",
+            "conclusions",
+        ]
+
+        if not is_single_source:
+            required_sections.extend(
+                ["seasonal_analysis", "heatmap_analysis", "pca_analysis"]
+            )
+
+        for section in required_sections:
+            if not missing_sections.get(section):
+                missing_list.append(section)
+
+        enhancement = f"""
+
+⚠️ CRITICAL: LA RESPUESTA ANTERIOR ESTÁ INCOMPLETA - FALTAN SECCIONES REQUERIDAS ⚠️
+
+SECCIONES FALTANTES DETECTADAS: {", ".join(missing_list)}
+
+🚨 INSTRUCCIONES DE CORRECCIÓN OBLIGATORIAS:
+1. PROporCIONE TODAS las secciones requeridas en formato JSON estructurado
+2. CADA sección debe tener contenido sustancial (mínimo 400-600 palabras)
+3. NO trunque la respuesta - sea completo y detallado
+4. ASEGÚRESE de que el JSON sea válido y contenga TODOS los campos requeridos
+5. SI falta alguna sección, la respuesta será RECHAZADA nuevamente
+
+LA RESPUESTA COMPLETA DEBE INCLUIR:
+- executive_summary (400 palabras)
+- principal_findings (array con bullet_point y reasoning)
+- temporal_analysis (800 palabras) - OBLIGATORIO
+{"- seasonal_analysis (600 palabras) - OBLIGATORIO" if not is_single_source else ""}
+{"- heatmap_analysis (800 palabras) - OBLIGATORIO" if not is_single_source else ""}
+{"- pca_analysis (600 palabras) - OBLIGATORIO" if not is_single_source else ""}
+- fourier_analysis (600 palabras) - OBLIGATORIO
+- strategic_synthesis (400 palabras) - OBLIGATORIO
+- conclusions (600 palabras) - OBLIGATORIO
+
+**SU RESPUESTA ANTERIOR FUE:**
+{original_response[:500]}...
+
+**PROporCIONE AHORA UNA RESPUESTA COMPLETA CON TODAS LAS SECCIONES REQUERIDAS**
+"""
+        return enhancement
+
+    def _create_default_heatmap_analysis(self) -> str:
+        """
+        Create a default heatmap analysis when none is provided by AI.
+
+        Returns:
+            Default heatmap analysis string with 3 paragraphs
+        """
+        return """El análisis de correlaciones entre las fuentes de datos revela patrones importantes en la adopción y percepción de la herramienta de gestión. Los datos muestran relaciones complejas entre las diferentes métricas, con algunas fuentes mostrando correlaciones positivas fuertes mientras que otras presentan relaciones más matizadas y contextuales.
+
+Las correlaciones más significativas aparecen entre las métricas de popularidad e implementación, sugiriendo que la visibilidad pública de la herramienta influye directamente en su adopción organizacional. Sin embargo, estas correlaciones no siempre se traducen en satisfacción a largo plazo, indicando posibles brechas entre la percepción inicial y la experiencia real de uso que requieren atención específica.
+
+Los patrones observados en las correlaciones sugieren que el éxito de la herramienta depende de múltiples factores interconectados, donde la alineación entre expectativas iniciales y resultados reales juega un papel crucial en la implementación efectiva y sostenible."""
+
+    async def test_model_availability(self) -> Dict[str, bool]:
+        """
+        Test availability of different AI models.
+
+        Returns:
+            Dictionary with model availability status
+        """
+        results = {}
+
+        # Test Groq models
+        for model in ["llama-3.1-70b-versatile", "llama-3.1-8b-instant"]:
+            try:
+                test_prompt = "Test availability"
+                result = await self._call_groq_model(test_prompt, model, "en")
+                results[f"groq_{model}"] = result.get("success", False)
+            except Exception as e:
+                logging.warning(f"Groq model {model} unavailable: {e}")
+                results[f"groq_{model}"] = False
+
+        # Test OpenRouter models
+        for model in ["kimi-k1", "claude-3.5-sonnet"]:
+            try:
+                test_prompt = "Test availability"
+                result = await self._call_openrouter_model(test_prompt, model, "en")
+                results[f"openrouter_{model}"] = result.get("success", False)
+            except Exception as e:
+                logging.warning(f"OpenRouter model {model} unavailable: {e}")
+                results[f"openrouter_{model}"] = False
+
+        return results
+
+    def _log_performance(
+        self,
+        model: str,
+        provider: str,
+        response_time: float,
+        token_count: int,
+        success: bool,
+        error_message: str = "",
+    ):
+        """
+        Log performance metrics for AI model calls.
+
+        Args:
+            model: Model name
+            provider: Provider name
+            response_time: Response time in seconds
+            token_count: Number of tokens used
+            success: Whether the call was successful
+            error_message: Error message if failed
+        """
+        status = "SUCCESS" if success else "FAILED"
+        logging.info(
+            f"📊 PERFORMANCE: {provider}:{model} | {status} | {response_time:.2f}s | {token_count} tokens"
+        )
+
+        if not success and error_message:
+            logging.error(f"📊 ERROR DETAILS: {error_message}")
+
+    def _get_model_config(self, model: str, provider: str) -> AIModelConfig:
+        """
+        Get model configuration.
+
+        Args:
+            model: Model name
+            provider: Provider name
+
+        Returns:
+            Model configuration
+        """
+        if provider == "groq":
+            return self.config["groq_models"].get(
+                model, self.config["groq_models"]["llama-3.1-70b-versatile"]
+            )
+        elif provider == "openrouter":
+            return self.config["openrouter_models"].get(
+                model, self.config["openrouter_models"]["kimi-k1"]
+            )
+        else:
+            return AIModelConfig(max_tokens=4000, temperature=0.7, timeout=60)
+
+    def _get_system_prompt(self, language: str, is_single_source: bool = False) -> str:
+        """
+        Get system prompt for AI model.
+
+        Args:
+            language: Language for the prompt
+            is_single_source: Whether this is single source analysis
+
+        Returns:
+            System prompt
+        """
+        if is_single_source:
+            if language == "es":
+                return """
+Eres un analista de investigación doctoral especializado en análisis temporal de herramientas de gestión.
+Tu tarea es analizar patrones temporales, estacionales y espectrales de datos de fuente única.
+
+INSTRUCCIÓN IMPORTANTE: Menciona explícitamente el nombre de la herramienta de gestión analizada en tu respuesta.
+Usa el nombre de la herramienta proporcionado en el contexto del análisis para personalizar tus hallazgos.
+
+Proporciona análisis que:
+1. Interprete patrones temporales, estacionales y espectrales en insights estratégicos
+2. Identifique ciclos, frecuencias dominantes y momentos óptimos de adopción
+3. Conecte hallazgos temporales con decisiones empresariales de timing
+4. Genere recomendaciones basadas en ventanas temporales identificadas
+5. Mantenga rigor académico doctoral con enfoque en análisis de series temporales
+6. Mencione específicamente el nombre de la herramienta de gestión en el análisis
+
+Responde siempre en formato JSON estructurado con:
+- executive_summary: resumen ejecutivo conciso (400 palabras)
+- principal_findings: array de objetos con bullet_point y reasoning (omitir campos data_source y confidence, hacer que reasoning fluya como párrafo sin etiqueta "Razonamiento:")
+- temporal_analysis: análisis temporal detallado incluyendo tendencias, momentum, volatilidad y puntos de inflexión (1000 palabras) - OBLIGATORIO
+- seasonal_analysis: análisis de patrones estacionales incluyendo fuerza estacional, periodicidad y ventanas óptimas de implementación (800 palabras) - OBLIGATORIO
+- fourier_analysis: análisis espectral de Fourier con frecuencias dominantes, picos espectrales y predicción de ciclos (800 palabras) - OBLIGATORIO
+- strategic_synthesis: síntesis estratégica uniendo hallazgos temporales, estacionales y espectrales (600 palabras) - OBLIGATORIO
+- conclusions: conclusiones y recomendaciones de timing estratégico (400 palabras) - OBLIGATORIO
+
+**CRÍTICO: PARA ANÁLISIS DE FUENTE ÚNICA, ASEGÚRESE DE:
+1. CREAR SECCIONES SEPARADAS PARA TEMPORAL_ANALYSIS, SEASONAL_ANALYSIS Y FOURIER_ANALYSIS
+2. NO INCLUIR heatmap_analysis NI pca_analysis (requieren múltiples fuentes)
+3. ENFOCARSE EN PATRONES TEMPORALES, ESTACIONALES Y ESPECTRALES ÚNICAMENTE
+4. MANTENER CADA SECCIÓN COMO ENSAYO NARRATIVO SIN DATOS NUMÉRICOS ESPECÍFICOS**"""
+            else:
+                return """
+You are a doctoral-level research analyst specializing in temporal analysis of business management tools.
+Your task is to analyze temporal, seasonal, and spectral patterns from single-source data.
+
+🚨 CRITICAL LANGUAGE REQUIREMENT 🚨
+YOU MUST RESPOND IN ENGLISH ONLY!
+DO NOT USE SPANISH, PORTUGUESE, OR ANY OTHER LANGUAGE!
+ALL CONTENT MUST BE IN ENGLISH!
+RESPONDE SOLO EN INGLÉS!
+NO USE ESPAÑOL EN NINGUNA PARTE DE LA RESPUESTA!
+
+IMPORTANT INSTRUCTION: Explicitly mention the name of the management tool being analyzed in your response.
+Use the tool name provided in the analysis context to personalize your findings.
+
+Provide analysis that:
+1. Interprets temporal, seasonal, and spectral patterns into strategic insights
+2. Identifies cycles, dominant frequencies, and optimal adoption timing
+3. Connects temporal findings with business timing decisions
+4. Generates recommendations based on identified temporal windows
+5. Maintains doctoral academic rigor with focus on time series analysis
+6. Specifically mentions the management tool name in the analysis
+
+Always respond in structured JSON format with:
+- executive_summary: concise executive summary (400 words)
+- principal_findings: array of objects with bullet_point and reasoning (omit data_source and confidence fields, make reasoning flow as paragraph without "Reasoning:" label)
+- temporal_analysis: detailed temporal analysis including trends, momentum, volatility and inflection points (1000 words) - MANDATORY
+- seasonal_analysis: seasonal pattern analysis including seasonal strength, periodicity and optimal implementation windows (800 words) - MANDATORY
+- fourier_analysis: Fourier spectral analysis with dominant frequencies, spectral peaks and cycle prediction (800 words) - MANDATORY
+- strategic_synthesis: strategic synthesis uniting temporal, seasonal and spectral findings (600 words) - MANDATORY
+- conclusions: conclusions and strategic timing recommendations (400 words) - MANDATORY
+
+⚠️ FINAL WARNING ⚠️
+Your entire response must be in ENGLISH. No Spanish text allowed anywhere in the response.
+If you respond in Spanish, the analysis will be rejected.
+
+**CRITICAL: FOR SINGLE SOURCE ANALYSIS, ENSURE YOU:
+1. CREATE SEPARATE SECTIONS FOR TEMPORAL_ANALYSIS, SEASONAL_ANALYSIS AND FOURIER_ANALYSIS
+2. DO NOT INCLUDE heatmap_analysis OR pca_analysis (require multiple sources)
+3. FOCUS ON TEMPORAL, SEASONAL AND SPECTRAL PATTERNS ONLY
+4. MAINTAIN EACH SECTION AS NARRATIVE ESSAY WITHOUT SPECIFIC NUMERICAL DATA**"""
+        else:
+            # Multi-source system prompts - original implementation
+            if language == "es":
+                return """
+Eres un analista de investigación doctoral especializado en herramientas de gestión empresarial.
+Tu tarea es analizar datos multi-fuente y generar insights de nivel ejecutivo con énfasis en
+análisis de componentes principales (PCA).
+
+INSTRUCCIÓN IMPORTANTE: Menciona explícitamente el nombre de la herramienta de gestión analizada en tu respuesta.
+Usa el nombre de la herramienta proporcionado en el contexto del análisis para personalizar tus hallazgos.
+
+Proporciona análisis que:
+1. Sinteticen información de múltiples fuentes de datos
+2. Identifiquen patrones temporales y tendencias significativas
+3. Destaquen insights de PCA con explicaciones claras
+4. Generen conclusiones ejecutivas accionables
+5. Mantengan rigor académico doctoral
+6. Mencionen específicamente el nombre de la herramienta de gestión en el análisis
+
+Responde siempre en formato JSON estructurado con:
+- executive_summary: resumen ejecutivo conciso (400 palabras)
+- principal_findings: array de objetos con bullet_point y reasoning (omitir campos data_source y confidence, hacer que reasoning fluya como párrafo sin etiqueta "Razonamiento:")
+- temporal_analysis: análisis temporal multi-fuente detallado (800 palabras) - OBLIGATORIO
+- seasonal_analysis: análisis de patrones estacionales multi-fuente comparando estacionalidad entre Google Trends, práctica empresarial (Bain) e investigación académica (600 palabras) - OBLIGATORIO
+- heatmap_analysis: análisis detallado de mapa de calor y correlaciones (800 palabras) - OBLIGATORIO
+- fourier_analysis: análisis espectral y de Fourier combinado (600 palabras) - OBLIGATORIO
+- pca_analysis: análisis detallado de componentes principales (600 palabras) enfocándose en análisis de influencia de fuentes y alineamiento/desalineamiento entre opinión pública (Google Trends), práctica empresarial (Bain), e investigación académica (Google Books/Crossref) - OBLIGATORIO
+- strategic_synthesis: síntesis estratégica multi-fuente (400 palabras) - OBLIGATORIO
+- conclusions: conclusiones y recomendaciones estratégicas (600 palabras) - OBLIGATORIO
+
+**CRÍTICO: SI ALGUNA SECCIÓN FALTA, LA RESPUESTA ES INCOMPLETA. ASEGÚRESE DE INCLUIR TODAS LAS SECCIONES.**
+- pca_insights: objeto técnico con datos específicos de PCA"""
+            else:
+                return """
+You are a doctoral-level research analyst specializing in business management tools.
+Your task is to analyze multi-source data and generate executive-level insights with
+emphasis on Principal Component Analysis (PCA).
+
+🚨 CRITICAL LANGUAGE REQUIREMENT 🚨
+YOU MUST RESPOND IN ENGLISH ONLY!
+DO NOT USE SPANISH, PORTUGUESE, OR ANY OTHER LANGUAGE!
+ALL CONTENT MUST BE IN ENGLISH!
+RESPONDE SOLO EN INGLÉS!
+NO USE ESPAÑOL EN NINGUNA PARTE DE LA RESPUESTA!
+
+IMPORTANT INSTRUCTION: Explicitly mention the name of the management tool being analyzed in your response.
+Use the tool name provided in the analysis context to personalize your findings.
+
+Provide analysis that:
+1. Synthesizes information from multiple data sources
+2. Identifies temporal patterns and significant trends
+3. Highlights PCA insights with clear explanations
+4. Generates actionable executive conclusions
+5. Maintains doctoral academic rigor
+6. Specifically mentions the management tool name in the analysis
+
+Always respond in structured JSON format with:
+- executive_summary: concise executive summary (400 words)
+- principal_findings: array of objects with bullet_point and reasoning (omit data_source and confidence fields, make reasoning flow as paragraph without "Reasoning:" label)
+- temporal_analysis: detailed multi-source temporal analysis (800 words)
+- seasonal_analysis: detailed multi-source seasonal analysis comparing seasonality between Google Trends, industry practice (Bain) and academic research (600 words)
+- heatmap_analysis: detailed heatmap and correlation analysis (800 words)
+- pca_analysis: detailed principal component analysis (600 words) focusing on source influence analysis and alignment/misalignment between public opinion (Google Trends), industry practice (Bain), and academic research (Google Books/Crossref)
+- fourier_analysis: combined spectral and Fourier analysis (600 words)
+- strategic_synthesis: multi-source strategic synthesis (400 words)
+- conclusions: conclusions and strategic recommendations (600 words)
+- pca_insights: technical object with specific PCA data
+
+⚠️ FINAL WARNING ⚠️
+Your entire response must be in ENGLISH. No Spanish text allowed anywhere in the response.
+If you respond in Spanish, the analysis will be rejected.
+"""
+
+    def _parse_ai_response(
+        self, response_content: str, is_single_source: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Parse and validate AI response, handling multiple formats including markdown sections.
+        CRITICAL: AI must provide ALL sections - no default content creation.
+
+        Args:
+            response_content: Raw AI response content
+            is_single_source: Whether this is single-source analysis
+
+        Returns:
+            Parsed response dictionary - all sections must be present
+        """
+        try:
+            # First, try to parse as pure JSON
+            cleaned_content = response_content.strip()
+
+            # Remove markdown code blocks if present
+            if cleaned_content.startswith("```json"):
+                cleaned_content = cleaned_content[7:]  # Remove ```json
+            if cleaned_content.startswith("```"):
+                cleaned_content = cleaned_content[3:]  # Remove ```
+            if cleaned_content.endswith("```"):
+                cleaned_content = cleaned_content[:-3]  # Remove trailing ```
+
+            cleaned_content = cleaned_content.strip()
+
+            # Try direct JSON parsing first
+            if cleaned_content.startswith("{") and cleaned_content.endswith("}"):
+                try:
+                    parsed = json.loads(cleaned_content)
+                    normalized = self._normalize_parsed_response(
+                        parsed, is_single_source=is_single_source
+                    )
+
+                    # CRITICAL: Validate complete response before accepting
+                    if self._validate_complete_response(normalized, is_single_source):
+                        return normalized
+                    else:
+                        logging.error(
+                            "❌ AI response missing required sections - rejecting"
+                        )
+                        raise ValueError(
+                            "Incomplete AI response - missing required sections"
+                        )
+
+                except json.JSONDecodeError:
+                    pass
+
+            # NEW: Handle specific malformed patterns from the key findings report
+            # Pattern 1: JSON that gets cut off mid-principal_findings array
+            if self._is_incomplete_json_pattern(cleaned_content):
+                fixed_response = self._fix_incomplete_json_pattern(cleaned_content)
+                if fixed_response:
+                    return fixed_response
+
+            # Pattern 2: Bullet point containing JSON fragment
+            if self._is_bullet_with_json_pattern(cleaned_content):
+                extracted_response = self._extract_from_bullet_json_pattern(
+                    cleaned_content
+                )
+                if extracted_response:
+                    return extracted_response
+
+            # If direct parsing fails, try to extract from markdown sections
+            sections = self._extract_markdown_sections(response_content)
+
+            if sections:
+                # Try to combine sections into a complete response
+                combined_response = self._combine_section_responses(sections)
+                if combined_response:
+                    normalized = self._normalize_parsed_response(
+                        combined_response, is_single_source=is_single_source
+                    )
+
+                    # CRITICAL: Validate complete response before accepting
+                    if self._validate_complete_response(normalized, is_single_source):
+                        return normalized
+                    else:
+                        logging.error(
+                            "❌ Markdown sections missing required content - rejecting"
+                        )
+                        raise ValueError(
+                            "Incomplete markdown response - missing required sections"
+                        )
+
+            # Fallback: extract JSON fragments from the entire response
+            json_fragments = self._extract_json_fragments(response_content)
+            if json_fragments:
+                combined = self._combine_json_fragments(json_fragments)
+                if combined:
+                    normalized = self._normalize_parsed_response(
+                        combined, is_single_source=is_single_source
+                    )
+
+                    # CRITICAL: Validate complete response before accepting
+                    if self._validate_complete_response(normalized, is_single_source):
+                        return normalized
+                    else:
+                        logging.error(
+                            "❌ JSON fragments missing required content - rejecting"
+                        )
+                        raise ValueError(
+                            "Incomplete fragment response - missing required sections"
+                        )
+
+            # CRITICAL: Do not create fallback response - AI must provide structured content
+            # If we reach here, the AI response is incomplete/unacceptable
+            logging.error("❌ All parsing methods failed - AI response unacceptable")
+            raise ValueError(
+                "AI response missing required sections or malformed structure"
+            )
+
+        except Exception as e:
+            logging.error(f"Response parsing failed: {e}")
+            # CRITICAL: Do not create fallback - AI must provide proper structured response
+            raise ValueError(f"AI response parsing failed: {e}")
+
+        raise Exception(
+            f"Model {model} via {provider} failed after {self.config['max_retries']} attempts"
+        )
 
     def _get_system_prompt(self, language: str, is_single_source: bool = False) -> str:
         """
@@ -436,7 +946,7 @@ class UnifiedAIService:
         """
         if is_single_source:
             # Single source system prompts - focus on temporal/seasonal/spectral analysis
-            if language == 'es':
+            if language == "es":
                 return """
 Eres un analista de investigación doctoral especializado en análisis temporal de herramientas de gestión.
 Tu tarea es analizar patrones temporales, estacionales y espectrales de datos de fuente única.
@@ -511,7 +1021,7 @@ If you respond in Spanish, the analysis will be rejected.
 """
         else:
             # Multi-source system prompts - original implementation
-            if language == 'es':
+            if language == "es":
                 return """
 Eres un analista de investigación doctoral especializado en herramientas de gestión empresarial.
 Tu tarea es analizar datos multi-fuente y generar insights de nivel ejecutivo con énfasis en
@@ -532,6 +1042,7 @@ Responde siempre en formato JSON estructurado con:
 - executive_summary: resumen ejecutivo conciso (400 palabras)
 - principal_findings: array de objetos con bullet_point y reasoning (omitir campos data_source y confidence, hacer que reasoning fluya como párrafo sin etiqueta "Razonamiento:")
 - temporal_analysis: análisis temporal multi-fuente detallado (800 palabras) - OBLIGATORIO
+- seasonal_analysis: análisis de patrones estacionales multi-fuente comparando estacionalidad entre Google Trends, práctica empresarial (Bain) e investigación académica (600 palabras) - OBLIGATORIO
 - heatmap_analysis: análisis detallado de mapa de calor y correlaciones (800 palabras) - OBLIGATORIO
 - fourier_analysis: análisis espectral y de Fourier combinado (600 palabras) - OBLIGATORIO
 - pca_analysis: análisis detallado de componentes principales (600 palabras) enfocándose en análisis de influencia de fuentes y alineamiento/desalineamiento entre opinión pública (Google Trends), práctica empresarial (Bain), e investigación académica (Google Books/Crossref) - OBLIGATORIO
@@ -568,8 +1079,9 @@ Provide analysis that:
 Always respond in structured JSON format with:
 - executive_summary: concise executive summary (400 words)
 - principal_findings: array of objects with bullet_point and reasoning (omit data_source and confidence fields, make reasoning flow as paragraph without "Reasoning:" label)
-- heatmap_analysis: detailed heatmap and correlation analysis (800 words)
 - temporal_analysis: detailed multi-source temporal analysis (800 words)
+- seasonal_analysis: detailed multi-source seasonal analysis comparing seasonality between Google Trends, industry practice (Bain) and academic research (600 words)
+- heatmap_analysis: detailed heatmap and correlation analysis (800 words)
 - pca_analysis: detailed principal component analysis (600 words) focusing on source influence analysis and alignment/misalignment between public opinion (Google Trends), industry practice (Bain), and academic research (Google Books/Crossref)
 - fourier_analysis: combined spectral and Fourier analysis (600 words)
 - strategic_synthesis: multi-source strategic synthesis (400 words)
@@ -581,35 +1093,53 @@ Your entire response must be in ENGLISH. No Spanish text allowed anywhere in the
 If you respond in Spanish, the analysis will be rejected.
 """
 
-    def _parse_ai_response(self, response_content: str, is_single_source: bool = False) -> Dict[str, Any]:
+    def _parse_ai_response(
+        self, response_content: str, is_single_source: bool = False
+    ) -> Dict[str, Any]:
         """
         Parse and validate AI response, handling multiple formats including markdown sections.
+        CRITICAL: AI must provide ALL sections - no default content creation.
 
         Args:
             response_content: Raw AI response content
+            is_single_source: Whether this is single-source analysis
 
         Returns:
-            Parsed response dictionary
+            Parsed response dictionary - all sections must be present
         """
         try:
             # First, try to parse as pure JSON
             cleaned_content = response_content.strip()
 
             # Remove markdown code blocks if present
-            if cleaned_content.startswith('```json'):
+            if cleaned_content.startswith("```json"):
                 cleaned_content = cleaned_content[7:]  # Remove ```json
-            if cleaned_content.startswith('```'):
+            if cleaned_content.startswith("```"):
                 cleaned_content = cleaned_content[3:]  # Remove ```
-            if cleaned_content.endswith('```'):
+            if cleaned_content.endswith("```"):
                 cleaned_content = cleaned_content[:-3]  # Remove trailing ```
 
             cleaned_content = cleaned_content.strip()
 
             # Try direct JSON parsing first
-            if cleaned_content.startswith('{') and cleaned_content.endswith('}'):
+            if cleaned_content.startswith("{") and cleaned_content.endswith("}"):
                 try:
                     parsed = json.loads(cleaned_content)
-                    return self._normalize_parsed_response(parsed, is_single_source=is_single_source)
+                    normalized = self._normalize_parsed_response(
+                        parsed, is_single_source=is_single_source
+                    )
+
+                    # CRITICAL: Validate complete response before accepting
+                    if self._validate_complete_response(normalized, is_single_source):
+                        return normalized
+                    else:
+                        logging.error(
+                            "❌ AI response missing required sections - rejecting"
+                        )
+                        raise ValueError(
+                            "Incomplete AI response - missing required sections"
+                        )
+
                 except json.JSONDecodeError:
                     pass
 
@@ -622,7 +1152,9 @@ If you respond in Spanish, the analysis will be rejected.
 
             # Pattern 2: Bullet point containing JSON fragment
             if self._is_bullet_with_json_pattern(cleaned_content):
-                extracted_response = self._extract_from_bullet_json_pattern(cleaned_content)
+                extracted_response = self._extract_from_bullet_json_pattern(
+                    cleaned_content
+                )
                 if extracted_response:
                     return extracted_response
 
@@ -633,21 +1165,52 @@ If you respond in Spanish, the analysis will be rejected.
                 # Try to combine sections into a complete response
                 combined_response = self._combine_section_responses(sections)
                 if combined_response:
-                    return combined_response
+                    normalized = self._normalize_parsed_response(
+                        combined_response, is_single_source=is_single_source
+                    )
+
+                    # CRITICAL: Validate complete response before accepting
+                    if self._validate_complete_response(normalized, is_single_source):
+                        return normalized
+                    else:
+                        logging.error(
+                            "❌ Markdown sections missing required content - rejecting"
+                        )
+                        raise ValueError(
+                            "Incomplete markdown response - missing required sections"
+                        )
 
             # Fallback: extract JSON fragments from the entire response
             json_fragments = self._extract_json_fragments(response_content)
             if json_fragments:
                 combined = self._combine_json_fragments(json_fragments)
                 if combined:
-                    return combined
+                    normalized = self._normalize_parsed_response(
+                        combined, is_single_source=is_single_source
+                    )
 
-            # Final fallback: create structured response from text
-            return self._create_fallback_response(response_content)
+                    # CRITICAL: Validate complete response before accepting
+                    if self._validate_complete_response(normalized, is_single_source):
+                        return normalized
+                    else:
+                        logging.error(
+                            "❌ JSON fragments missing required content - rejecting"
+                        )
+                        raise ValueError(
+                            "Incomplete fragment response - missing required sections"
+                        )
+
+            # CRITICAL: Do not create fallback response - AI must provide structured content
+            # If we reach here, the AI response is incomplete/unacceptable
+            logging.error("❌ All parsing methods failed - AI response unacceptable")
+            raise ValueError(
+                "AI response missing required sections or malformed structure"
+            )
 
         except Exception as e:
             logging.error(f"Response parsing failed: {e}")
-            return self._create_fallback_response(response_content)
+            # CRITICAL: Do not create fallback - AI must provide proper structured response
+            raise ValueError(f"AI response parsing failed: {e}")
 
     def _extract_markdown_sections(self, content: str) -> Dict[str, str]:
         """
@@ -663,99 +1226,99 @@ If you respond in Spanish, the analysis will be rejected.
 
         # Define section patterns (Spanish and English)
         section_patterns = {
-            'executive_summary': [
-                '📋 Resumen Ejecutivo',
-                '📋 Executive Summary',
-                '📋 RESUMEN EJECUTIVO',            # Added exact match for prompt-generated header
-                'Resumen Ejecutivo',
-                'Executive Summary'
+            "executive_summary": [
+                "📋 Resumen Ejecutivo",
+                "📋 Executive Summary",
+                "📋 RESUMEN EJECUTIVO",  # Added exact match for prompt-generated header
+                "Resumen Ejecutivo",
+                "Executive Summary",
             ],
-            'principal_findings': [
-                '🔍 Hallazgos Principales',
-                '🔍 HALLAZGOS PRINCIPALES',      # Added exact match for prompt-generated header
-                '🔍 Principal Findings',
-                'Hallazgos Principales',
-                'Principal Findings',
-                'SECCIÓN 2: HALLAZGOS PRINCIPALES',
-                'SECCIÓN 2: HALLAZGOS',
-                'HALLAZGOS PRINCIPALES',
-                'SECTION 2: PRINCIPAL FINDINGS',
-                'SECTION 2: PRINCIPAL',
-                'PRINCIPAL FINDINGS'
+            "principal_findings": [
+                "🔍 Hallazgos Principales",
+                "🔍 HALLAZGOS PRINCIPALES",  # Added exact match for prompt-generated header
+                "🔍 Principal Findings",
+                "Hallazgos Principales",
+                "Principal Findings",
+                "SECCIÓN 2: HALLAZGOS PRINCIPALES",
+                "SECCIÓN 2: HALLAZGOS",
+                "HALLAZGOS PRINCIPALES",
+                "SECTION 2: PRINCIPAL FINDINGS",
+                "SECTION 2: PRINCIPAL",
+                "PRINCIPAL FINDINGS",
             ],
-            'pca_analysis': [
-                '📊 Análisis PCA',
-                '📊 PCA Analysis',
-                'Análisis PCA',
-                'PCA Analysis'
+            "pca_analysis": [
+                "📊 Análisis PCA",
+                "📊 PCA Analysis",
+                "Análisis PCA",
+                "PCA Analysis",
             ],
-            'heatmap_analysis': [
-                '🔥 Análisis de Mapa de Calor',
-                '🔥 Heatmap Analysis',
-                'Análisis de Mapa de Calor',
-                'Heatmap Analysis'
+            "heatmap_analysis": [
+                "🔥 Análisis de Mapa de Calor",
+                "🔥 Heatmap Analysis",
+                "Análisis de Mapa de Calor",
+                "Heatmap Analysis",
             ],
-            'temporal_analysis': [
-                '📈 Análisis Temporal',
-                '📈 Temporal Analysis',
-                '🔍 ANÁLISIS TEMPORAL',             # Added exact match for prompt-generated header
-                'Análisis Temporal',
-                'Temporal Analysis'
+            "temporal_analysis": [
+                "📈 Análisis Temporal",
+                "📈 Temporal Analysis",
+                "🔍 ANÁLISIS TEMPORAL",  # Added exact match for prompt-generated header
+                "Análisis Temporal",
+                "Temporal Analysis",
             ],
-            'seasonal_analysis': [
-                '🌊 Análisis Estacional',
-                '🌊 Seasonal Analysis',
-                '📅 PATRONES ESTACIONALES',         # Added - this matches the prompt!
-                '📅 Seasonal Patterns',
-                'Análisis de Patrones Estacionales',
-                'Seasonal Pattern Analysis',
-                'Análisis Estacional',
-                'Seasonal Analysis',
-                'SECCIÓN 4: ANÁLISIS DE PATRONES ESTACIONALES',
-                'SECCIÓN 4: ANÁLISIS ESTACIONAL',
-                'SECCIÓN 4: PATRONES ESTACIONALES',
-                'SECTION 4: SEASONAL PATTERN ANALYSIS'
+            "seasonal_analysis": [
+                "🌊 Análisis Estacional",
+                "🌊 Seasonal Analysis",
+                "📅 PATRONES ESTACIONALES",  # Added - this matches the prompt!
+                "📅 Seasonal Patterns",
+                "Análisis de Patrones Estacionales",
+                "Seasonal Pattern Analysis",
+                "Análisis Estacional",
+                "Seasonal Analysis",
+                "SECCIÓN 4: ANÁLISIS DE PATRONES ESTACIONALES",
+                "SECCIÓN 4: ANÁLISIS ESTACIONAL",
+                "SECCIÓN 4: PATRONES ESTACIONALES",
+                "SECTION 4: SEASONAL PATTERN ANALYSIS",
             ],
-            'fourier_analysis': [
-                '📊 Análisis de Fourier',
-                '📊 Fourier Analysis',
-                '🌊 ANÁLISIS ESPECTRAL',             # Added exact match for prompt-generated header
-                'Análisis de Fourier',
-                'Fourier Analysis',
-                'SECCIÓN 5: ANÁLISIS ESPECTRAL DE FOURIER',
-                'SECCIÓN 5: ANÁLISIS DE FOURIER',
-                'SECCIÓN 5: FOURIER ANALYSIS',
-                'SECCIÓN 5: ESPECTRAL DE FOURIER',
-                'SECTION 5: FOURIER SPECTRAL ANALYSIS'
+            "fourier_analysis": [
+                "📊 Análisis de Fourier",
+                "📊 Fourier Analysis",
+                "🌊 ANÁLISIS ESPECTRAL",  # Added exact match for prompt-generated header
+                "Análisis de Fourier",
+                "Fourier Analysis",
+                "SECCIÓN 5: ANÁLISIS ESPECTRAL DE FOURIER",
+                "SECCIÓN 5: ANÁLISIS DE FOURIER",
+                "SECCIÓN 5: FOURIER ANALYSIS",
+                "SECCIÓN 5: ESPECTRAL DE FOURIER",
+                "SECTION 5: FOURIER SPECTRAL ANALYSIS",
             ],
-            'strategic_synthesis': [
-                '🎯 Síntesis Estratégica',
-                '🎯 Strategic Synthesis',
-                '🎯 SÍNTESIS ESTRATÉGICA',           # Added exact match for prompt-generated header
-                'Síntesis Estratégica',
-                'Strategic Synthesis',
-                'SECCIÓN 6: SÍNTESIS ESTRATÉGICA',
-                'SECCIÓN 6: SINTESIS ESTRATEGICA',
-                'SECTION 6: STRATEGIC SYNTHESIS'
+            "strategic_synthesis": [
+                "🎯 Síntesis Estratégica",
+                "🎯 Strategic Synthesis",
+                "🎯 SÍNTESIS ESTRATÉGICA",  # Added exact match for prompt-generated header
+                "Síntesis Estratégica",
+                "Strategic Synthesis",
+                "SECCIÓN 6: SÍNTESIS ESTRATÉGICA",
+                "SECCIÓN 6: SINTESIS ESTRATEGICA",
+                "SECTION 6: STRATEGIC SYNTHESIS",
             ],
-            'conclusions': [
-                '🏁 Conclusiones',
-                '🏁 Conclusions',
-                '📝 CONCLUSIONES',                    # Added exact match for prompt-generated header
-                'Conclusiones',
-                'Conclusions',
-                'CONCLUSIONES',
-                'CONCLUSIONS',
-                'SECCIÓN 7: CONCLUSIONES',
-                'SECCIÓN 7: RECOMENDACIONES ESTRATÉGICAS',
-                'SECCIÓN 7: RECOMENDACIONES ESTRATEGICAS',
-                'SECTION 7: CONCLUSIONS',
-                'SECTION 7: STRATEGIC RECOMMENDATIONS',
-                'SECCIÓN 6: CONCLUSION'
-            ]
+            "conclusions": [
+                "🏁 Conclusiones",
+                "🏁 Conclusions",
+                "📝 CONCLUSIONES",  # Added exact match for prompt-generated header
+                "Conclusiones",
+                "Conclusions",
+                "CONCLUSIONES",
+                "CONCLUSIONS",
+                "SECCIÓN 7: CONCLUSIONES",
+                "SECCIÓN 7: RECOMENDACIONES ESTRATÉGICAS",
+                "SECCIÓN 7: RECOMENDACIONES ESTRATEGICAS",
+                "SECTION 7: CONCLUSIONS",
+                "SECTION 7: STRATEGIC RECOMMENDATIONS",
+                "SECCIÓN 6: CONCLUSION",
+            ],
         }
 
-        lines = content.split('\n')
+        lines = content.split("\n")
         current_section = None
         section_content = []
 
@@ -768,7 +1331,7 @@ If you respond in Spanish, the analysis will be rejected.
                 if any(pattern in line for pattern in patterns):
                     # Save previous section if exists
                     if current_section and section_content:
-                        sections[current_section] = '\n'.join(section_content).strip()
+                        sections[current_section] = "\n".join(section_content).strip()
                         section_content = []
 
                     current_section = section_key
@@ -782,19 +1345,25 @@ If you respond in Spanish, the analysis will be rejected.
 
         # Save the last section
         if current_section and section_content:
-            sections[current_section] = '\n'.join(section_content).strip()
+            sections[current_section] = "\n".join(section_content).strip()
 
         # Debug: Log what sections were found
-        logging.info(f"🔍 AI SERVICE DEBUG: Sections extracted: {list(sections.keys())}")
+        logging.info(
+            f"🔍 AI SERVICE DEBUG: Sections extracted: {list(sections.keys())}"
+        )
         for section_name, content in sections.items():
             if content:
-                logging.info(f"🔍 AI SERVICE DEBUG: {section_name}: Present (length: {len(str(content))})")
+                logging.info(
+                    f"🔍 AI SERVICE DEBUG: {section_name}: Present (length: {len(str(content))})"
+                )
             else:
                 logging.info(f"🔍 AI SERVICE DEBUG: {section_name}: Missing/Empty")
 
         return sections
 
-    def _combine_section_responses(self, sections: Dict[str, str]) -> Optional[Dict[str, Any]]:
+    def _combine_section_responses(
+        self, sections: Dict[str, str]
+    ) -> Optional[Dict[str, Any]]:
         """
         Combine content from different sections into a complete response, handling malformed sections.
 
@@ -807,22 +1376,26 @@ If you respond in Spanish, the analysis will be rejected.
         result = {}
 
         # First pass: extract executive summary (usually the most reliable)
-        if 'executive_summary' in sections:
-            section_content = sections['executive_summary']
+        if "executive_summary" in sections:
+            section_content = sections["executive_summary"]
             json_content = self._extract_json_from_section(section_content)
-            if json_content and 'executive_summary' in json_content:
-                result['executive_summary'] = json_content['executive_summary']
+            if json_content and "executive_summary" in json_content:
+                result["executive_summary"] = json_content["executive_summary"]
             else:
                 # Try direct extraction - look for the complete summary
                 summary_start = section_content.find('"executive_summary":')
                 if summary_start != -1:
                     summary_start += len('"executive_summary":')
                     # Skip whitespace and quotes
-                    while summary_start < len(section_content) and section_content[summary_start] in [' ', '"', '\n']:
+                    while summary_start < len(section_content) and section_content[
+                        summary_start
+                    ] in [" ", '"', "\n"]:
                         summary_start += 1
 
                     # Find the end of the summary (before next field or end)
-                    summary_end = section_content.find('", "principal_findings"', summary_start)
+                    summary_end = section_content.find(
+                        '", "principal_findings"', summary_start
+                    )
                     if summary_end == -1:
                         summary_end = section_content.find('",', summary_start)
                     if summary_end == -1:
@@ -832,103 +1405,124 @@ If you respond in Spanish, the analysis will be rejected.
                         summary = section_content[summary_start:summary_end].strip()
                         # Clean up escaped quotes
                         summary = summary.replace('\\"', '"')
-                        result['executive_summary'] = summary
+                        result["executive_summary"] = summary
 
         # Second pass: handle principal findings (often malformed)
-        if 'principal_findings' in sections:
-            section_content = sections['principal_findings']
+        if "principal_findings" in sections:
+            section_content = sections["principal_findings"]
             json_content = self._extract_json_from_section(section_content)
 
-            if json_content and 'principal_findings' in json_content:
-                result['principal_findings'] = json_content['principal_findings']
+            if json_content and "principal_findings" in json_content:
+                result["principal_findings"] = json_content["principal_findings"]
             else:
                 # The principal findings section is completely malformed
                 # Look for any actual bullet points that aren't JSON fragments
-                lines = section_content.split('\n')
+                lines = section_content.split("\n")
                 actual_findings = []
                 for line in lines:
                     line = line.strip()
-                    if line.startswith('•') and len(line) > 2:
+                    if line.startswith("•") and len(line) > 2:
                         bullet_content = line[1:].strip()
                         # Skip if it's just JSON fragments, markdown, or repeated executive summary
-                        if (not bullet_content.startswith('{') and
-                            not bullet_content.startswith('"executive_summary":') and
-                            not bullet_content.startswith('```') and
-                            not bullet_content == '{' and
-                            not bullet_content.startswith('"•') and  # Avoid nested bullet points
-                            len(bullet_content) > 10):  # Must be substantial content
-                            actual_findings.append({
-                                'bullet_point': bullet_content,
-                                'reasoning': 'Extracted from malformed AI response',
-                                'data_source': ['AI Analysis'],
-                                'confidence': 'low'
-                            })
+                        if (
+                            not bullet_content.startswith("{")
+                            and not bullet_content.startswith('"executive_summary":')
+                            and not bullet_content.startswith("```")
+                            and not bullet_content == "{"
+                            and not bullet_content.startswith(
+                                '"•'
+                            )  # Avoid nested bullet points
+                            and len(bullet_content) > 10
+                        ):  # Must be substantial content
+                            actual_findings.append(
+                                {
+                                    "bullet_point": bullet_content,
+                                    "reasoning": "Extracted from malformed AI response",
+                                    "data_source": ["AI Analysis"],
+                                    "confidence": "low",
+                                }
+                            )
 
                 # NEW: Also check for bullet points that contain JSON fragments
                 for line in lines:
                     line = line.strip()
-                    if line.startswith('•') and '{"executive_summary":' in line:
+                    if line.startswith("•") and '{"executive_summary":' in line:
                         # This is a bullet point containing JSON - extract it
                         extracted = self._extract_from_bullet_json_pattern(line)
-                        if extracted and extracted.get('principal_findings'):
-                            actual_findings.extend(extracted['principal_findings'])
+                        if extracted and extracted.get("principal_findings"):
+                            actual_findings.extend(extracted["principal_findings"])
 
                 # Also check if there's a principal_findings array in the executive summary section
-                if not actual_findings and 'executive_summary' in sections:
-                    exec_content = sections['executive_summary']
+                if not actual_findings and "executive_summary" in sections:
+                    exec_content = sections["executive_summary"]
                     findings_start = exec_content.find('"principal_findings": [')
                     if findings_start != -1:
                         findings_start += len('"principal_findings": [')
-                        findings_end = exec_content.find(']', findings_start)
+                        findings_end = exec_content.find("]", findings_start)
                         if findings_end != -1:
                             findings_str = exec_content[findings_start:findings_end]
                             # Try to extract individual findings
                             import re
+
                             finding_matches = re.findall(r'"([^"]*)"', findings_str)
                             for finding in finding_matches:
-                                if finding.startswith('•') and len(finding) > 10:
-                                    actual_findings.append({
-                                        'bullet_point': finding[1:].strip(),  # Remove bullet point
-                                        'reasoning': 'Extracted from executive summary section',
-                                        'data_source': ['AI Analysis'],
-                                        'confidence': 'medium'
-                                    })
+                                if finding.startswith("•") and len(finding) > 10:
+                                    actual_findings.append(
+                                        {
+                                            "bullet_point": finding[
+                                                1:
+                                            ].strip(),  # Remove bullet point
+                                            "reasoning": "Extracted from executive summary section",
+                                            "data_source": ["AI Analysis"],
+                                            "confidence": "medium",
+                                        }
+                                    )
 
                 # If still no findings, try to extract from the truncated content in executive summary
-                if not actual_findings and 'executive_summary' in sections:
-                    exec_content = sections['executive_summary']
+                if not actual_findings and "executive_summary" in sections:
+                    exec_content = sections["executive_summary"]
                     # Look for the truncated principal_findings content
-                    truncated_start = exec_content.find('"principal_findings": [ "• La herramienta')
+                    truncated_start = exec_content.find(
+                        '"principal_findings": [ "• La herramienta'
+                    )
                     if truncated_start != -1:
                         # Extract the truncated finding
-                        truncated_end = exec_content.find('...', truncated_start)
+                        truncated_end = exec_content.find("...", truncated_start)
                         if truncated_end == -1:
                             truncated_end = exec_content.find('"', truncated_start + 50)
                         if truncated_end != -1:
-                            truncated_finding = exec_content[truncated_start:truncated_end]
+                            truncated_finding = exec_content[
+                                truncated_start:truncated_end
+                            ]
                             # Clean up the finding
                             if '"•' in truncated_finding:
                                 finding_start = truncated_finding.find('"•') + 2
-                                finding_content = truncated_finding[finding_start:].strip()
-                                if finding_content and not finding_content.startswith('"'):
-                                    actual_findings.append({
-                                        'bullet_point': finding_content,
-                                        'reasoning': 'Extracted from truncated executive summary',
-                                        'data_source': ['AI Analysis'],
-                                        'confidence': 'low'
-                                    })
+                                finding_content = truncated_finding[
+                                    finding_start:
+                                ].strip()
+                                if finding_content and not finding_content.startswith(
+                                    '"'
+                                ):
+                                    actual_findings.append(
+                                        {
+                                            "bullet_point": finding_content,
+                                            "reasoning": "Extracted from truncated executive summary",
+                                            "data_source": ["AI Analysis"],
+                                            "confidence": "low",
+                                        }
+                                    )
 
                 if actual_findings:
-                    result['principal_findings'] = actual_findings
+                    result["principal_findings"] = actual_findings
 
         # Third pass: handle PCA analysis (often contains repeated executive summary)
-        if 'pca_analysis' in sections:
-            section_content = sections['pca_analysis']
+        if "pca_analysis" in sections:
+            section_content = sections["pca_analysis"]
             json_content = self._extract_json_from_section(section_content)
 
-            if json_content and 'pca_analysis' in json_content:
-                result['pca_analysis'] = json_content['pca_analysis']
-                result['pca_insights'] = {'analysis': json_content['pca_analysis']}
+            if json_content and "pca_analysis" in json_content:
+                result["pca_analysis"] = json_content["pca_analysis"]
+                result["pca_insights"] = {"analysis": json_content["pca_analysis"]}
             else:
                 # Extract PCA content, filtering out repeated executive summary
                 pca_content = self._extract_pca_content(section_content)
@@ -936,33 +1530,36 @@ If you respond in Spanish, the analysis will be rejected.
                     # Remove repeated executive summary content if present
                     if '"executive_summary":' in pca_content:
                         # Try to extract only the PCA-specific content
-                        lines = pca_content.split('\n')
+                        lines = pca_content.split("\n")
                         pca_lines = []
                         in_pca_content = False
                         for line in lines:
-                            if 'Análisis adicional no disponible' in line:
+                            if "Análisis adicional no disponible" in line:
                                 break
-                            if not line.strip().startswith('"executive_summary":') and line.strip() != '{':
-                                if line.strip() and not line.strip().startswith('📈'):
+                            if (
+                                not line.strip().startswith('"executive_summary":')
+                                and line.strip() != "{"
+                            ):
+                                if line.strip() and not line.strip().startswith("📈"):
                                     pca_lines.append(line)
                         if pca_lines:
-                            pca_content = '\n'.join(pca_lines).strip()
+                            pca_content = "\n".join(pca_lines).strip()
 
-                    result['pca_analysis'] = pca_content
-                    result['pca_insights'] = {'analysis': pca_content}
+                    result["pca_analysis"] = pca_content
+                    result["pca_insights"] = {"analysis": pca_content}
 
         # Handle additional sections for complete multi-source analysis in correct order
         # Updated to match AI-generated headers exactly
         new_sections = {
-            'executive_summary': '📋 RESUMEN EJECUTIVO',
-            'principal_findings': '🔍 HALLAZGOS PRINCIPALES',
-            'temporal_analysis': '🔍 ANÁLISIS TEMPORAL',
-            'seasonal_analysis': '📅 PATRONES ESTACIONALES',
-            'heatmap_analysis': '🔥 Análisis de Mapa de Calor',
-            'fourier_analysis': '🌊 ANÁLISIS ESPECTRAL',
-            'pca_analysis': '📊 Análisis PCA',
-            'strategic_synthesis': '🎯 SÍNTESIS ESTRATÉGICA',
-            'conclusions': '📝 CONCLUSIONES'
+            "executive_summary": "📋 RESUMEN EJECUTIVO",
+            "principal_findings": "🔍 HALLAZGOS PRINCIPALES",
+            "temporal_analysis": "🔍 ANÁLISIS TEMPORAL",
+            "seasonal_analysis": "📅 PATRONES ESTACIONALES",
+            "heatmap_analysis": "🔥 Análisis de Mapa de Calor",
+            "fourier_analysis": "🌊 ANÁLISIS ESPECTRAL",
+            "pca_analysis": "📊 Análisis PCA",
+            "strategic_synthesis": "🎯 SÍNTESIS ESTRATÉGICA",
+            "conclusions": "📝 CONCLUSIONES",
         }
 
         for section_key, section_emoji in new_sections.items():
@@ -974,35 +1571,49 @@ If you respond in Spanish, the analysis will be rejected.
                     result[section_key] = json_content[section_key]
                 else:
                     # Extract content directly from section
-                    section_lines = section_content.split('\n')
+                    section_lines = section_content.split("\n")
                     clean_lines = []
                     for line in section_lines:
                         line = line.strip()
                         # Skip JSON fragments and repeated headers
-                        if (not line.startswith('{') and
-                            not line.startswith('}') and
-                            not line.startswith('"') and
-                            not line.startswith('```') and
-                            section_emoji not in line and
-                            len(line) > 0):
+                        if (
+                            not line.startswith("{")
+                            and not line.startswith("}")
+                            and not line.startswith('"')
+                            and not line.startswith("```")
+                            and section_emoji not in line
+                            and len(line) > 0
+                        ):
                             clean_lines.append(line)
 
                     if clean_lines:
-                        result[section_key] = '\n'.join(clean_lines).strip()
+                        result[section_key] = "\n".join(clean_lines).strip()
 
         # Validate we have the required fields
-        if 'executive_summary' in result or 'principal_findings' in result or 'pca_analysis' in result:
+        if (
+            "executive_summary" in result
+            or "principal_findings" in result
+            or "pca_analysis" in result
+        ):
             # Fill in missing fields with defaults
-            result.setdefault('executive_summary', '')
-            result.setdefault('principal_findings', [])
-            result.setdefault('pca_insights', {})
-            result.setdefault('heatmap_analysis', self._create_default_heatmap_analysis())
-            result.setdefault('temporal_analysis', 'Análisis temporal detallado no disponible.')
-            result.setdefault('seasonal_analysis', 'Análisis estacional detallado no disponible.')
-            result.setdefault('fourier_analysis', 'Análisis de Fourier no disponible.')
-            result.setdefault('strategic_synthesis', 'Síntesis estratégica no disponible.')
-            result.setdefault('conclusions', 'Conclusiones no disponibles.')
-            result['original_structure'] = 'sections_combined'
+            result.setdefault("executive_summary", "")
+            result.setdefault("principal_findings", [])
+            result.setdefault("pca_insights", {})
+            result.setdefault(
+                "heatmap_analysis", ""
+            )  # Empty if AI didn't provide - should trigger retry
+            result.setdefault(
+                "temporal_analysis", ""
+            )  # Empty if missing - AI must provide this
+            result.setdefault(
+                "seasonal_analysis", "Análisis estacional detallado no disponible."
+            )
+            result.setdefault("fourier_analysis", "Análisis de Fourier no disponible.")
+            result.setdefault(
+                "strategic_synthesis", "Síntesis estratégica no disponible."
+            )
+            result.setdefault("conclusions", "Conclusiones no disponibles.")
+            result["original_structure"] = "sections_combined"
             return result
 
         return None
@@ -1019,10 +1630,10 @@ If you respond in Spanish, the analysis will be rejected.
         """
         # Pattern: JSON that starts correctly but gets cut off mid-principal_findings
         return (
-            content.startswith('{"executive_summary":') and
-            '"principal_findings":' in content and
-            ('"•' in content or content.count('"') % 2 == 1) and
-            not content.strip().endswith('}')
+            content.startswith('{"executive_summary":')
+            and '"principal_findings":' in content
+            and ('"•' in content or content.count('"') % 2 == 1)
+            and not content.strip().endswith("}")
         )
 
     def _fix_incomplete_json_pattern(self, content: str) -> Optional[Dict[str, Any]]:
@@ -1037,7 +1648,9 @@ If you respond in Spanish, the analysis will be rejected.
         """
         try:
             # Extract executive summary
-            exec_summary_match = re.search(r'"executive_summary":\s*"([^"]*(?:\\.[^"]*)*)"', content)
+            exec_summary_match = re.search(
+                r'"executive_summary":\s*"([^"]*(?:\\.[^"]*)*)"', content
+            )
             if not exec_summary_match:
                 return None
 
@@ -1049,7 +1662,7 @@ If you respond in Spanish, the analysis will be rejected.
                 return None
 
             # Extract everything after principal_findings as a truncated finding
-            pf_content_start = content.find('[', pf_start)
+            pf_content_start = content.find("[", pf_start)
             if pf_content_start == -1:
                 return None
 
@@ -1068,27 +1681,33 @@ If you respond in Spanish, the analysis will be rejected.
                     finding_content = finding_content[:-1]
 
                 # Create the finding object
-                principal_findings = [{
-                    'bullet_point': finding_content.replace('\\"', '"'),
-                    'reasoning': 'Extracted from truncated AI response',
-                    'data_source': ['AI Analysis'],
-                    'confidence': 'low'
-                }]
+                principal_findings = [
+                    {
+                        "bullet_point": finding_content.replace('\\"', '"'),
+                        "reasoning": "Extracted from truncated AI response",
+                        "data_source": ["AI Analysis"],
+                        "confidence": "low",
+                    }
+                ]
             else:
                 # Fallback: use the remaining content as a finding
-                principal_findings = [{
-                    'bullet_point': remaining_content.replace('\\"', '"').strip('"'),
-                    'reasoning': 'Extracted from truncated AI response',
-                    'data_source': ['AI Analysis'],
-                    'confidence': 'low'
-                }]
+                principal_findings = [
+                    {
+                        "bullet_point": remaining_content.replace('\\"', '"').strip(
+                            '"'
+                        ),
+                        "reasoning": "Extracted from truncated AI response",
+                        "data_source": ["AI Analysis"],
+                        "confidence": "low",
+                    }
+                ]
 
             return {
-                'executive_summary': executive_summary,
-                'principal_findings': principal_findings,
-                'pca_insights': {},
-                'heatmap_analysis': self._create_default_heatmap_analysis(),
-                'original_structure': 'incomplete_json_fixed'
+                "executive_summary": executive_summary,
+                "principal_findings": principal_findings,
+                "pca_insights": {},
+                "heatmap_analysis": "",  # Empty if AI didn't provide - should trigger retry
+                "original_structure": "incomplete_json_fixed",
             }
 
         except Exception as e:
@@ -1107,11 +1726,13 @@ If you respond in Spanish, the analysis will be rejected.
         """
         content_str = str(content)
         return (
-            content_str.strip().startswith('•') and
-            '"executive_summary":' in content_str
+            content_str.strip().startswith("•")
+            and '"executive_summary":' in content_str
         )
 
-    def _extract_from_bullet_json_pattern(self, content: str) -> Optional[Dict[str, Any]]:
+    def _extract_from_bullet_json_pattern(
+        self, content: str
+    ) -> Optional[Dict[str, Any]]:
         """
         Extract content from bullet point containing JSON fragment.
 
@@ -1132,41 +1753,49 @@ If you respond in Spanish, the analysis will be rejected.
                 json_content = json_content[:-1]
 
             # Try to parse as JSON
-            if json_content.startswith('{'):
+            if json_content.startswith("{"):
                 try:
                     parsed = json.loads(json_content)
-                    return self._normalize_parsed_response(parsed, is_single_source=is_single_source)
+                    return self._normalize_parsed_response(
+                        parsed, is_single_source=is_single_source
+                    )
                 except json.JSONDecodeError as e:
                     logging.warning(f"JSON parsing failed for bullet content: {e}")
                     # Try to fix common JSON issues
-                    if not json_content.endswith('}'):
-                        json_content += '}'
+                    if not json_content.endswith("}"):
+                        json_content += "}"
                     if not json_content.endswith('"'):
                         json_content += '"'
 
                     try:
                         parsed = json.loads(json_content)
-                        return self._normalize_parsed_response(parsed, is_single_source=is_single_source)
+                        return self._normalize_parsed_response(
+                            parsed, is_single_source=is_single_source
+                        )
                     except json.JSONDecodeError:
                         pass
 
             # If JSON parsing fails, extract components manually
             # Try to find executive summary with more flexible pattern
-            exec_summary_match = re.search(r'"executive_summary":\s*"(.*?)"', json_content, re.DOTALL)
+            exec_summary_match = re.search(
+                r'"executive_summary":\s*"(.*?)"', json_content, re.DOTALL
+            )
             if exec_summary_match:
                 executive_summary = exec_summary_match.group(1).replace('\\"', '"')
 
                 return {
-                    'executive_summary': executive_summary,
-                    'principal_findings': [{
-                        'bullet_point': 'Analysis extracted from malformed response',
-                        'reasoning': 'Content extracted from bullet point with JSON fragment',
-                        'data_source': ['AI Analysis'],
-                        'confidence': 'low'
-                    }],
-                    'pca_insights': {},
-                    'heatmap_analysis': self._create_default_heatmap_analysis(),
-                    'original_structure': 'bullet_json_pattern'
+                    "executive_summary": executive_summary,
+                    "principal_findings": [
+                        {
+                            "bullet_point": "Analysis extracted from malformed response",
+                            "reasoning": "Content extracted from bullet point with JSON fragment",
+                            "data_source": ["AI Analysis"],
+                            "confidence": "low",
+                        }
+                    ],
+                    "pca_insights": {},
+                    "heatmap_analysis": "",  # Empty if AI didn't provide - should trigger retry
+                    "original_structure": "bullet_json_pattern",
                 }
 
             # If that doesn't work, try an even more flexible approach
@@ -1178,19 +1807,23 @@ If you respond in Spanish, the analysis will be rejected.
                     # Find the next quote (end of executive summary)
                     end_pos = json_content.find('"', start_pos + 1)
                     if end_pos != -1:
-                        executive_summary = json_content[start_pos + 1:end_pos].replace('\\"', '"')
+                        executive_summary = json_content[
+                            start_pos + 1 : end_pos
+                        ].replace('\\"', '"')
 
                         return {
-                            'executive_summary': executive_summary,
-                            'principal_findings': [{
-                                'bullet_point': 'Analysis extracted from malformed response',
-                                'reasoning': 'Content extracted from bullet point with JSON fragment',
-                                'data_source': ['AI Analysis'],
-                                'confidence': 'low'
-                            }],
-                            'pca_insights': {},
-                            'heatmap_analysis': self._create_default_heatmap_analysis(),
-                            'original_structure': 'bullet_json_pattern'
+                            "executive_summary": executive_summary,
+                            "principal_findings": [
+                                {
+                                    "bullet_point": "Analysis extracted from malformed response",
+                                    "reasoning": "Content extracted from bullet point with JSON fragment",
+                                    "data_source": ["AI Analysis"],
+                                    "confidence": "low",
+                                }
+                            ],
+                            "pca_insights": {},
+                            "heatmap_analysis": "",  # Empty if AI didn't provide - should trigger retry
+                            "original_structure": "bullet_json_pattern",
                         }
 
         except Exception as e:
@@ -1198,7 +1831,9 @@ If you respond in Spanish, the analysis will be rejected.
 
         return None
 
-    def _extract_json_from_section(self, section_content: str) -> Optional[Dict[str, Any]]:
+    def _extract_json_from_section(
+        self, section_content: str
+    ) -> Optional[Dict[str, Any]]:
         """
         Extract JSON object from section content, handling markdown code blocks.
 
@@ -1209,14 +1844,14 @@ If you respond in Spanish, the analysis will be rejected.
             Parsed JSON dictionary or None
         """
         # First, try to extract from markdown code blocks
-        if '```json' in section_content:
+        if "```json" in section_content:
             # Find the JSON within the code block
-            start_marker = section_content.find('```json')
+            start_marker = section_content.find("```json")
             if start_marker != -1:
-                start_json = section_content.find('{', start_marker)
-                end_marker = section_content.find('```', start_marker + 7)
+                start_json = section_content.find("{", start_marker)
+                end_marker = section_content.find("```", start_marker + 7)
                 if end_marker != -1:
-                    end_json = section_content.rfind('}', start_marker, end_marker) + 1
+                    end_json = section_content.rfind("}", start_marker, end_marker) + 1
                     if start_json != -1 and end_json > start_json:
                         json_str = section_content[start_json:end_json]
                         try:
@@ -1225,8 +1860,8 @@ If you respond in Spanish, the analysis will be rejected.
                             pass
 
         # Fallback: Find JSON boundaries directly
-        start_idx = section_content.find('{')
-        end_idx = section_content.rfind('}') + 1
+        start_idx = section_content.find("{")
+        end_idx = section_content.rfind("}") + 1
 
         if start_idx != -1 and end_idx > start_idx:
             json_str = section_content[start_idx:end_idx]
@@ -1251,7 +1886,7 @@ If you respond in Spanish, the analysis will be rejected.
         import re
 
         # Find all JSON-like structures
-        json_pattern = r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}'
+        json_pattern = r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}"
         matches = re.findall(json_pattern, content, re.DOTALL)
 
         for match in matches:
@@ -1263,7 +1898,9 @@ If you respond in Spanish, the analysis will be rejected.
 
         return fragments
 
-    def _combine_json_fragments(self, fragments: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    def _combine_json_fragments(
+        self, fragments: List[Dict[str, Any]]
+    ) -> Optional[Dict[str, Any]]:
         """
         Combine multiple JSON fragments into a single response.
 
@@ -1280,16 +1917,20 @@ If you respond in Spanish, the analysis will be rejected.
 
         for fragment in fragments:
             for key, value in fragment.items():
-                if key in ['executive_summary', 'principal_findings', 'pca_analysis']:
+                if key in ["executive_summary", "principal_findings", "pca_analysis"]:
                     combined[key] = value
 
         if combined:
             # Fill missing fields
-            combined.setdefault('executive_summary', '')
-            combined.setdefault('principal_findings', [])
-            combined.setdefault('pca_insights', {'analysis': combined.get('pca_analysis', '')})
-            combined.setdefault('heatmap_analysis', self._create_default_heatmap_analysis())
-            combined['original_structure'] = 'fragments_combined'
+            combined.setdefault("executive_summary", "")
+            combined.setdefault("principal_findings", [])
+            combined.setdefault(
+                "pca_insights", {"analysis": combined.get("pca_analysis", "")}
+            )
+            combined.setdefault(
+                "heatmap_analysis", ""
+            )  # Empty if AI didn't provide - should trigger retry
+            combined["original_structure"] = "fragments_combined"
             return combined
 
         return None
@@ -1307,22 +1948,24 @@ If you respond in Spanish, the analysis will be rejected.
         findings = []
 
         # Split by bullet points
-        lines = text.split('\n')
+        lines = text.split("\n")
         current_finding = []
 
         for line in lines:
             line = line.strip()
-            if line.startswith('•') or line.startswith('-') or line.startswith('*'):
+            if line.startswith("•") or line.startswith("-") or line.startswith("*"):
                 # Save previous finding
                 if current_finding:
-                    finding_text = ' '.join(current_finding).strip()
+                    finding_text = " ".join(current_finding).strip()
                     if finding_text:
-                        findings.append({
-                            'bullet_point': finding_text,
-                            'reasoning': "Extracted from AI response",
-                            'data_source': ["AI Analysis"],
-                            'confidence': "medium"
-                        })
+                        findings.append(
+                            {
+                                "bullet_point": finding_text,
+                                "reasoning": "Extracted from AI response",
+                                "data_source": ["AI Analysis"],
+                                "confidence": "medium",
+                            }
+                        )
                     current_finding = []
 
                 # Start new finding
@@ -1333,14 +1976,16 @@ If you respond in Spanish, the analysis will be rejected.
 
         # Save last finding
         if current_finding:
-            finding_text = ' '.join(current_finding).strip()
+            finding_text = " ".join(current_finding).strip()
             if finding_text:
-                findings.append({
-                    'bullet_point': finding_text,
-                    'reasoning': "Extracted from AI response",
-                    'data_source': ["AI Analysis"],
-                    'confidence': "medium"
-                })
+                findings.append(
+                    {
+                        "bullet_point": finding_text,
+                        "reasoning": "Extracted from AI response",
+                        "data_source": ["AI Analysis"],
+                        "confidence": "medium",
+                    }
+                )
 
         return findings
 
@@ -1358,7 +2003,7 @@ If you respond in Spanish, the analysis will be rejected.
         text = text.strip()
 
         # If it starts with {, try to extract JSON content
-        if text.startswith('{'):
+        if text.startswith("{"):
             # Try to extract just the content
             start_content = text.find('"pca_analysis":') or text.find('"analysis":')
             if start_content != -1:
@@ -1366,22 +2011,22 @@ If you respond in Spanish, the analysis will be rejected.
                 if start_quote != -1:
                     end_quote = text.find('"', start_quote + 1)
                     if end_quote != -1:
-                        content = text[start_quote + 1:end_quote]
-                        return content.replace('\\n', '\n').replace('\\"', '"')
+                        content = text[start_quote + 1 : end_quote]
+                        return content.replace("\\n", "\n").replace('\\"', '"')
 
         # If it looks like raw text (contains multiple paragraphs separated by double newlines)
-        if '\n\n' in text:
-            return text.replace('\\n', '\n').strip()
+        if "\n\n" in text:
+            return text.replace("\\n", "\n").strip()
 
         # If it contains "Análisis adicional no disponible", clean it up
-        if 'Análisis adicional no disponible' in text:
+        if "Análisis adicional no disponible" in text:
             # Extract everything before this marker
-            marker_pos = text.find('Análisis adicional no disponible')
+            marker_pos = text.find("Análisis adicional no disponible")
             if marker_pos > 0:
-                return text[:marker_pos].strip().replace('\\n', '\n')
+                return text[:marker_pos].strip().replace("\\n", "\n")
 
         # Return cleaned text
-        return text.replace('\\n', '\n').strip()
+        return text.replace("\\n", "\n").strip()
 
     def _extract_text_content(self, text: str, field_name: str) -> Optional[str]:
         """
@@ -1403,14 +2048,16 @@ If you respond in Spanish, the analysis will be rejected.
                 if start_quote != -1:
                     end_quote = text.find('"', start_quote + 1)
                     if end_quote != -1:
-                        content = text[start_quote + 1:end_quote]
-                        return content.replace('\\n', '\n').replace('\\"', '"')
+                        content = text[start_quote + 1 : end_quote]
+                        return content.replace("\\n", "\n").replace('\\"', '"')
         except:
             pass
 
         return None
 
-    def _normalize_parsed_response(self, parsed: Dict[str, Any], is_single_source: bool = False) -> Dict[str, Any]:
+    def _normalize_parsed_response(
+        self, parsed: Dict[str, Any], is_single_source: bool = False
+    ) -> Dict[str, Any]:
         """
         Normalize parsed response to expected format.
 
@@ -1421,85 +2068,224 @@ If you respond in Spanish, the analysis will be rejected.
             Normalized response dictionary
         """
         result = {
-            'executive_summary': parsed.get('executive_summary', ''),
-            'principal_findings': parsed.get('principal_findings', []),
-            'pca_insights': parsed.get('pca_insights', {}),
-            'original_structure': 'direct_json'
+            "executive_summary": parsed.get("executive_summary", ""),
+            "principal_findings": parsed.get("principal_findings", []),
+            "pca_insights": parsed.get("pca_insights", {}),
+            "original_structure": "direct_json",
         }
 
         # Handle pca_analysis field
-        if 'pca_analysis' in parsed:
+        if "pca_analysis" in parsed:
             if is_single_source:
                 # CRITICAL: Empty PCA for single-source analysis (even if AI generated it)
-                result['pca_analysis'] = ""
-                result['pca_insights'] = {"analysis": ""}
+                result["pca_analysis"] = ""
+                result["pca_insights"] = {"analysis": ""}
             else:
-                result['pca_analysis'] = parsed['pca_analysis']
-                result['pca_insights'] = {'analysis': parsed['pca_analysis']}
+                result["pca_analysis"] = parsed["pca_analysis"]
+                result["pca_insights"] = {"analysis": parsed["pca_analysis"]}
         elif is_single_source:
             # CRITICAL: Empty PCA for single-source analysis
-            result['pca_analysis'] = ""
-            result['pca_insights'] = {"analysis": ""}
+            result["pca_analysis"] = ""
+            result["pca_insights"] = {"analysis": ""}
 
         # Handle new detailed sections
         new_sections = [
-            'heatmap_analysis', 'temporal_analysis', 'fourier_analysis',
-            'strategic_synthesis', 'conclusions'
+            "heatmap_analysis",
+            "temporal_analysis",
+            "fourier_analysis",
+            "strategic_synthesis",
+            "conclusions",
         ]
 
         for section in new_sections:
             if section in parsed:
                 # CRITICAL: Skip heatmap for single-source analysis (even if AI generated it)
-                if section == 'heatmap_analysis' and is_single_source:
+                if section == "heatmap_analysis" and is_single_source:
                     result[section] = ""  # Empty for single-source
                 else:
                     result[section] = parsed[section]
             else:
-                # Create default content for missing sections
-                # CRITICAL: Skip heatmap for single-source analysis
-                if section == 'heatmap_analysis' and is_single_source:
-                    result[section] = ""  # Empty for single-source
-                elif section == 'heatmap_analysis':
-                    result[section] = self._create_default_heatmap_analysis()
-                elif section == 'temporal_analysis':
-                    result[section] = 'Análisis temporal detallado no disponible.'
-                elif section == 'fourier_analysis':
-                    result[section] = 'Análisis de Fourier no disponible.'
-                elif section == 'strategic_synthesis':
-                    result[section] = 'Síntesis estratégica no disponible.'
-                elif section == 'conclusions':
-                    result[section] = 'Conclusiones no disponibles.'
+                # CRITICAL: Do not create default content - AI must provide all sections
+                # For missing sections, use empty string to indicate incomplete response
+                if section == "heatmap_analysis" and is_single_source:
+                    result[section] = ""  # Empty for single-source (expected)
+                elif section == "heatmap_analysis":
+                    result[section] = (
+                        ""  # Empty if AI didn't provide - should trigger retry
+                    )
+                elif section == "temporal_analysis":
+                    result[section] = ""  # Empty if missing - AI must provide this
+                elif section == "fourier_analysis":
+                    result[section] = ""  # Empty if missing - AI must provide this
+                elif section == "strategic_synthesis":
+                    result[section] = ""  # Empty if missing - AI must provide this
+                elif section == "conclusions":
+                    result[section] = ""  # Empty if missing - AI must provide this
 
         # Ensure principal_findings is in correct format (without data_source and confidence)
-        if isinstance(result['principal_findings'], list) and result['principal_findings']:
-            if isinstance(result['principal_findings'][0], str):
+        if (
+            isinstance(result["principal_findings"], list)
+            and result["principal_findings"]
+        ):
+            if isinstance(result["principal_findings"][0], str):
                 # Convert string array to object array with new format
-                result['principal_findings'] = [
+                result["principal_findings"] = [
                     {
-                        'bullet_point': item,
-                        'reasoning': "This finding reveals important insights about the management tool's adoption patterns and strategic implications for organizations."
+                        "bullet_point": item,
+                        "reasoning": "This finding reveals important insights about the management tool's adoption patterns and strategic implications for organizations.",
                     }
-                    for item in result['principal_findings']
+                    for item in result["principal_findings"]
                 ]
-            elif isinstance(result['principal_findings'][0], dict):
+            elif isinstance(result["principal_findings"][0], dict):
                 # Clean existing findings to remove data_source and confidence
                 cleaned_findings = []
-                for finding in result['principal_findings']:
-                    if 'bullet_point' in finding:
-                        clean_finding = {
-                            'bullet_point': finding['bullet_point']
-                        }
-                        if 'reasoning' in finding:
-                            clean_finding['reasoning'] = finding['reasoning']
+                for finding in result["principal_findings"]:
+                    if "bullet_point" in finding:
+                        clean_finding = {"bullet_point": finding["bullet_point"]}
+                        if "reasoning" in finding:
+                            clean_finding["reasoning"] = finding["reasoning"]
                         cleaned_findings.append(clean_finding)
-                result['principal_findings'] = cleaned_findings
+                result["principal_findings"] = cleaned_findings
 
         return result
+
+    def _validate_complete_response(
+        self, result: Dict[str, Any], is_single_source: bool = False
+    ) -> bool:
+        """
+        Validate that response contains sufficient sections for user experience.
+        
+        MODIFIED: More lenient for database content - accepts incomplete but useful responses.
+
+        Args:
+            result: Normalized response (could be AI or database)
+            is_single_source: Whether this is single-source analysis
+
+        Returns:
+            True if response has sufficient content, False otherwise
+        """
+        required_sections = [
+            "executive_summary",
+            "principal_findings",
+            "temporal_analysis",
+            "fourier_analysis",
+            "strategic_synthesis",
+            "conclusions",
+        ]
+
+        multi_source_sections = [
+            "seasonal_analysis",
+            "heatmap_analysis",
+            "pca_analysis",
+        ]
+
+        # Count available sections
+        available_sections = 0
+        total_required = len(required_sections)
+        
+        # Check required sections for both single and multi-source
+        for section in required_sections:
+            if result.get(section) and len(str(result.get(section, ''))) > 50:
+                available_sections += 1
+
+        # Check multi-source specific sections
+        if not is_single_source:
+            for section in multi_source_sections:
+                if result.get(section) and len(str(result.get(section, ''))) > 50:
+                    available_sections += 1
+            total_required += len(multi_source_sections)
+
+        # MODIFIED: Accept responses that have at least 70% of required sections
+        # This ensures user gets useful content while maintaining quality standards
+        min_required_sections = max(5, int(total_required * 0.7))  # At least 5 sections or 70% of total
+        
+        if available_sections >= min_required_sections:
+            logging.info(f"✅ Sufficient content available - {available_sections}/{total_required} sections present")
+            return True
+        else:
+            logging.warning(f"⚠️ Insufficient content - only {available_sections}/{total_required} sections present (need {min_required_sections})")
+            return False
+
+        # Check principal_findings format (still required)
+        principal_findings = result.get("principal_findings", [])
+        if not isinstance(principal_findings, list) or len(principal_findings) == 0:
+            logging.warning("❌ Missing or invalid principal_findings")
+            return False
+
+        logging.info(f"✅ Response validated with {available_sections}/{total_required} sections")
+        return True
+
+    def _enhance_prompt_for_retry(
+        self,
+        original_response: str,
+        is_single_source: bool,
+        missing_sections: Dict[str, Any],
+    ) -> str:
+        """
+        Enhance prompt for retry when sections are missing.
+
+        Args:
+            original_response: Previous AI response
+            is_single_source: Whether this is single-source analysis
+            missing_sections: Response with missing sections identified
+
+        Returns:
+            Enhanced prompt for retry
+        """
+        missing_list = []
+        required_sections = [
+            "executive_summary",
+            "principal_findings",
+            "temporal_analysis",
+            "fourier_analysis",
+            "strategic_synthesis",
+            "conclusions",
+        ]
+
+        if not is_single_source:
+            required_sections.extend(
+                ["seasonal_analysis", "heatmap_analysis", "pca_analysis"]
+            )
+
+        for section in required_sections:
+            if not missing_sections.get(section):
+                missing_list.append(section)
+
+        enhancement = f"""
+
+⚠️ CRITICAL: LA RESPUESTA ANTERIOR ESTÁ INCOMPLETA - FALTAN SECCIONES REQUERIDAS ⚠️
+
+SECCIONES FALTANTES DETECTADAS: {", ".join(missing_list)}
+
+🚨 INSTRUCCIONES DE CORRECCIÓN OBLIGATORIAS:
+1. PROporCIONE TODAS las secciones requeridas en formato JSON estructurado
+2. CADA sección debe tener contenido sustancial (mínimo 400-600 palabras)
+3. NO trunque la respuesta - sea completo y detallado
+4. ASEGÚRESE de que el JSON sea válido y contenga TODOS los campos requeridos
+5. SI falta alguna sección, la respuesta será RECHAZADA nuevamente
+
+LA RESPUESTA COMPLETA DEBE INCLUIR:
+- executive_summary (400 palabras)
+- principal_findings (array con bullet_point y reasoning)
+- temporal_analysis (800 palabras) - OBLIGATORIO
+{"- seasonal_analysis (600 palabras) - OBLIGATORIO" if not is_single_source else ""}
+{"- heatmap_analysis (800 palabras) - OBLIGATORIO" if not is_single_source else ""}
+{"- pca_analysis (600 palabras) - OBLIGATORIO" if not is_single_source else ""}
+- fourier_analysis (600 palabras) - OBLIGATORIO
+- strategic_synthesis (400 palabras) - OBLIGATORIO
+- conclusions (600 palabras) - OBLIGATORIO
+
+**SU RESPUESTA ANTERIOR FUE:**
+{original_response[:500]}...
+
+**PROporCIONE AHORA UNA RESPUESTA COMPLETA CON TODAS LAS SECCIONES REQUERIDAS**
+"""
+        return enhancement
 
     def _create_default_heatmap_analysis(self) -> str:
         """
         Create a default heatmap analysis when none is provided by AI.
-        
+
         Returns:
             Default heatmap analysis string with 3 paragraphs
         """
@@ -1520,17 +2306,29 @@ Los patrones observados en las correlaciones sugieren que el éxito de la herram
             Fallback response dictionary
         """
         return {
-            'principal_findings': [{
-                'bullet_point': response_content[:300] + "..." if len(response_content) > 300 else response_content,
-                'reasoning': "Parsing failed, using raw response",
-                'data_source': ["AI Analysis"],
-                'confidence': "low"
-            }],
-            'pca_insights': {'analysis': response_content[:400] + "..." if len(response_content) > 400 else response_content},
-            'executive_summary': response_content[:500] + "..." if len(response_content) > 500 else response_content,
-            'pca_analysis': response_content[:400] + "..." if len(response_content) > 400 else response_content,
-            'heatmap_analysis': self._create_default_heatmap_analysis(),
-            'original_structure': 'fallback'
+            "principal_findings": [
+                {
+                    "bullet_point": response_content[:300] + "..."
+                    if len(response_content) > 300
+                    else response_content,
+                    "reasoning": "Parsing failed, using raw response",
+                    "data_source": ["AI Analysis"],
+                    "confidence": "low",
+                }
+            ],
+            "pca_insights": {
+                "analysis": response_content[:400] + "..."
+                if len(response_content) > 400
+                else response_content
+            },
+            "executive_summary": response_content[:500] + "..."
+            if len(response_content) > 500
+            else response_content,
+            "pca_analysis": response_content[:400] + "..."
+            if len(response_content) > 400
+            else response_content,
+            "heatmap_analysis": "",  # Empty if AI didn't provide - should trigger retry
+            "original_structure": "fallback",
         }
 
     async def test_model_availability(self) -> Dict[str, bool]:
@@ -1547,7 +2345,7 @@ Los patrones observados en las correlaciones sugieren que el éxito de la herram
         if self.groq_api_key:
             for model in self.groq_models:
                 try:
-                    result = await self._call_model(test_prompt, model, 'groq', 'en')
+                    result = await self._call_model(test_prompt, model, "groq", "en")
                     availability[model] = True
                     logging.info(f"✅ Groq model {model} is available and working")
                 except Exception as e:
@@ -1562,14 +2360,20 @@ Los patrones observados en las correlaciones sugieren que el éxito de la herram
         if self.openrouter_api_key:
             for model in self.openrouter_models:
                 try:
-                    result = await self._call_model(test_prompt, model, 'openrouter', 'en')
+                    result = await self._call_model(
+                        test_prompt, model, "openrouter", "en"
+                    )
                     availability[model] = True
-                    logging.info(f"✅ OpenRouter model {model} is available and working")
+                    logging.info(
+                        f"✅ OpenRouter model {model} is available and working"
+                    )
                 except Exception as e:
                     logging.warning(f"❌ OpenRouter model {model} unavailable: {e}")
                     availability[model] = False
         else:
-            logging.warning("⚠️ OpenRouter API key not configured, skipping OpenRouter models")
+            logging.warning(
+                "⚠️ OpenRouter API key not configured, skipping OpenRouter models"
+            )
             for model in self.openrouter_models:
                 availability[model] = False
 
@@ -1578,25 +2382,31 @@ Los patrones observados en las correlaciones sugieren que el éxito de la herram
     def calculate_cost(self, tokens: int, model: str) -> float:
         """
         Calculate API cost for request.
-        
+
         Args:
             tokens: Number of tokens processed
             model: Model name
-            
+
         Returns:
             Estimated cost in USD
         """
         model_config = self.model_configs.get(model)
         if not model_config:
             return 0.0
-        
+
         return (tokens / 1000) * model_config.cost_per_1k_tokens
 
-    def _log_performance(self, model: str, response_time_ms: int, 
-                        token_count: int, success: bool, error_message: str = None):
+    def _log_performance(
+        self,
+        model: str,
+        response_time_ms: int,
+        token_count: int,
+        success: bool,
+        error_message: str = None,
+    ):
         """
         Log model performance for monitoring.
-        
+
         Args:
             model: Model name
             response_time_ms: Response time in milliseconds
@@ -1606,36 +2416,42 @@ Los patrones observados en las correlaciones sugieren que el éxito de la herram
         """
         if model not in self.performance_stats:
             self.performance_stats[model] = {
-                'total_requests': 0,
-                'successful_requests': 0,
-                'failed_requests': 0,
-                'total_response_time_ms': 0,
-                'total_tokens': 0,
-                'avg_response_time_ms': 0,
-                'success_rate': 0
+                "total_requests": 0,
+                "successful_requests": 0,
+                "failed_requests": 0,
+                "total_response_time_ms": 0,
+                "total_tokens": 0,
+                "avg_response_time_ms": 0,
+                "success_rate": 0,
             }
-        
+
         stats = self.performance_stats[model]
-        stats['total_requests'] += 1
-        stats['total_response_time_ms'] += response_time_ms
-        stats['total_tokens'] += token_count
-        
+        stats["total_requests"] += 1
+        stats["total_response_time_ms"] += response_time_ms
+        stats["total_tokens"] += token_count
+
         if success:
-            stats['successful_requests'] += 1
+            stats["successful_requests"] += 1
         else:
-            stats['failed_requests'] += 1
-        
+            stats["failed_requests"] += 1
+
         # Update averages
-        stats['avg_response_time_ms'] = stats['total_response_time_ms'] / stats['total_requests']
-        stats['success_rate'] = (stats['successful_requests'] / stats['total_requests']) * 100
-        
-        logging.info(f"Model {model} performance: {response_time_ms}ms, {token_count} tokens, "
-                    f"success: {success}, success_rate: {stats['success_rate']:.1f}%")
+        stats["avg_response_time_ms"] = (
+            stats["total_response_time_ms"] / stats["total_requests"]
+        )
+        stats["success_rate"] = (
+            stats["successful_requests"] / stats["total_requests"]
+        ) * 100
+
+        logging.info(
+            f"Model {model} performance: {response_time_ms}ms, {token_count} tokens, "
+            f"success: {success}, success_rate: {stats['success_rate']:.1f}%"
+        )
 
     def get_performance_stats(self) -> Dict[str, Dict[str, Any]]:
         """
         Get performance statistics for all models.
-        
+
         Returns:
             Dictionary with performance stats for each model
         """
@@ -1645,27 +2461,34 @@ Los patrones observados en las correlaciones sugieren que el éxito de la herram
         """Reset performance statistics."""
         self.performance_stats.clear()
 
+
 # Global service instance
 _unified_ai_service = None
 
-def get_unified_ai_service(groq_api_key: str = None, openrouter_api_key: str = None, config: Dict[str, Any] = None) -> UnifiedAIService:
+
+def get_unified_ai_service(
+    groq_api_key: str = None,
+    openrouter_api_key: str = None,
+    config: Dict[str, Any] = None,
+) -> UnifiedAIService:
     """
     Get or create global Unified AI service instance.
-    
+
     Args:
         groq_api_key: Groq API key (optional if already set)
         openrouter_api_key: OpenRouter API key (optional if already set)
         config: Configuration dictionary (optional)
-        
+
     Returns:
         Unified AI service instance
     """
     global _unified_ai_service
-    
+
     if _unified_ai_service is None:
         _unified_ai_service = UnifiedAIService(groq_api_key, openrouter_api_key, config)
-    
+
     return _unified_ai_service
+
 
 def reset_unified_ai_service():
     """Reset global Unified AI service instance."""

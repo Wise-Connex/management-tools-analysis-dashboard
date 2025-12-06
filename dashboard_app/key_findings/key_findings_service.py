@@ -196,11 +196,26 @@ class KeyFindingsService:
                     "source": "precomputed_findings",
                 }
 
-            # No precomputed data - generate new analysis
-            logging.info(
-                f"No precomputed data for {tool_name} + {len(selected_sources)} sources - generating new analysis"
+            # No precomputed data - THIS SHOULD NEVER HAPPEN
+            logging.error(
+                f"🚨 CRITICAL: No precomputed data found for {tool_name} + {len(selected_sources)} sources!"
             )
-            self.performance_metrics["live_ai_requests"] += 1
+            logging.error(
+                f"🚨 This indicates a database population issue. The combination should exist in precomputed_findings.db"
+            )
+
+            # Instead of falling back to AI, return a clear error message
+            response_time_ms = int((time.time() - start_time) * 1000)
+            return {
+                "success": False,
+                "error": f"No precomputed analysis available for {tool_name} with {len(selected_sources)} sources. This combination should be precomputed in the database.",
+                "response_time_ms": response_time_ms,
+                "cache_hit": False,
+                "missing_combination": True,
+                "tool_name": tool_name,
+                "selected_sources": selected_sources,
+                "language": language,
+            }
 
             # Check if this is a single source analysis
             is_single_source = len(selected_sources) == 1
@@ -1209,7 +1224,7 @@ class KeyFindingsService:
             }
 
             # Convert source IDs to display names and sort by numeric ID for consistency
-            # The database stores sources in numeric ID order: 1,2,3,4,5
+            # The database stores sources in a specific order that matches the precomputation pipeline
             source_display_pairs = []
             for source_id in selected_sources:
                 display_name = source_mapping.get(source_id, str(source_id))
@@ -1230,7 +1245,24 @@ class KeyFindingsService:
             # Sort by numeric ID and extract display names
             source_display_pairs.sort(key=lambda x: x[0])
             display_sources = [pair[1] for pair in source_display_pairs]
-            sources_text = ", ".join(display_sources)
+
+            # CRITICAL: Use the exact same order as stored in the database
+            # Database order: Google Trends, Bain Usability, Bain Satisfaction, Crossref, Google Books
+            database_order = [
+                "Google Trends",  # ID 1
+                "Bain Usability",  # ID 3
+                "Bain Satisfaction",  # ID 5
+                "Crossref",  # ID 4
+                "Google Books",  # ID 2
+            ]
+
+            # Reorder to match database storage format
+            ordered_sources = []
+            for source in database_order:
+                if source in display_sources:
+                    ordered_sources.append(source)
+
+            sources_text = ", ".join(ordered_sources)
 
             # Debug logging to see what we're querying
             logging.info(
@@ -1271,7 +1303,10 @@ class KeyFindingsService:
                 logging.info(f"🔍 DEBUG: Precomputed findings FOUND!")
                 logging.info(f"🔍 DEBUG: Result has {len(result)} fields")
             else:
-                logging.info(f"🔍 DEBUG: No precomputed findings found for query")
+                logging.error(f"🚨 DATABASE MISS: No result found for query")
+                logging.error(
+                    f"🚨 Query parameters: tool_name='{spanish_tool_name}', sources_text='{sources_text}', language='{language}'"
+                )
                 # Let's check what combinations exist for this tool
                 conn_check = sqlite3.connect(db_path)
                 cursor_check = conn_check.cursor()
@@ -1303,6 +1338,10 @@ class KeyFindingsService:
                     )
 
             if not result:
+                logging.error(f"🚨 DATABASE MISS: No result found for query")
+                logging.error(
+                    f"🚨 Query parameters: tool_name='{spanish_tool_name}', sources_text='{sources_text}', language='{language}'"
+                )
                 return None
 
             # Debug the actual content lengths

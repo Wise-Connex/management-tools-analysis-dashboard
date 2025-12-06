@@ -152,14 +152,21 @@ Este análisis integra insights de múltiples fuentes de datos para proporcionar
 - Convergencias y divergencias temporales
 - Implicaciones de sincronización para estrategia
 
-**SECCIÓN 4: ANÁLISIS DE PERIODOGRAMA Y FOURIER COMBINADO** (600 palabras) [SECUNDARIO]
+**SECCIÓN 4: ANÁLISIS DE PATRONES ESTACIONALES MULTI-FUENTE** (600 palabras) [SECUNDARIO]
+- Patrones estacionales comparados entre fuentes (Google Trends vs Bain vs Academic)
+- Diferencias de estacionalidad entre opinión pública, práctica empresarial e investigación
+- Ciclos anuales y su significado para timing de implementación
+- Ventanas óptimas de adopción según cada tipo de fuente
+- Convergencias y divergencias estacionales entre stakeholders
+
+**SECCIÓN 5: ANÁLISIS DE PERIODOGRAMA Y FOURIER COMBINADO** (600 palabras) [SECUNDARIO]
 - Análisis espectral combinado a través de todas las fuentes
 - Ciclos dominantes y su significado empresarial
 - Patrones de frecuencia indicando ondas de adopción
 - Indicadores de madurez del mercado desde análisis espectral
 - Insights de timing estratégico desde análisis cíclico
 
-**SECCIÓN 5: ANÁLISIS DE COMPONENTES PRINCIPALES (PCA)** (600 palabras) [SECUNDARIO]
+**SECCIÓN 6: ANÁLISIS DE COMPONENTES PRINCIPALES (PCA)** (600 palabras) [SECUNDARIO]
 - **ANÁLISIS DE INFLUENCIA POR FUENTE**: Examine las cargas específicas de cada fuente en el componente principal
 - **ALINEAMIENTO VS DESALINEAMIENTO**: Analice la convergencia entre opinión pública (Google Trends), práctica empresarial (Bain), e investigación académica (Google Books/Crossref)
 - **PESO RELATIVO DE CADA STAKEHOLDER**: Identifique qué voces dominan la narrativa del Benchmarking
@@ -167,13 +174,13 @@ Este análisis integra insights de múltiples fuentes de datos para proporcionar
 - **INTERPRETACIÓN ESTRATÉGICA**: Qué revela la varianza concentrada sobre madurez del mercado
 - **IMPLICACIONES DE PODER**: Quién define el futuro del Benchmarking según los componentes
 
-**SECCIÓN 6: SÍNTESIS ESTRATÉGICA MULTI-FUENTE** (400 palabras)
+**SECCIÓN 7: SÍNTESIS ESTRATÉGICA MULTI-FUENTE** (400 palabras)
 - Integración de hallazgos de correlación, temporal y PCA
 - Convergencias y divergencias clave entre métodos
 - Validación cruzada de insights entre técnicas analíticas
 - Priorización de hallazgos por fortaleza de evidencia
 
-**SECCIÓN 7: CONCLUSIONES Y RECOMENDACIONES ESTRATÉGICAS** (600 palabras)
+**SECCIÓN 8: CONCLUSIONES Y RECOMENDACIONES ESTRATÉGICAS** (600 palabras)
 - **Síntesis Ejecutiva**: Principales hallazgos consolidados
 - **Implicaciones para la Gestión**: Qué significa para directivos
 - **Timing Estratégico**: Cuándo implementar según los datos
@@ -617,20 +624,25 @@ MUST include these 7 exact headers in this order:
         )
 
         # Debug: Show key sections that should be in the prompt
-        if 'SECCIÓN 4: ANÁLISIS DE PATRONES ESTACIONALES' in prompt:
+        if "SECCIÓN 4: ANÁLISIS DE PATRONES ESTACIONALES" in prompt:
             logging.info(f"🔍 PROMPT DEBUG: Seasonal analysis section found in prompt")
         else:
-            logging.warning(f"🔍 PROMPT DEBUG: Seasonal analysis section MISSING from prompt!")
+            logging.warning(
+                f"🔍 PROMPT DEBUG: Seasonal analysis section MISSING from prompt!"
+            )
 
-        if 'SECCIÓN 5: ANÁLISIS ESPECTRAL DE FOURIER' in prompt:
+        if "SECCIÓN 5: ANÁLISIS ESPECTRAL DE FOURIER" in prompt:
             logging.info(f"🔍 PROMPT DEBUG: Fourier analysis section found in prompt")
         else:
-            logging.warning(f"🔍 PROMPT DEBUG: Fourier analysis section MISSING from prompt!")
+            logging.warning(
+                f"🔍 PROMPT DEBUG: Fourier analysis section MISSING from prompt!"
+            )
 
         return prompt
 
     # Helper methods for building prompt sections would go here
     # These are used by the improved prompt methods above
+
 
 # Additional helper methods for PCA analysis, temporal analysis, etc.
 # would be implemented here to support the main prompt generation methods
