@@ -1,0 +1,55 @@
+{
+  "test_metadata": {
+    "timestamp": "2025-12-08T22:46:38.927004",
+    "total_tests": 5,
+    "success_rate": 0.0,
+    "completeness_rate": 0.0
+  },
+  "summary": {
+    "successful": 0,
+    "failed": 5,
+    "complete": 0
+  },
+  "performance": {
+    "avg_response_time": 0,
+    "avg_content_length": 0,
+    "avg_confidence": 0
+  },
+  "results": [
+    {
+      "tool": "Calidad Total",
+      "source": "Google Trends",
+      "language": "es",
+      "success": false,
+      "error": "All providers and models failed. Last error: None"
+    },
+    {
+      "tool": "Benchmarking",
+      "source": "Google Trends",
+      "language": "es",
+      "success": false,
+      "error": "All providers and models failed. Last error: None"
+    },
+    {
+      "tool": "Six Sigma",
+      "source": "Google Trends",
+      "language": "es",
+      "success": false,
+      "error": "Data collection failed: No data available for tool 'Six Sigma' with selected sources"
+    },
+    {
+      "tool": "Calidad Total",
+      "source": "Google Books",
+      "language": "es",
+      "success": false,
+      "error": "All providers and models failed. Last error: None"
+    },
+    {
+      "tool": "Lean Manufacturing",
+      "source": "Google Trends",
+      "language": "es",
+      "success": false,
+      "error": "Data collection failed: No data available for tool 'Lean Manufacturing' with selected sources"
+    }
+  ]
+}

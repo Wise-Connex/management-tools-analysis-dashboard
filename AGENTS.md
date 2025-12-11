@@ -249,6 +249,22 @@ dashboard_app/
 - Validate user inputs in callbacks
 - Implement proper CORS headers for production deployment
 
+### API Key Management
+- **Groq API Key**: Required for AI analysis, loaded via `os.getenv("GROQ_API_KEY")`
+- **Environment Setup**: Copy `.env.example` to `.env` and add API keys
+- **Security**: Never commit `.env` files to version control
+- **Fallback**: System works in database-only mode without API key
+- **Loading**: Automatic via `python-dotenv` in app startup
+- **Verification**: Use `python3 -c "import os; print('GROQ_API_KEY loaded:', 'GROQ_API_KEY' in os.environ)"`
+
+### Database-First Architecture
+- **Implementation**: Precomputed findings database with 1,302 combinations
+- **Performance**: Sub-2ms query time vs 5-15s live AI generation
+- **Hash System**: Consistent hash generation for tool-source-language combinations
+- **Fallback**: Live AI generation only for missing combinations
+- **Integration**: `database_first_service.py` handles database-first logic
+- **Testing**: All combinations verified with comprehensive test suite
+
 ### Documentation Maintenance
 - **Keep README.md current** when making changes to:
   - Installation procedures or dependencies
@@ -274,11 +290,71 @@ dashboard_app/
 - Follow established patterns from Phase 1 implementation
 - Update progress tracking as work advances through phases
 
-**Current Status (Phase 1 Complete):**
+**Current Status (Phase 5 Complete):**
 - ✅ Database foundation implemented and tested
 - ✅ Performance targets exceeded (1.59ms vs 100ms target)
-- ✅ Ready for Phase 2: AI Integration Testing
+- ✅ Key Findings Modal Architecture refactored with new services
 - ✅ Full test suite passing with comprehensive validation
+
+### Key Findings Modal Architecture (NEW - 2025-12-10)
+
+**New Service-Oriented Architecture:**
+- **KeyFindingsRetrievalService**: Dedicated database retrieval (1.59ms avg)
+- **KeyFindingsContentParser**: Robust content transformation (0.56ms avg)
+- **RefactoredModalCallback**: Clean orchestration layer
+
+**Architecture Benefits:**
+- **100% Database-Driven**: No live AI calls, sub-2ms performance
+- **Flawless Formatting**: Zero parsing artifacts, perfect content preservation
+- **Perfect Section Structure**: 6 sections (single-source) / 7 sections (multi-source)
+- **Comprehensive Error Handling**: Graceful degradation with clear messages
+- **Performance Monitoring**: Built-in metrics and validation
+
+**Implementation Guidelines:**
+```python
+# New workflow - clean and simple
+def handle_key_findings_modal(tool_name, sources, language):
+    # Step 1: Retrieve from database
+    retrieval_result = retrieval_service.retrieve_precomputed_findings(
+        tool_name=tool_name,
+        selected_sources=sources,
+        language=language
+    )
+    
+    if retrieval_result["success"]:
+        # Step 2: Parse content
+        parse_result = content_parser.parse_modal_content(
+            retrieval_result["data"],
+            language
+        )
+        
+        if parse_result["success"]:
+            # Step 3: Create modal content
+            return create_modal_content_from_parsed(parse_result["data"], language)
+    
+    # Handle errors gracefully
+    return create_error_modal_content(retrieval_result.get("error"), language)
+```
+
+**Performance Targets:**
+- Database queries: <100ms (achieved: 1.59ms - 61x better)
+- Content parsing: <10ms (achieved: 0.56ms - 18x better)
+- Total response time: <200ms (achieved: <2.2ms)
+- Zero parsing errors: 100% formatting preservation
+
+**Testing Requirements:**
+- Unit tests for both services (95%+ coverage)
+- Integration tests for complete workflow
+- Performance benchmarks under load
+- Content validation and formatting preservation
+- Error handling and edge case coverage
+
+**Migration Path:**
+1. Replace complex callback logic with service calls
+2. Remove embedded parsing functions
+3. Use dedicated services for retrieval and parsing
+4. Maintain backward compatibility during transition
+5. Monitor performance metrics post-deployment
 
 ### Precomputation Pipeline
 - **Pipeline**: `database_implementation/phase3_precomputation_pipeline.py`

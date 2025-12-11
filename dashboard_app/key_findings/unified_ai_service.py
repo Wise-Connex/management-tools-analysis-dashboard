@@ -21,8 +21,27 @@ import os
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
 )
+
+logger = logging.getLogger(__name__)
+
+
+# Add comprehensive error tracking
+def track_regex_error(func_name, content_type, content_preview, error):
+    """Track regex errors with full context"""
+    logger.error(f"🚨 REGEX ERROR DETECTED!")
+    logger.error(f"   Function: {func_name}")
+    logger.error(f"   Content type: {content_type}")
+    logger.error(f"   Content preview: {content_preview}")
+    logger.error(f"   Error: {error}")
+    import traceback
+
+    logger.error(f"   Traceback:")
+    for line in traceback.format_exc().split("\n"):
+        if line.strip():
+            logger.error(f"     {line}")
+    logger.error("=" * 80)
 
 
 @dataclass
@@ -1743,6 +1762,21 @@ If you respond in Spanish, the analysis will be rejected.
             Extracted response dictionary or None
         """
         try:
+            # Safety check: ensure content is a string
+            if not isinstance(content, str):
+                logging.warning(
+                    f"⚠️ _extract_from_bullet_json_pattern received non-string content: {type(content)}"
+                )
+                # Convert to string if possible
+                if isinstance(content, (list, dict)):
+                    content = (
+                        json.dumps(content)
+                        if isinstance(content, (list, dict))
+                        else str(content)
+                    )
+                else:
+                    content = str(content)
+
             # Remove the bullet point marker and clean up
             json_content = content.strip()[1:].strip()
 
@@ -1777,9 +1811,18 @@ If you respond in Spanish, the analysis will be rejected.
 
             # If JSON parsing fails, extract components manually
             # Try to find executive summary with more flexible pattern
-            exec_summary_match = re.search(
-                r'"executive_summary":\s*"(.*?)"', json_content, re.DOTALL
-            )
+            try:
+                exec_summary_match = re.search(
+                    r'"executive_summary":\s*"(.*?)"', json_content, re.DOTALL
+                )
+            except TypeError as e:
+                logging.error(
+                    f"❌ Regex error in _extract_from_bullet_json_pattern: {e}"
+                )
+                logging.error(
+                    f"Content type: {type(json_content)}, content: {json_content[:200] if isinstance(json_content, str) else json_content}"
+                )
+                return None
             if exec_summary_match:
                 executive_summary = exec_summary_match.group(1).replace('\\"', '"')
 
@@ -1886,8 +1929,17 @@ If you respond in Spanish, the analysis will be rejected.
         import re
 
         # Find all JSON-like structures
-        json_pattern = r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}"
-        matches = re.findall(json_pattern, content, re.DOTALL)
+        try:
+            json_pattern = r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}"
+            matches = re.findall(json_pattern, content, re.DOTALL)
+        except TypeError as e:
+            track_regex_error(
+                "_extract_json_fragments",
+                type(content).__name__,
+                str(content)[:200],
+                str(e),
+            )
+            return fragments
 
         for match in matches:
             try:
@@ -2154,7 +2206,7 @@ If you respond in Spanish, the analysis will be rejected.
     ) -> bool:
         """
         Validate that response contains sufficient sections for user experience.
-        
+
         MODIFIED: More lenient for database content - accepts incomplete but useful responses.
 
         Args:
@@ -2182,28 +2234,34 @@ If you respond in Spanish, the analysis will be rejected.
         # Count available sections
         available_sections = 0
         total_required = len(required_sections)
-        
+
         # Check required sections for both single and multi-source
         for section in required_sections:
-            if result.get(section) and len(str(result.get(section, ''))) > 50:
+            if result.get(section) and len(str(result.get(section, ""))) > 50:
                 available_sections += 1
 
         # Check multi-source specific sections
         if not is_single_source:
             for section in multi_source_sections:
-                if result.get(section) and len(str(result.get(section, ''))) > 50:
+                if result.get(section) and len(str(result.get(section, ""))) > 50:
                     available_sections += 1
             total_required += len(multi_source_sections)
 
         # MODIFIED: Accept responses that have at least 70% of required sections
         # This ensures user gets useful content while maintaining quality standards
-        min_required_sections = max(5, int(total_required * 0.7))  # At least 5 sections or 70% of total
-        
+        min_required_sections = max(
+            5, int(total_required * 0.7)
+        )  # At least 5 sections or 70% of total
+
         if available_sections >= min_required_sections:
-            logging.info(f"✅ Sufficient content available - {available_sections}/{total_required} sections present")
+            logging.info(
+                f"✅ Sufficient content available - {available_sections}/{total_required} sections present"
+            )
             return True
         else:
-            logging.warning(f"⚠️ Insufficient content - only {available_sections}/{total_required} sections present (need {min_required_sections})")
+            logging.warning(
+                f"⚠️ Insufficient content - only {available_sections}/{total_required} sections present (need {min_required_sections})"
+            )
             return False
 
         # Check principal_findings format (still required)
@@ -2212,7 +2270,9 @@ If you respond in Spanish, the analysis will be rejected.
             logging.warning("❌ Missing or invalid principal_findings")
             return False
 
-        logging.info(f"✅ Response validated with {available_sections}/{total_required} sections")
+        logging.info(
+            f"✅ Response validated with {available_sections}/{total_required} sections"
+        )
         return True
 
     def _enhance_prompt_for_retry(

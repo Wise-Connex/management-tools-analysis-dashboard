@@ -1,0 +1,136 @@
+{
+  "total_tests": 6,
+  "successful_tests": 0,
+  "cache_hits": 0,
+  "success_rate": 0.0,
+  "total_cost": 0.0,
+  "results": [
+    {
+      "success": false,
+      "error": "All providers and models failed. Last error: None",
+      "combination": {
+        "tool": "Benchmarking",
+        "sources": [
+          "Google Trends"
+        ],
+        "language": "es",
+        "description": "Spanish single-source: Benchmarking + Google Trends",
+        "expected_sections": [
+          "executive_summary",
+          "principal_findings",
+          "temporal_analysis",
+          "seasonal_analysis",
+          "fourier_analysis",
+          "heatmap_analysis",
+          "conclusions"
+        ]
+      }
+    },
+    {
+      "success": false,
+      "error": "All providers and models failed. Last error: None",
+      "combination": {
+        "tool": "Calidad Total",
+        "sources": [
+          "Crossref"
+        ],
+        "language": "es",
+        "description": "Spanish single-source: Calidad Total + Crossref",
+        "expected_sections": [
+          "executive_summary",
+          "principal_findings",
+          "temporal_analysis",
+          "seasonal_analysis",
+          "fourier_analysis",
+          "heatmap_analysis",
+          "conclusions"
+        ]
+      }
+    },
+    {
+      "success": false,
+      "error": "All providers and models failed. Last error: None",
+      "combination": {
+        "tool": "Reingeniería de Procesos",
+        "sources": [
+          "Bain Usability"
+        ],
+        "language": "es",
+        "description": "Spanish single-source: Gestión de Procesos + Bain Usability",
+        "expected_sections": [
+          "executive_summary",
+          "principal_findings",
+          "temporal_analysis",
+          "seasonal_analysis",
+          "fourier_analysis",
+          "heatmap_analysis",
+          "conclusions"
+        ]
+      }
+    },
+    {
+      "success": false,
+      "error": "All providers and models failed. Last error: None",
+      "combination": {
+        "tool": "Benchmarking",
+        "sources": [
+          "Google Trends"
+        ],
+        "language": "en",
+        "description": "English single-source: Benchmarking + Google Trends",
+        "expected_sections": [
+          "executive_summary",
+          "principal_findings",
+          "temporal_analysis",
+          "seasonal_analysis",
+          "fourier_analysis",
+          "heatmap_analysis",
+          "conclusions"
+        ]
+      }
+    },
+    {
+      "success": false,
+      "error": "All providers and models failed. Last error: None",
+      "combination": {
+        "tool": "Total Quality Management",
+        "sources": [
+          "Crossref"
+        ],
+        "language": "en",
+        "description": "English single-source: Total Quality Management + Crossref",
+        "expected_sections": [
+          "executive_summary",
+          "principal_findings",
+          "temporal_analysis",
+          "seasonal_analysis",
+          "fourier_analysis",
+          "heatmap_analysis",
+          "conclusions"
+        ]
+      }
+    },
+    {
+      "success": false,
+      "error": "All providers and models failed. Last error: None",
+      "combination": {
+        "tool": "Business Process Reengineering",
+        "sources": [
+          "Bain Usability"
+        ],
+        "language": "en",
+        "description": "English single-source: Business Process Reengineering + Bain Usability",
+        "expected_sections": [
+          "executive_summary",
+          "principal_findings",
+          "temporal_analysis",
+          "seasonal_analysis",
+          "fourier_analysis",
+          "heatmap_analysis",
+          "conclusions"
+        ]
+      }
+    }
+  ],
+  "quality_scores": []
+}

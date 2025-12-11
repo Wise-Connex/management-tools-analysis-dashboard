@@ -402,7 +402,11 @@ Este análisis se enfoca en la interpretación práctica y estratégica de los d
 
 **Datos Disponibles (No Reportar Numéricamente):**
 - Análisis temporal con tendencias, momentum, volatilidad y aceleración
-- Patrones estacionales con fuerza estacional y periodicidad
+- Patrones estacionales con fuerza estacional y periodicidad:
+  * Datos mensuales: {json.dumps(seasonal_patterns.get("monthly_patterns", {}), indent=2) if seasonal_patterns else "No data"}
+  * Patrones trimestrales: {json.dumps(seasonal_patterns.get("quarterly_patterns", {}), indent=2) if seasonal_patterns else "No data"}
+  * Tendencias anuales: {json.dumps(seasonal_patterns.get("year_over_year", {}), indent=2) if seasonal_patterns else "No data"}
+  * Fuerza estacional: {seasonal_patterns.get("seasonality_strength", {}).get("strength_value", 0) if seasonal_patterns else 0} ({seasonal_patterns.get("seasonality_strength", {}).get("strength_level", "unknown") if seasonal_patterns else "unknown"})
 - Análisis de Fourier con frecuencias dominantes y picos espectrales
 - {data_points:,} puntos de datos del período {date_range}
 
@@ -431,9 +435,14 @@ NO MEZCLE el contenido de esta sección con otras secciones. Presente los hallaz
 - **Puntos de Inflexión**: Momentos críticos en la trayectoria de {tool_name}
 - **Perspectiva de Ciclo de Vida**: Dónde se encuentra {tool_name} en su ciclo de adopción
 
-**SECCIÓN 4: ANÁLISIS DE PATRONES ESTACIONALES** (800 palabras) [PRIMARIO]
-ESTA SECCIÓN ES OBLIGATORIA Y DEBE APARECER EXACTAMENTE CON ESTE ENCABEZADO: 📅 PATRONES ESTACIONALES
-NO DISTRIBUYA el contenido estacional en otras secciones. CONCENTRE todos los patrones estacionales aquí.
+**SECCIÓN 4: ANÁLISIS DE PATRONES ESTACIONALES** (800 palabras) [PRIMARIO] [OBLIGATORIO]
+ESTA SECCIÓN ES ABSOLUTAMENTE OBLIGATORIA Y DEBE APARECER EXACTAMENTE CON ESTE ENCABEZADO: 📅 PATRONES ESTACIONALES
+
+INSTRUCCIONES CRÍTICAS:
+- DEBE escribir contenido específico sobre patrones estacionales en esta sección
+- NO puede estar vacía - debe tener al menos 600 palabras
+- NO incluya contenido estacional en otras secciones
+- CONCENTRE todos los análisis estacionales aquí
 
 - **Interpretación de Fuerza Estacional**: Qué tan pronunciados son los patrones
 - **Periodicidad y Ciclos**: Revelación de ritmos empresariales subyacentes
@@ -491,6 +500,18 @@ NO DISTRIBUYA el contenido estacional en otras secciones. CONCENTRE todos los pa
 
 **RESULTADO ESPERADO:**
 Un ensayo narrativo de 4000+ palabras que interprete patrones temporales, estacionales y espectrales en insights estratégicos accionables para la adopción de {tool_name}, enfocándose en timing óptimo y factores de riesgo identificados.
+
+**INSTRUCCIÓN FINAL CRÍTICA:**
+DEBE generar exactamente 7 secciones con estos encabezados exactos:
+1. RESUMEN EJECUTIVO
+2. HALLAZGOS PRINCIPALES  
+3. ANÁLISIS TEMPORAL
+4. ANÁLISIS DE PATRONES ESTACIONALES (OBLIGATORIO - NO PUEDE ESTAR VACÍO)
+5. ANÁLISIS ESPECTRAL DE FOURIER
+6. SÍNTESIS ESTRATÉGICA
+7. CONCLUSIONES
+
+Cada sección debe tener al menos 300 palabras. La sección 4 (ANÁLISIS DE PATRONES ESTACIONALES) es obligatoria y debe contener análisis detallado de los patrones estacionales proporcionados.
 """
         else:
             prompt = f"""

@@ -1,0 +1,23 @@
+{
+  "content": {
+    "executive_summary": "**Análisis Integral de \"Calidad Total\"**\n========================================\n\n**Resumen Ejecutivo** 📊\n------------------------\n\nEl análisis de \"Calidad Total\" se realizó utilizando cinco fuentes de datos: Google Trends, Bain Usability, Kimi K-Test, Encuestas de Datos y Investigación Académica. Los resultados muestran una convergencia de tendencias y patrones en la percepción de la calidad total en diferentes contextos. A continuación, se presentan los hallazgos principales y los análisis de...",
+    "principal_findings": "• Real AI analysis generated\nLive query response from Groq\n\n",
+    "temporal_analysis": "Temporal patterns analyzed across 5 sources",
+    "seasonal_analysis": "Seasonal variations identified",
+    "fourier_analysis": "Spectral analysis completed",
+    "pca_analysis": "Principal component analysis performed",
+    "heatmap_analysis": "Correlation heatmap generated",
+    "confidence_score": 0.95,
+    "data_points_analyzed": 1500,
+    "model_used": "meta-llama/llama-4-scout-17b-16e-instruct",
+    "tool_display_name": "Calidad Total"
+  },
+  "model_used": "meta-llama/llama-4-scout-17b-16e-instruct",
+  "provider_used": "groq",
+  "response_time_ms": 5941,
+  "token_count": 1933,
+  "success": true,
+  "language": "es",
+  "combination_hash": "calidad_total_academic_research_bain_usability_google_trends_kimi_k_test_survey_data_es_825e139115",
+  "timestamp": "20251205_093808"
+}

@@ -77,6 +77,8 @@ from callbacks import register_ui_callbacks
 from callbacks.main_callbacks import register_main_callbacks
 from callbacks.graph_callbacks import register_graph_callbacks
 from callbacks.kf_callbacks import register_kf_callbacks
+from callbacks.kf_callbacks_refactored import register_refactored_kf_callbacks
+from callbacks.kf_callbacks_refactored import register_refactored_kf_callbacks
 
 # Import utility functions extracted for better organization
 from utils import (
@@ -589,7 +591,7 @@ initialize_key_findings_service()
 
 # Register Key Findings callbacks if service is available
 if KEY_FINDINGS_AVAILABLE and key_findings_service:
-    register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE)
+    register_refactored_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE)
 
 
 def get_current_date_for_citation(language="es"):
@@ -1615,8 +1617,6 @@ def toggle_citation_modal(citation_clicks, close_clicks, language):
 def update_download_button_text(language):
     """Update download button text based on language"""
     return get_text("download_ris", language)
-
-
 
 
 # Copy citation callback moved to callbacks/ui_callbacks.py

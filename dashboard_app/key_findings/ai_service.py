@@ -450,6 +450,32 @@ If you respond in Spanish, the analysis will be rejected.
             Parsed response dictionary
         """
         try:
+            # Enhanced logging to track the exact error
+            logging.info(
+                f"🔍 _parse_ai_response called with content type: {type(response_content)}"
+            )
+            logging.info(
+                f"🔍 Content preview: {str(response_content)[:200] if response_content else 'EMPTY'}"
+            )
+
+            # Safety check: ensure response_content is a string
+            if not isinstance(response_content, str):
+                logging.warning(
+                    f"⚠️ _parse_ai_response received non-string content: {type(response_content)}"
+                )
+                # Convert to string if possible
+                if isinstance(response_content, (list, dict)):
+                    response_content = (
+                        json.dumps(response_content)
+                        if isinstance(response_content, (list, dict))
+                        else str(response_content)
+                    )
+                else:
+                    response_content = str(response_content)
+                logging.info(
+                    f"🔍 Converted content to string: {response_content[:200]}"
+                )
+
             # First, try to parse as pure JSON
             cleaned_content = response_content.strip()
 
@@ -589,6 +615,20 @@ If you respond in Spanish, the analysis will be rejected.
         Returns:
             True if matches incomplete JSON pattern
         """
+        # Safety check: ensure content is a string
+        if not isinstance(content, str):
+            logging.warning(
+                f"⚠️ _is_incomplete_json_pattern received non-string content: {type(content)}"
+            )
+            # Convert to JSON string if it's a list/dict, otherwise return False
+            if isinstance(content, (list, dict)):
+                content = json.dumps(content)
+                logging.info(
+                    f"🔍 Converted {type(content)} to JSON string: {content[:100]}"
+                )
+            else:
+                return False
+
         return (
             content.startswith('{"executive_summary":')
             and '"principal_findings":' in content
@@ -607,10 +647,33 @@ If you respond in Spanish, the analysis will be rejected.
             Fixed response dictionary or None
         """
         try:
-            # Extract executive summary
-            exec_summary_match = re.search(
-                r'"executive_summary":\s*"([^"]*(?:\\.[^"]*)*)"', content
-            )
+            # Safety check: ensure content is a string
+            if not isinstance(content, str):
+                logging.warning(
+                    f"⚠️ _fix_incomplete_json_pattern received non-string content: {type(content)}"
+                )
+                # Convert to string if possible
+                if isinstance(content, (list, dict)):
+                    content = (
+                        json.dumps(content)
+                        if isinstance(content, (list, dict))
+                        else str(content)
+                    )
+                else:
+                    content = str(content)
+
+            try:
+                # Extract executive summary
+                exec_summary_match = re.search(
+                    r'"executive_summary":\s*"([^"]*(?:\.[^"]*)*)"', content
+                )
+            except TypeError as e:
+                logging.error(f"❌ Regex error in _fix_incomplete_json_pattern: {e}")
+                logging.error(
+                    f"Content type: {type(content)}, content: {content[:200] if isinstance(content, str) else content}"
+                )
+                return None
+
             if not exec_summary_match:
                 return None
 
@@ -1068,9 +1131,55 @@ If you respond in Spanish, the analysis will be rejected.
         fragments = []
         import re
 
-        # Find all JSON-like structures
-        json_pattern = r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}"
-        matches = re.findall(json_pattern, content, re.DOTALL)
+        # Safety check: ensure content is a string
+        if not isinstance(content, str):
+            logging.warning(
+                f"⚠️ _extract_json_fragments received non-string content: {type(content)}"
+            )
+            # If it's already a list/dict, return it directly if it's valid JSON
+            if isinstance(content, list):
+                # Check if it's a list of valid JSON objects
+                try:
+                    # Validate that each item in the list is a valid dict
+                    valid_items = []
+                    for item in content:
+                        if isinstance(item, dict):
+                            valid_items.append(item)
+                    if valid_items:
+                        logging.info(
+                            f"✅ Returning list of {len(valid_items)} valid JSON objects directly"
+                        )
+                        return valid_items
+                except Exception as e:
+                    logging.error(f"❌ Error processing list content: {e}")
+                # If validation fails, convert to JSON string
+                content = json.dumps(content)
+            elif isinstance(content, dict):
+                content = json.dumps(content)
+            else:
+                return fragments
+
+        try:
+            # Find all JSON-like structures
+            json_pattern = r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}"
+            matches = re.findall(json_pattern, content, re.DOTALL)
+        except TypeError as e:
+            logging.error(f"❌ Regex error in _extract_json_fragments: {e}")
+            logging.error(
+                f"Content type: {type(content)}, content: {content[:200] if isinstance(content, str) else content}"
+            )
+            return fragments
+
+        try:
+            # Find all JSON-like structures
+            json_pattern = r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}"
+            matches = re.findall(json_pattern, content, re.DOTALL)
+        except TypeError as e:
+            logging.error(f"❌ Regex error in _extract_json_fragments: {e}")
+            logging.error(
+                f"Content type: {type(content)}, content: {content[:200] if isinstance(content, str) else content}"
+            )
+            return fragments
 
         for match in matches:
             try:

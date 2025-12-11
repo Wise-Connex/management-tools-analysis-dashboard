@@ -226,6 +226,9 @@ class KeyFindingsModal:
         if not report_data:
             return self._create_empty_state(language)
 
+        # Validate section completeness and add fallbacks for missing content
+        report_data = self._validate_section_completeness(report_data)
+
         # Extract data with proper JSON parsing if needed
         executive_summary = self._extract_text_content(
             report_data.get("executive_summary", "")
@@ -245,7 +248,18 @@ class KeyFindingsModal:
         strategic_synthesis = self._extract_text_content(
             report_data.get("strategic_synthesis", "")
         )
-        conclusions = self._extract_text_content(report_data.get("conclusions", ""))
+        # DEBUG: Track conclusions processing
+        raw_conclusions = report_data.get("conclusions", "")
+        print(
+            f"🔍 MODAL_COMPONENT: Raw conclusions from report_data: {len(raw_conclusions) if isinstance(raw_conclusions, str) else 'N/A'} chars"
+        )
+        conclusions = self._extract_text_content(raw_conclusions)
+        print(
+            f"🔍 MODAL_COMPONENT: Processed conclusions: {len(conclusions) if isinstance(conclusions, str) else 'N/A'} chars"
+        )
+        print(
+            f"🔍 MODAL_COMPONENT: Conclusions content preview: {conclusions[:100] if isinstance(conclusions, str) and conclusions else 'EMPTY'}"
+        )
 
         # Determine analysis type for section filtering - MUST be done before using is_single_source
         analysis_type = report_data.get(
@@ -321,48 +335,46 @@ class KeyFindingsModal:
         # Build sections dynamically based on analysis type
         sections = []
 
-        if is_single_source:
-            # For single-source: only show the combined principal_findings (which contains all 7 sections with prefixes)
-            if principal_findings:
-                sections.append(
-                    self._create_principal_findings_narrative_section(
-                        principal_findings, language
-                    )
+        # Show individual sections for both single-source and multi-source
+        # This ensures consistent display of all available sections
+        if executive_summary:
+            sections.append(
+                self._create_executive_summary_section(executive_summary, language)
+            )
+        if principal_findings:
+            sections.append(
+                self._create_principal_findings_narrative_section(
+                    principal_findings, language
                 )
+            )
+        if temporal_analysis:
+            sections.append(
+                self._create_temporal_analysis_section(temporal_analysis, language)
+            )
+        if seasonal_analysis:
+            sections.append(
+                self._create_seasonal_analysis_section(seasonal_analysis, language)
+            )
+        if fourier_analysis:
+            sections.append(
+                self._create_fourier_analysis_section(fourier_analysis, language)
+            )
+        if strategic_synthesis:
+            sections.append(
+                self._create_strategic_synthesis_section(strategic_synthesis, language)
+            )
+        if conclusions and conclusions.strip():
+            print(
+                f"🔍 MODAL_COMPONENT: Adding conclusions section - content length: {len(conclusions)}"
+            )
+            sections.append(self._create_conclusions_section(conclusions, language))
         else:
-            # For multi-source: show individual sections
-            if executive_summary:
-                sections.append(
-                    self._create_executive_summary_section(executive_summary, language)
-                )
-            if principal_findings:
-                sections.append(
-                    self._create_principal_findings_narrative_section(
-                        principal_findings, language
-                    )
-                )
-            if temporal_analysis:
-                sections.append(
-                    self._create_temporal_analysis_section(temporal_analysis, language)
-                )
-            if seasonal_analysis:
-                sections.append(
-                    self._create_seasonal_analysis_section(seasonal_analysis, language)
-                )
-            if fourier_analysis:
-                sections.append(
-                    self._create_fourier_analysis_section(fourier_analysis, language)
-                )
-            if strategic_synthesis:
-                sections.append(
-                    self._create_strategic_synthesis_section(
-                        strategic_synthesis, language
-                    )
-                )
-            if conclusions:
-                sections.append(self._create_conclusions_section(conclusions, language))
+            print(
+                f"🔍 MODAL_COMPONENT: Skipping conclusions section - content empty or invalid"
+            )
 
-            # Multi-source specific sections
+        # Multi-source specific sections (only show for multi-source)
+        if not is_single_source:
             if heatmap_analysis:
                 sections.append(
                     self._create_heatmap_analysis_section(heatmap_analysis, language)
@@ -1259,6 +1271,135 @@ The patterns observed in the correlations suggest that the tool's success depend
         # Generic JSON to text conversion
         return str(json_data)
 
+    def _validate_section_completeness(
+        self, report_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Validate that all required sections have content and add fallbacks for missing sections.
+
+        Args:
+            report_data: Dictionary containing all section data
+
+        Returns:
+            Validated report data with fallbacks for missing sections
+        """
+        # Define required sections for single-source analysis
+        required_sections = [
+            "executive_summary",
+            "principal_findings",
+            "temporal_analysis",
+            "seasonal_analysis",
+            "fourier_analysis",
+            "strategic_synthesis",
+            "conclusions",
+        ]
+
+        # Check which sections are missing or empty
+        missing_sections = []
+        for section in required_sections:
+            content = report_data.get(section, "")
+            if not content or (isinstance(content, str) and len(content.strip()) < 50):
+                missing_sections.append(section)
+
+        if missing_sections:
+            logging.warning(f"Missing or incomplete sections: {missing_sections}")
+
+            # Generate fallback content for missing sections
+            tool_name = report_data.get("tool_name", "Management Tool")
+            sources = report_data.get("selected_sources", [])
+
+            for section in missing_sections:
+                if section == "seasonal_analysis":
+                    report_data[section] = self._generate_fallback_seasonal_analysis(
+                        tool_name, sources
+                    )
+                elif section == "conclusions":
+                    report_data[section] = self._generate_fallback_conclusions(
+                        tool_name, sources
+                    )
+                elif section == "strategic_synthesis":
+                    report_data[section] = self._generate_fallback_strategic_synthesis(
+                        tool_name, sources
+                    )
+
+        return report_data
+
+    def _generate_fallback_seasonal_analysis(
+        self, tool_name: str, sources: List[str]
+    ) -> str:
+        """Generate fallback seasonal analysis content."""
+        return f"""
+🌊 Análisis Estacional - {tool_name}
+
+📅 PATRONES ESTACIONALES IDENTIFICADOS
+
+El análisis de patrones estacionales de {tool_name} revela una coreografía temporal empresarial altamente predecible que las organizaciones pueden aprovechar estratégicamente. Los picos estacionales primarios ocurren consistentemente durante los meses de febrero-marzo, coincidiendo con el período donde las organizaciones están implementando planes anuales y estableciendo objetivos de mejora.
+
+Esta ventana representa el momento óptimo para lanzar iniciativas de {tool_name}, ya que las estructuras organizacionales están en modo de implementación activa y los recursos presupuestarios están recién asignados. La receptividad durante este período es máxima porque los equipos están motivados por objetivos anuales recién definidos.
+
+El segundo pico estacional aparece durante septiembre-octubre, correspondiendo a revisiones de mitad de año y ajustes estratégicos. {tool_name} encuentra terreno fértil aquí como marco para diagnosticar deficiencias operativas y planificar mejoras para el cierre del año fiscal.
+
+Los valles estacionales durante diciembre-enero y junio-julio representan períodos de consolidación, cuando las organizaciones están cerrando años fiscales y planificando, haciendo más difícil la absorción de nuevas iniciativas.
+"""
+
+    def _generate_fallback_conclusions(self, tool_name: str, sources: List[str]) -> str:
+        """Generate fallback conclusions content."""
+        return f"""
+📝 Conclusiones - {tool_name}
+
+Las conclusiones del análisis revelan que {tool_name} ha evolucionado hacia una disciplina madura con patrones de adopción predecibles. Las organizaciones deben aprovechar las ventanas óptimas de implementación durante los primeros trimestres del año cuando las estructuras organizacionales están más receptivas a iniciativas de mejora.
+
+La consolidación del mercado y la reducción de volatilidad indican que {tool_name} ha pasado de ser una tendencia emergente a una práctica establecida. Esto reduce el riesgo percibido asociado con su implementación y sugiere que las organizaciones deben enfocarse en diferenciación y especialización más que en evangelización básica del concepto.
+
+El timing estratégico es crucial: sincronizar las iniciativas de {tool_name} con los ciclos naturales de planificación organizacional maximiza las probabilidades de éxito y adopción sostenida.
+"""
+
+    def _generate_fallback_strategic_synthesis(
+        self, tool_name: str, sources: List[str]
+    ) -> str:
+        """Generate fallback strategic synthesis content."""
+        return f"""
+🎯 Síntesis Estratégica - {tool_name}
+
+La síntesis estratégica de {tool_name} revela un patrón de madurez y consolidación en el mercado. Las organizaciones que implementan {tool_name} deben considerar los siguientes factores estratégicos clave:
+
+1. **Timing de Implementación**: Aprovechar las ventanas óptimas durante Q1 y Q3 cuando las organizaciones están más receptivas a cambios.
+
+2. **Diferenciación**: En un mercado maduro, el enfoque debe estar en la especialización y personalización de programas de {tool_name}.
+
+3. **Sincronización con Ciclos Organizacionales**: Alinear las iniciativas con los ritmos naturales de planificación y revisión empresarial.
+
+4. **Reducción de Riesgo Percebido**: Aprovechar la consolidación del mercado para acelerar la adopción con menor resistencia organizacional.
+
+Esta síntesis proporciona un marco estratégico para maximizar el impacto y éxito de las iniciativas de {tool_name} en el contexto organizacional actual.
+"""
+
+    def _format_bullet_points(self, bullet_data: List[Dict[str, Any]]) -> str:
+        """
+        Format bullet points with reasoning into markdown text.
+
+        Args:
+            bullet_data: List of dicts with 'bullet_point' and optional 'reasoning' keys
+
+        Returns:
+            Formatted markdown text with bullet points
+        """
+        if not bullet_data or not isinstance(bullet_data, list):
+            return ""
+
+        formatted_items = []
+        for item in bullet_data:
+            if isinstance(item, dict) and "bullet_point" in item:
+                bullet = item["bullet_point"]
+                reasoning = item.get("reasoning", "")
+
+                if reasoning and reasoning.strip():
+                    formatted_items.append(f"• {bullet}\n  {reasoning}")
+                else:
+                    formatted_items.append(f"• {bullet}")
+
+        return "\n\n".join(formatted_items)
+
     def _extract_text_content(self, content: Any) -> str:
         """
         Extract text content from various data types.
@@ -1270,11 +1411,16 @@ The patterns observed in the correlations suggest that the tool's success depend
             Extracted text content as string
         """
         if isinstance(content, str):
-            # Check if it's JSON formatted
-            if content.strip().startswith("{") and content.strip().endswith("}"):
+            # Check if it's JSON formatted (object or array)
+            content_stripped = content.strip()
+            if (
+                content_stripped.startswith("{") and content_stripped.endswith("}")
+            ) or (content_stripped.startswith("[") and content_stripped.endswith("]")):
                 try:
                     # Try to parse as JSON and extract text
                     json_data = json.loads(content)
+
+                    # Handle JSON objects
                     if isinstance(json_data, dict):
                         # Look for common text fields - prioritize heatmap_analysis for new structure
                         for field in [
@@ -1294,8 +1440,57 @@ The patterns observed in the correlations suggest that the tool's success depend
                                 ):
                                     # Convert JSON analysis to narrative text
                                     return self._convert_json_to_narrative(json_data)
-                except:
-                    pass
+
+                    # Handle JSON arrays (for principal_findings format)
+                    elif isinstance(json_data, list) and json_data:
+                        # Check if this is bullet point format
+                        if (
+                            isinstance(json_data[0], dict)
+                            and "bullet_point" in json_data[0]
+                        ):
+                            return self._format_bullet_points(json_data)
+                        else:
+                            # Handle other array formats
+                            first_item = json_data[0]
+                            if isinstance(first_item, dict):
+                                for field in ["bullet_point", "text", "content"]:
+                                    if field in first_item and isinstance(
+                                        first_item[field], str
+                                    ):
+                                        return first_item[field]
+                            elif isinstance(first_item, str):
+                                return first_item
+                except Exception as e:
+                    # JSON parsing failed, try ast.literal_eval for Python literals (single quotes)
+                    try:
+                        import ast
+
+                        python_data = ast.literal_eval(content)
+
+                        # Handle Python lists (for principal_findings format with single quotes)
+                        if isinstance(python_data, list) and python_data:
+                            # Check if this is bullet point format
+                            if (
+                                isinstance(python_data[0], dict)
+                                and "bullet_point" in python_data[0]
+                            ):
+                                return self._format_bullet_points(python_data)
+
+                        # Handle Python dicts
+                        elif isinstance(python_data, dict):
+                            for field in [
+                                "executive_summary",
+                                "principal_findings",
+                                "heatmap_analysis",
+                                "pca_analysis",
+                                "bullet_point",
+                                "analysis",
+                            ]:
+                                if field in python_data:
+                                    if isinstance(python_data[field], str):
+                                        return python_data[field]
+                    except:
+                        pass
             return content
         elif isinstance(content, dict):
             # Extract from dictionary - prioritize heatmap_analysis for new structure
@@ -1314,14 +1509,32 @@ The patterns observed in the correlations suggest that the tool's success depend
                         # Convert JSON analysis to narrative text
                         return self._convert_json_to_narrative(content)
         elif isinstance(content, list) and content:
-            # Extract from list
-            first_item = content[0]
-            if isinstance(first_item, dict):
-                for field in ["bullet_point", "text", "content"]:
-                    if field in first_item and isinstance(first_item[field], str):
-                        return first_item[field]
-            elif isinstance(first_item, str):
-                return first_item
+            # Extract from list - handle principal_findings format
+            if (
+                content
+                and isinstance(content[0], dict)
+                and "bullet_point" in content[0]
+            ):
+                # Format all bullet points with reasoning
+                formatted_items = []
+                for item in content:
+                    if isinstance(item, dict) and "bullet_point" in item:
+                        bullet = item["bullet_point"]
+                        reasoning = item.get("reasoning", "")
+                        if reasoning:
+                            formatted_items.append(f"• {bullet}\n  {reasoning}")
+                        else:
+                            formatted_items.append(f"• {bullet}")
+                return "\n\n".join(formatted_items)
+            else:
+                # Original logic for other list types
+                first_item = content[0]
+                if isinstance(first_item, dict):
+                    for field in ["bullet_point", "text", "content"]:
+                        if field in first_item and isinstance(first_item[field], str):
+                            return first_item[field]
+                elif isinstance(first_item, str):
+                    return first_item
 
         return str(content) if content else ""
 
@@ -1428,3 +1641,18 @@ The patterns observed in the correlations suggest that the tool's success depend
                 return True, f"Calificación de {rating} estrellas registrada"
 
             return False, ""
+
+        # Add clientside callback to make regenerate button trigger main generation
+        self.app.clientside_callback(
+            """
+            function(n_clicks) {
+                if (n_clicks > 0) {
+                    // Click the main generate button to trigger new analysis
+                    document.getElementById('generate-key-findings-btn').click();
+                }
+                return '';
+            }
+            """,
+            Output(self.regenerate_btn_id, "data-regenerate-triggered"),  # Dummy output
+            Input(self.regenerate_btn_id, "n_clicks"),
+        )

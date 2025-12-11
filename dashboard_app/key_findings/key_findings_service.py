@@ -176,9 +176,17 @@ class KeyFindingsService:
             # No secondary cache layer - query precomputed findings directly
 
             # Check precomputed findings database directly (primary storage)
-            precomputed_result = self._get_precomputed_findings_direct(
-                tool_name, selected_sources, language
-            )
+            # Bypass precomputed data if force_refresh is requested
+            if force_refresh:
+                logging.info(
+                    f"🔄 Force refresh requested - bypassing precomputed database"
+                )
+                precomputed_result = None
+            else:
+                precomputed_result = self._get_precomputed_findings_direct(
+                    tool_name, selected_sources, language
+                )
+
             if precomputed_result:
                 response_time_ms = int((time.time() - start_time) * 1000)
 
@@ -204,18 +212,10 @@ class KeyFindingsService:
                 f"🚨 This indicates a database population issue. The combination should exist in precomputed_findings.db"
             )
 
-            # Instead of falling back to AI, return a clear error message
-            response_time_ms = int((time.time() - start_time) * 1000)
-            return {
-                "success": False,
-                "error": f"No precomputed analysis available for {tool_name} with {len(selected_sources)} sources. This combination should be precomputed in the database.",
-                "response_time_ms": response_time_ms,
-                "cache_hit": False,
-                "missing_combination": True,
-                "tool_name": tool_name,
-                "selected_sources": selected_sources,
-                "language": language,
-            }
+            # No precomputed data found - fall back to live AI generation
+            logging.warning(
+                f"⚠️ No precomputed data found for {tool_name} + {len(selected_sources)} sources - falling back to live AI generation"
+            )
 
             # Check if this is a single source analysis
             is_single_source = len(selected_sources) == 1
@@ -470,8 +470,7 @@ class KeyFindingsService:
             )
 
             # Build proper single-source report structure
-            # For single-source, combine all analysis into principal_findings narrative
-            principal_findings_content = []
+            # For single-source, keep all sections separate (like multi-source) instead of combining them
 
             # Debug: Log what sections the AI generated
             print(f"🔍 SERVICE DEBUG: AI content sections: {list(content.keys())}")
@@ -479,6 +478,7 @@ class KeyFindingsService:
             for key, value in content.items():
                 if value and key in [
                     "executive_summary",
+                    "principal_findings",
                     "temporal_analysis",
                     "seasonal_analysis",
                     "fourier_analysis",
@@ -488,6 +488,7 @@ class KeyFindingsService:
                     print(f"  - {key}: Present (length: {len(str(value))})")
                 elif not value and key in [
                     "executive_summary",
+                    "principal_findings",
                     "temporal_analysis",
                     "seasonal_analysis",
                     "fourier_analysis",
@@ -496,87 +497,10 @@ class KeyFindingsService:
                 ]:
                     print(f"  - {key}: Missing/Empty")
 
-            # Add executive summary if available
-            if content.get("executive_summary"):
-                principal_findings_content.append(
-                    f"{get_text('section_prefix_executive_summary', language)}\n{content.get('executive_summary')}"
-                )
-
-            # Add temporal analysis if available
-            if content.get("temporal_analysis"):
-                principal_findings_content.append(
-                    f"{get_text('section_prefix_temporal_analysis', language)}\n{content.get('temporal_analysis')}"
-                )
-
-            # Add seasonal analysis if available
-            if content.get("seasonal_analysis"):
-                principal_findings_content.append(
-                    f"{get_text('section_prefix_seasonal_analysis', language)}\n{content.get('seasonal_analysis')}"
-                )
-            else:
-                print(f"🔍 SERVICE DEBUG: seasonal_analysis section is missing!")
-
-            # Add fourier analysis if available
-            if content.get("fourier_analysis"):
-                principal_findings_content.append(
-                    f"{get_text('section_prefix_fourier_analysis', language)}\n{content.get('fourier_analysis')}"
-                )
-            else:
-                print(f"🔍 SERVICE DEBUG: fourier_analysis section is missing!")
-
-            # Add strategic synthesis if available
-            if content.get("strategic_synthesis"):
-                principal_findings_content.append(
-                    f"{get_text('section_prefix_strategic_synthesis', language)}\n{content.get('strategic_synthesis')}"
-                )
-
-            # Add conclusions if available
-            if content.get("conclusions"):
-                principal_findings_content.append(
-                    f"{get_text('section_prefix_conclusions', language)}\n{content.get('conclusions')}"
-                )
-
+            # Keep sections separate instead of combining them
+            # This matches the multi-source approach and allows proper section display
             print(
-                f"🔍 SERVICE DEBUG: Total sections combined: {len(principal_findings_content)}"
-            )
-
-            # Combine all sections into principal_findings narrative
-            principal_findings_narrative = "\n\n".join(principal_findings_content)
-
-            # Remove statistical summary section if present (this comes from AI-generated content)
-            lines_to_remove = [
-                "📈 Resumen Estadístico",
-                "📈 Statistical Summary",
-                "Resumen Estadístico",
-                "Statistical Summary",
-                "Datos analizados:",
-                "Data analyzed:",
-                "Puntos de Datos:",
-                "Data Points:",
-                "Rango temporal:",
-                "Time range:",
-                "TS:",
-            ]
-
-            filtered_lines = []
-            for line in principal_findings_narrative.split("\n"):
-                should_remove = False
-                for remove_pattern in lines_to_remove:
-                    if remove_pattern in line:
-                        should_remove = True
-                        break
-                if not should_remove:
-                    filtered_lines.append(line)
-
-            principal_findings_narrative = "\n".join(filtered_lines)
-
-            # Clean up any extra blank lines
-            principal_findings_narrative = "\n".join(
-                [
-                    line
-                    for line in principal_findings_narrative.split("\n")
-                    if line.strip()
-                ]
+                f"🔍 SERVICE DEBUG: Keeping sections separate for single-source display"
             )
 
             # For single-source, PCA and heatmap should be empty or contain placeholder
@@ -589,19 +513,40 @@ class KeyFindingsService:
             ):
                 pca_analysis_content = ""
 
-            # If heatmap contains placeholder text, make it empty for single-source
-            if heatmap_analysis_content and "No heatmap analysis available" in str(
-                heatmap_analysis_content
-            ):
-                heatmap_analysis_content = ""
+            # For single-source, PCA and heatmap should be empty or contain placeholder
+            pca_analysis_content = content.get("pca_insights", "")
+            heatmap_analysis_content = content.get("heatmap_analysis", "")
 
-            # Log the final single-source content structure
-            pca_str = str(pca_analysis_content) if pca_analysis_content else ""
+            # If PCA contains placeholder text, make it empty for single-source
+            if pca_analysis_content and "No PCA analysis available" in str(
+                pca_analysis_content
+            ):
+                pca_analysis_content = ""
+
+            # Log the content structure for debugging
+            pca_str = (
+                str(pca_analysis_content)[:50] if pca_analysis_content else "Empty"
+            )
             heatmap_str = (
-                str(heatmap_analysis_content) if heatmap_analysis_content else ""
+                str(heatmap_analysis_content)[:50]
+                if heatmap_analysis_content
+                else "Empty"
+            )
+
+            # Log individual section lengths for debugging
+            exec_summary_len = len(str(content.get("executive_summary", "")))
+            principal_len = len(str(content.get("principal_findings", "")))
+            temporal_len = len(str(content.get("temporal_analysis", "")))
+            seasonal_len = len(str(content.get("seasonal_analysis", "")))
+            fourier_len = len(str(content.get("fourier_analysis", "")))
+            synthesis_len = len(str(content.get("strategic_synthesis", "")))
+            conclusions_len = len(str(content.get("conclusions", "")))
+
+            logging.info(
+                f"🔧 Single-source content structure - sections: exec_summary({exec_summary_len}), principal({principal_len}), temporal({temporal_len}), seasonal({seasonal_len}), fourier({fourier_len}), synthesis({synthesis_len}), conclusions({conclusions_len})"
             )
             logging.info(
-                f"🔧 Single-source content structure - principal_findings length: {len(principal_findings_narrative)}, pca_analysis: '{pca_str[:50]}...', heatmap_analysis: '{heatmap_str[:50]}...'"
+                f"🔧 Single-source content structure - sections: exec_summary({exec_summary_len}), principal({principal_len}), temporal({temporal_len}), seasonal({seasonal_len}), fourier({fourier_len}), synthesis({synthesis_len}), conclusions({conclusions_len})"
             )
 
             # Calculate confidence score
@@ -624,12 +569,20 @@ class KeyFindingsService:
                 "selected_sources": selected_sources,
                 "language": language,
                 "executive_summary": content.get("executive_summary", ""),
-                "principal_findings": principal_findings_narrative,  # ✅ Combined narrative
+                "principal_findings": content.get(
+                    "principal_findings", ""
+                ),  # ✅ Keep separate
                 "pca_analysis": pca_analysis_content,  # ✅ Empty or placeholder for single-source
                 "heatmap_analysis": heatmap_analysis_content,  # ✅ Empty or placeholder for single-source
-                "temporal_analysis": "",  # ✅ Empty (moved to principal_findings)
-                "seasonal_analysis": "",  # ✅ Empty (moved to principal_findings)
-                "fourier_analysis": "",  # ✅ Empty (moved to principal_findings)
+                "temporal_analysis": content.get(
+                    "temporal_analysis", ""
+                ),  # ✅ Keep separate
+                "seasonal_analysis": content.get(
+                    "seasonal_analysis", ""
+                ),  # ✅ Keep separate
+                "fourier_analysis": content.get(
+                    "fourier_analysis", ""
+                ),  # ✅ Keep separate
                 "strategic_synthesis": content.get("strategic_synthesis", ""),
                 "conclusions": content.get("conclusions", ""),
                 "model_used": system_model_used,  # ✅ Use system model, NOT AI-generated

@@ -409,6 +409,8 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                     # Helper function to extract text content from AI response with robust parsing
                     def extract_text_content(content):
                         """Extract text content from various data types with robust malformed JSON handling."""
+                        import json  # Import json for all JSON operations
+
                         # For single-source analysis, skip all parsing and return content as-is
                         # This prevents the extraction of individual sections from the combined principal_findings
                         if len(selected_sources) == 1:
@@ -816,6 +818,19 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                     executive_summary = clean_section_headers(
                         executive_summary, language
                     )
+                    # FIX: Apply extract_text_content to principal_findings for proper JSON-to-bullet formatting
+                    print(
+                        f"🔍 PRINCIPAL_FINDINGS_DEBUG: Before extract_text_content - length: {len(principal_findings_raw) if isinstance(principal_findings_raw, str) else 'N/A'}"
+                    )
+                    principal_findings_raw = extract_text_content(
+                        principal_findings_raw
+                    )
+                    print(
+                        f"🔍 PRINCIPAL_FINDINGS_DEBUG: After extract_text_content - length: {len(principal_findings_raw) if isinstance(principal_findings_raw, str) else 'N/A'}"
+                    )
+                    print(
+                        f"🔍 PRINCIPAL_FINDINGS_DEBUG: First 200 chars: {principal_findings_raw[:200] if isinstance(principal_findings_raw, str) else 'N/A'}"
+                    )
                     principal_findings_raw = clean_section_headers(
                         principal_findings_raw, language
                     )
@@ -882,6 +897,12 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                         principal_findings_content = principal_findings_raw
 
                     # Create modal content sections
+                    print(
+                        f"🔍 MODAL_GENERATION: Starting modal section generation for {len(selected_sources)} sources"
+                    )
+                    print(
+                        f"🔍 MODAL_GENERATION: Available sections in ai_content: {list(ai_content.keys())}"
+                    )
                     modal_sections = []
 
                     # 1. Executive Summary Section - Display with proper formatting
@@ -928,7 +949,7 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                             )
                         )
 
-                    # Temporal Analysis Section (only for multi-source analysis)
+                    # Temporal Analysis Section (for both single and multi-source analysis)
                     temporal_analysis_raw = ai_content.get(
                         "temporal_analysis", "No temporal analysis available"
                     )
@@ -961,7 +982,13 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                         seasonal_analysis_raw, language
                     )
 
-                    if len(selected_sources) > 1 and seasonal_analysis_raw:
+                    if (
+                        temporal_analysis_raw
+                        and temporal_analysis_raw != "No temporal analysis available"
+                    ):
+                        print(
+                            f"🔍 MODAL_GENERATION: ✅ Temporal Analysis condition passed, adding to modal"
+                        )
                         modal_sections.append(
                             html.Div(
                                 [
@@ -986,7 +1013,10 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                         fourier_analysis_raw, language
                     )
 
-                    if len(selected_sources) > 1 and fourier_analysis_raw:
+                    if (
+                        fourier_analysis_raw
+                        and fourier_analysis_raw != "No Fourier analysis available"
+                    ):
                         modal_sections.append(
                             html.Div(
                                 [
@@ -998,6 +1028,35 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                                         language,
                                     ),
                                     create_section_content(fourier_analysis_raw),
+                                ],
+                                className="mb-4",
+                            )
+                        )
+
+                    # Strategic Synthesis Section (for both single and multi-source analysis)
+                    strategic_synthesis_raw = ai_content.get(
+                        "strategic_synthesis", "No strategic synthesis available"
+                    )
+                    strategic_synthesis_raw = clean_section_headers(
+                        strategic_synthesis_raw, language
+                    )
+
+                    if (
+                        strategic_synthesis_raw
+                        and strategic_synthesis_raw
+                        != "No strategic synthesis available"
+                    ):
+                        modal_sections.append(
+                            html.Div(
+                                [
+                                    create_section_title(
+                                        "🎯",
+                                        "🎯",
+                                        "Strategic Synthesis",
+                                        "Síntesis Estratégica",
+                                        language,
+                                    ),
+                                    create_section_content(strategic_synthesis_raw),
                                 ],
                                 className="mb-4",
                             )
@@ -1040,12 +1099,59 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                         )
 
                     # Conclusiones Section (Conclusions)
-                    conclusions_raw = ai_content.get(
-                        "conclusions", "No conclusions available"
+                    # ENHANCED DEBUGGING: Track conclusions content flow
+                    print(
+                        f"🔍 CONCLUSIONS_DEBUG: Starting conclusions section processing"
                     )
-                    conclusions_raw = clean_section_headers(conclusions_raw, language)
+                    print(
+                        f"🔍 CONCLUSIONS_DEBUG: ai_content keys: {list(ai_content.keys())}"
+                    )
 
-                    if conclusions_raw:
+                    # Check original content from database
+                    conclusions_original = ai_content.get("conclusions")
+                    print(
+                        f"🔍 CONCLUSIONS_DEBUG: conclusions_original type: {type(conclusions_original)}"
+                    )
+                    if isinstance(conclusions_original, str):
+                        print(
+                            f"🔍 CONCLUSIONS_DEBUG: conclusions_original length: {len(conclusions_original)}"
+                        )
+                        print(
+                            f"🔍 CONCLUSIONS_DEBUG: conclusions_original first 200 chars: {conclusions_original[:200]}"
+                        )
+                        print(
+                            f"🔍 CONCLUSIONS_DEBUG: conclusions_original last 200 chars: {conclusions_original[-200:]}"
+                        )
+
+                    # Get conclusions with proper fallback
+                    conclusions_raw = ai_content.get("conclusions", "")
+                    print(
+                        f"🔍 CONCLUSIONS_DEBUG: conclusions_raw after get: {type(conclusions_raw)}, length: {len(conclusions_raw) if isinstance(conclusions_raw, str) else 'N/A'}"
+                    )
+
+                    # Only use "No conclusions available" if truly empty
+                    if not conclusions_raw or (
+                        isinstance(conclusions_raw, str)
+                        and len(conclusions_raw.strip()) < 50
+                    ):
+                        print(
+                            f"🔍 CONCLUSIONS_DEBUG: Using fallback message - content too short or empty"
+                        )
+                        conclusions_raw = "No conclusions available"
+                    else:
+                        print(
+                            f"🔍 CONCLUSIONS_DEBUG: Using actual content - sufficient length detected"
+                        )
+
+                    conclusions_raw = clean_section_headers(conclusions_raw, language)
+                    print(
+                        f"🔍 CONCLUSIONS_DEBUG: conclusions_raw after cleaning: {type(conclusions_raw)}, length: {len(conclusions_raw) if isinstance(conclusions_raw, str) else 'N/A'}"
+                    )
+
+                    if (
+                        conclusions_raw
+                        and conclusions_raw != "No conclusions available"
+                    ):
                         modal_sections.append(
                             html.Div(
                                 [
