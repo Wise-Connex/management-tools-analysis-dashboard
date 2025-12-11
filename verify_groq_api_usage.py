@@ -28,7 +28,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Set up Groq API key with detailed tracking
-os.environ["GROQ_API_KEY"] = "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"
+os.environ["GROQ_API_KEY"] = "GROQ_API_KEY_PLACEHOLDER"
 
 # Import required modules
 from database_implementation.precomputed_findings_db import get_precomputed_db_manager

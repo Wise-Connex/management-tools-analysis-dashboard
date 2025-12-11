@@ -75,7 +75,7 @@ INSTRUCCIONES CRÍTICAS:
     try:
         # Initialize AI service
         ai_service = UnifiedAIService(
-            groq_api_key="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"
+            groq_api_key="GROQ_API_KEY_PLACEHOLDER"
         )
 
         # Generate analysis with simplified prompt

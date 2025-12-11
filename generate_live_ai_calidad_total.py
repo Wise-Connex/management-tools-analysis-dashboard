@@ -30,7 +30,7 @@ from database_implementation.precomputed_findings_db import get_precomputed_db_m
 from dashboard_app.key_findings.key_findings_service import get_key_findings_service
 
 # Set up Groq API key
-os.environ['GROQ_API_KEY'] = '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'
+os.environ['GROQ_API_KEY'] = 'GROQ_API_KEY_PLACEHOLDER'
 
 class CalidadTotalLiveAIGenerator:
     """Generator for live AI analyses using Groq API."""

@@ -37,7 +37,7 @@ $ uv run python verify_api_setup.py
 
 🔑 API Key Loading Test:
    GROQ_API_KEY: ✅ Loaded
-   GROQ_API_KEY format: ✅ Valid (starts with 'gsk_')
+   GROQ_API_KEY format: ✅ Valid (starts with 'GROQ_API_KEY_PLACEHOLDER')
    GROG_API_KEY length: 56 characters
 
 🚀 Dashboard App Loading Test:
@@ -47,7 +47,7 @@ $ uv run python verify_api_setup.py
 
 **Key Findings:**
 - ✅ API key properly loaded from `.env` file
-- ✅ Key format validation working (starts with 'gsk_')
+- ✅ Key format validation working (starts with 'GROQ_API_KEY_PLACEHOLDER')
 - ✅ Dashboard app successfully accesses API key
 - ✅ Database-first mode operational
 

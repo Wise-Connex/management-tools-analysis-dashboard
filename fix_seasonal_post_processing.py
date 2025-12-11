@@ -51,7 +51,7 @@ async def fix_seasonal_analysis_post_processing():
 
     key_findings_service = KeyFindingsService(
         db_manager=get_database_manager(),
-        groq_api_key="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",
+        groq_api_key="GROQ_API_KEY_PLACEHOLDER",
         config={
             "max_retries": 1,
             "enable_pca_emphasis": True,

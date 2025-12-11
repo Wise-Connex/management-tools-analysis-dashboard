@@ -38,7 +38,7 @@ from database import get_database_manager
 # Check for Groq API key - try environment first, then use hardcoded test key
 groq_api_key: str = (
     os.getenv("GROQ_API_KEY")
-    or "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"
+    or "GROQ_API_KEY_PLACEHOLDER"
 )
 
 if not os.getenv("GROQ_API_KEY"):

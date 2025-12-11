@@ -105,11 +105,11 @@ def verify_api_key_setup():
 
     # Validate key format
     if groq_key_after:
-        if groq_key_after.startswith("gsk_"):
-            print(f"   GROQ_API_KEY format: ✅ Valid (starts with 'gsk_')")
+        if groq_key_after.startswith("GROQ_API_KEY_PLACEHOLDER"):
+            print(f"   GROQ_API_KEY format: ✅ Valid (starts with 'GROQ_API_KEY_PLACEHOLDER')")
         else:
             print(
-                f"   GROQ_API_KEY format: ⚠️ Unusual format (doesn't start with 'gsk_')"
+                f"   GROQ_API_KEY format: ⚠️ Unusual format (doesn't start with 'GROQ_API_KEY_PLACEHOLDER')"
             )
         print(f"   GROQ_API_KEY length: {len(groq_key_after)} characters")
 

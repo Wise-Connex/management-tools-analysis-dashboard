@@ -70,7 +70,7 @@ def test_callback_context_fix():
     )
     has_no_update = "no_update" in content
     has_correlation_check = (
-        "if 'correlation-heatmap' not in trigger_prop_id:" in content
+        'if "correlation-heatmap" not in trigger_prop_id:' in content
     )
 
     print(f"📋 Callback Context Fix:")

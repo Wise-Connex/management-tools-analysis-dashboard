@@ -21,7 +21,7 @@ from dashboard_app.key_findings.unified_ai_service import UnifiedAIService
 from dashboard_app.key_findings.prompt_engineer import PromptEngineer
 
 # Set API key
-os.environ["GROQ_API_KEY"] = "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"
+os.environ["GROQ_API_KEY"] = "GROQ_API_KEY_PLACEHOLDER"
 
 
 async def generate_calidad_total_content():

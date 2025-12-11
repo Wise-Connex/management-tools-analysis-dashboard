@@ -14,7 +14,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Set API key
-os.environ['GROQ_API_KEY'] = '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'
+os.environ['GROQ_API_KEY'] = 'GROQ_API_KEY_PLACEHOLDER'
 
 from database_implementation.precomputed_findings_db import get_precomputed_db_manager
 
