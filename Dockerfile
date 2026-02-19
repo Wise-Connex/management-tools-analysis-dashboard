@@ -25,8 +25,11 @@ WORKDIR /app
 COPY dashboard_app/requirements.txt ./
 COPY dashboard_app/pyproject.toml dashboard_app/uv.lock ./
 
-# Install pip dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Upgrade pip first so it can resolve ARM64 binary wheels properly
+RUN pip install --upgrade pip
+
+# Install pip dependencies (--prefer-binary avoids compiling from source)
+RUN pip install --no-cache-dir --prefer-binary -r requirements.txt
 
 # Copy the full dashboard_app source
 COPY dashboard_app/ .
