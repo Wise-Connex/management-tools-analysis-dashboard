@@ -30,18 +30,18 @@ COPY dashboard_app/pyproject.toml dashboard_app/uv.lock ./
 # Upgrade pip first so it can resolve ARM64 binary wheels properly
 RUN pip install --upgrade pip
 
-# Stage 1: Install heavy scientific packages using ARM64 binary wheels.
-# Pinned versions in requirements.txt (numpy 2.3.3, pandas 2.3.3) have NO
-# aarch64 wheels on PyPI, forcing source compilation that times out.
-# These slightly older versions are fully compatible and have ARM64 wheels.
+# Stage 1: Install packages that lack aarch64 wheels at their pinned versions.
+# Using flexible version ranges to pick the latest version WITH ARM64 wheels.
 RUN pip install --no-cache-dir --only-binary=all \
     "numpy>=1.26,<2.3" \
     "pandas>=2.2,<2.3" \
     "scipy>=1.13" \
-    "scikit-learn>=1.5"
+    "scikit-learn>=1.5" \
+    "statsmodels>=0.14,<0.15" \
+    "aiohttp>=3.10,<3.13"
 
 # Stage 2: Install remaining packages (excluding already-installed heavy ones)
-RUN grep -vE "^(numpy|pandas|scipy|scikit.learn)==" requirements.txt \
+RUN grep -vE "^(numpy|pandas|scipy|scikit.learn|statsmodels|aiohttp)==" requirements.txt \
     > /tmp/req_filtered.txt && \
     pip install --no-cache-dir --prefer-binary -r /tmp/req_filtered.txt
 
