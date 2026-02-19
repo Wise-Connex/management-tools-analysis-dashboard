@@ -1695,14 +1695,18 @@ ER  -"""
 
 if __name__ == "__main__":
     import argparse
+    import os
 
     parser = argparse.ArgumentParser(description="Management Tools Analysis Dashboard")
     parser.add_argument(
         "--port", type=int, default=8050, help="Port to run the dashboard on"
     )
     parser.add_argument(
-        "--debug", action="store_true", default=True, help="Enable debug mode"
+        "--debug", action="store_true", default=False, help="Enable debug mode"
     )
     args = parser.parse_args()
 
-    app.run(debug=args.debug, host="0.0.0.0", port=args.port)
+    # Allow env var override (DASH_DEBUG=true enables debug mode)
+    debug_mode = args.debug or os.environ.get("DASH_DEBUG", "false").lower() == "true"
+
+    app.run(debug=debug_mode, host="0.0.0.0", port=args.port)

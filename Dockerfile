@@ -7,6 +7,8 @@ FROM python:3.11-slim
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
+ENV FLASK_ENV=production
+ENV DASH_DEBUG=false
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -44,8 +46,8 @@ RUN if [ -f .env.example ]; then cp .env.example .env; fi
 EXPOSE 8050
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
     CMD curl -f http://localhost:8050/ || exit 1
 
 # Start the application
-CMD ["python", "app.py"]
+CMD ["python", "app.py", "--port", "8050"]
