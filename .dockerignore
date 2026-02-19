@@ -1,0 +1,33 @@
+# Git
+.git
+.gitignore
+
+# Python
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.Python
+**/venv
+**/.venv
+
+# Dev tools
+.ruff_cache
+.DS_Store
+
+# Backup files
+**/*.bak
+**/* 2.bak
+**/* 3.bak
+
+# Logs
+**/*.log
+
+# Test results
+test_results/
+
+# Large debug scripts (not needed for production)
+dashboard_app_backup_20251117_201624/
+
+# Scripts directory at root (utility scripts, not needed in container)
+scripts/
