@@ -45,20 +45,25 @@ RUN grep -vE "^(numpy|pandas|scipy|scikit.learn|statsmodels|aiohttp)==" requirem
     > /tmp/req_filtered.txt && \
     pip install --no-cache-dir --prefer-binary -r /tmp/req_filtered.txt
 
-# Copy the full dashboard_app source
-COPY dashboard_app/ .
+# Copy the full source code (respecting .dockerignore)
+COPY . .
+
+# Set WORKDIR to dashboard_app before running the app
+# This is necessary because the app expects to be run from this directory
+# while still being able to access root-level files via sys.path manipulation
+WORKDIR /app/dashboard_app
 
 # Create necessary directories
 RUN mkdir -p data logs assets
 
 # Copy .env.example as .env template (real secrets injected via Dokploy env vars)
-RUN if [ -f .env.example ]; then cp .env.example .env; fi
+RUN if [ -f ../.env.example ]; then cp ../.env.example .env; fi
 
 # Expose the Dash port
 EXPOSE 8050
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
+# Health check - Note the increased timeout and retries for heavier apps
+HEALTHCHECK --interval=30s --timeout=15s --start-period=60s --retries=5 \
     CMD curl -f http://localhost:8050/ || exit 1
 
 # Start the application
