@@ -146,6 +146,7 @@ Thumbs.db
 
 # Project specific
 *.db
+!dashboard_app/data.db
 *.sqlite
 *.sqlite3
 data/
