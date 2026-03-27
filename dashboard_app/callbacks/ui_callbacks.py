@@ -213,50 +213,112 @@ def register_ui_callbacks(app):
 
         return components
 
+    # Mapping from UI display names to notes_and_doi.db source names
+    DISPLAY_TO_NOTES_SOURCE = {
+        "Google Trends": "Google_Trends",
+        "Google Books": "Google_Books",
+        "Crossref": "Crossref",
+        "Bain Usability": "BAIN_Ind_Usabilidad",
+        "Bain Satisfaction": "BAIN_Ind_Satisfacción",
+    }
+
     # Callback to update DOI display
     @app.callback(
         Output("doi-display", "children"),
         Input("keyword-dropdown", "value"),
+        Input("data-sources-store-v2", "data"),
         Input("language-store", "data"),
     )
-    def update_doi_display(selected_tool, language):
+    def update_doi_display(selected_tool, selected_sources, language):
         # Import here to avoid circular imports
         from database import get_database_manager
 
         if not selected_tool:
             return html.Div()
 
-        # Get the IC report DOI from the IC source (Complementary Report)
-        db_manager = get_database_manager()
-        tool_notes = db_manager.get_tool_notes_and_doi(selected_tool, "IC")
+        if not selected_sources:
+            return html.Div()
 
-        if tool_notes and len(tool_notes) > 0:
-            doi = tool_notes[0].get("doi", "")
-            if doi:
-                return html.Div(
-                    [
-                        html.Strong(
-                            get_text("ic_report_doi", language) + ": ",
-                            style={"fontSize": "12px"},
-                        ),
-                        html.A(
-                            doi,
-                            href=f"https://doi.org/{doi}",
-                            target="_blank",
-                            style={
-                                "color": "#007bff",
-                                "fontSize": "12px",
-                                "textDecoration": "none",
-                            },
-                        ),
-                    ],
-                    style={
-                        "padding": "8px",
-                        "backgroundColor": "#f8f9fa",
-                        "borderRadius": "4px",
-                        "border": "1px solid #dee2e6",
-                    },
-                )
+        db_manager = get_database_manager()
+        all_sources_selected = set(selected_sources) == set(DISPLAY_NAMES)
+
+        # When all sources selected, show only the IC (Informe Complementario) DOI
+        if all_sources_selected:
+            tool_notes = db_manager.get_tool_notes_and_doi(selected_tool, "IC")
+            if tool_notes and len(tool_notes) > 0:
+                doi = tool_notes[0].get("doi", "")
+                if doi:
+                    return html.Div(
+                        [
+                            html.Strong(
+                                get_text("ic_report_doi", language) + " ",
+                                style={"fontSize": "12px"},
+                            ),
+                            html.A(
+                                doi,
+                                href=f"https://doi.org/{doi}",
+                                target="_blank",
+                                style={
+                                    "color": "#007bff",
+                                    "fontSize": "12px",
+                                    "textDecoration": "none",
+                                },
+                            ),
+                        ],
+                        style={
+                            "padding": "8px",
+                            "backgroundColor": "#f8f9fa",
+                            "borderRadius": "4px",
+                            "border": "1px solid #dee2e6",
+                        },
+                    )
+            return html.Div(
+                get_text("no_doi_available", language),
+                style={"fontSize": "11px", "color": "#6c757d", "fontStyle": "italic"},
+            )
+
+        # For specific source selections, show one DOI per selected source
+        doi_elements = []
+        for display_name in selected_sources:
+            notes_source = DISPLAY_TO_NOTES_SOURCE.get(display_name)
+            if not notes_source:
+                continue
+            tool_notes = db_manager.get_tool_notes_and_doi(selected_tool, notes_source)
+            if tool_notes and len(tool_notes) > 0:
+                doi = tool_notes[0].get("doi", "")
+                if doi:
+                    doi_elements.append(
+                        html.Div(
+                            [
+                                html.Strong(
+                                    f"DOI {display_name}: ",
+                                    style={"fontSize": "12px"},
+                                ),
+                                html.A(
+                                    doi,
+                                    href=f"https://doi.org/{doi}",
+                                    target="_blank",
+                                    style={
+                                        "color": "#007bff",
+                                        "fontSize": "12px",
+                                        "textDecoration": "none",
+                                    },
+                                ),
+                            ],
+                            style={"marginBottom": "4px"},
+                        )
+                    )
+
+        if doi_elements:
+            return html.Div(
+                doi_elements,
+                style={
+                    "padding": "8px",
+                    "backgroundColor": "#f8f9fa",
+                    "borderRadius": "4px",
+                    "border": "1px solid #dee2e6",
+                },
+            )
 
         return html.Div(
             get_text("no_doi_available", language),
