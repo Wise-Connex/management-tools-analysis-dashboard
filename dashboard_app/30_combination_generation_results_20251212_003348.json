@@ -1,0 +1,516 @@
+{
+  "total_combinations": 30,
+  "successful": 30,
+  "failed": 0,
+  "cost_estimate": 0.94,
+  "time_estimate": 0.0,
+  "categories": {
+    "single_source": {
+      "total": 10,
+      "completed": 10,
+      "failed": 0
+    },
+    "multi_source_pairs": {
+      "total": 10,
+      "completed": 10,
+      "failed": 0
+    },
+    "comprehensive": {
+      "total": 10,
+      "completed": 10,
+      "failed": 0
+    }
+  },
+  "details": [
+    {
+      "success": true,
+      "tool": "Benchmarking",
+      "sources": [
+        "Google Trends"
+      ],
+      "sources_text": "Google Trends",
+      "language": "es",
+      "category": "single_source",
+      "hash": "benchmarking_google_trends_es_457d64d712",
+      "generation_time": 0.008943,
+      "cost_estimate": 0.02,
+      "time_estimate": 30,
+      "timestamp": "2025-12-12T00:33:47.942728"
+    },
+    {
+      "success": true,
+      "tool": "Competencias Centrales",
+      "sources": [
+        "Google Trends"
+      ],
+      "sources_text": "Google Trends",
+      "language": "en",
+      "category": "single_source",
+      "hash": "competencias_centrales_google_trends_en_42726c3bb3",
+      "generation_time": 0.005266,
+      "cost_estimate": 0.022000000000000002,
+      "time_estimate": 30,
+      "timestamp": "2025-12-12T00:33:47.953826"
+    },
+    {
+      "success": true,
+      "tool": "Cuadro de Mando Integral",
+      "sources": [
+        "Google Books"
+      ],
+      "sources_text": "Google Books",
+      "language": "es",
+      "category": "single_source",
+      "hash": "cuadro_de_mando_integral_google_books_es_ab03d9a683",
+      "generation_time": 0.004428,
+      "cost_estimate": 0.02,
+      "time_estimate": 30,
+      "timestamp": "2025-12-12T00:33:47.961266"
+    },
+    {
+      "success": true,
+      "tool": "Experiencia del Cliente",
+      "sources": [
+        "Bain Usability"
+      ],
+      "sources_text": "Bain Usability",
+      "language": "en",
+      "category": "single_source",
+      "hash": "experiencia_del_cliente_bain_usability_en_60d03aeb27",
+      "generation_time": 0.003834,
+      "cost_estimate": 0.022000000000000002,
+      "time_estimate": 30,
+      "timestamp": "2025-12-12T00:33:47.967763"
+    },
+    {
+      "success": true,
+      "tool": "Fusiones y Adquisiciones",
+      "sources": [
+        "Crossref"
+      ],
+      "sources_text": "Crossref",
+      "language": "es",
+      "category": "single_source",
+      "hash": "fusiones_y_adquisiciones_crossref_es_d1da96fd33",
+      "generation_time": 0.00545,
+      "cost_estimate": 0.02,
+      "time_estimate": 30,
+      "timestamp": "2025-12-12T00:33:47.973836"
+    },
+    {
+      "success": true,
+      "tool": "Gestión de Costos",
+      "sources": [
+        "Bain Satisfaction"
+      ],
+      "sources_text": "Bain Satisfaction",
+      "language": "en",
+      "category": "single_source",
+      "hash": "gestión_de_costos_bain_satisfaction_en_5140c53fc8",
+      "generation_time": 0.00391,
+      "cost_estimate": 0.022000000000000002,
+      "time_estimate": 30,
+      "timestamp": "2025-12-12T00:33:47.981392"
+    },
+    {
+      "success": true,
+      "tool": "Innovación Colaborativa",
+      "sources": [
+        "Google Trends"
+      ],
+      "sources_text": "Google Trends",
+      "language": "es",
+      "category": "single_source",
+      "hash": "innovación_colaborativa_google_trends_es_435ff0bc0b",
+      "generation_time": 0.003878,
+      "cost_estimate": 0.02,
+      "time_estimate": 30,
+      "timestamp": "2025-12-12T00:33:47.987426"
+    },
+    {
+      "success": true,
+      "tool": "Lealtad del Cliente",
+      "sources": [
+        "Google Books"
+      ],
+      "sources_text": "Google Books",
+      "language": "en",
+      "category": "single_source",
+      "hash": "lealtad_del_cliente_google_books_en_9252b76551",
+      "generation_time": 0.004236,
+      "cost_estimate": 0.022000000000000002,
+      "time_estimate": 30,
+      "timestamp": "2025-12-12T00:33:47.993454"
+    },
+    {
+      "success": true,
+      "tool": "Outsourcing",
+      "sources": [
+        "Bain Usability"
+      ],
+      "sources_text": "Bain Usability",
+      "language": "es",
+      "category": "single_source",
+      "hash": "outsourcing_bain_usability_es_8b5fc4f58d",
+      "generation_time": 0.003791,
+      "cost_estimate": 0.02,
+      "time_estimate": 30,
+      "timestamp": "2025-12-12T00:33:47.999773"
+    },
+    {
+      "success": true,
+      "tool": "Planificación Estratégica",
+      "sources": [
+        "Crossref"
+      ],
+      "sources_text": "Crossref",
+      "language": "en",
+      "category": "single_source",
+      "hash": "planificación_estratégica_crossref_en_4db5c5d3bb",
+      "generation_time": 0.003949,
+      "cost_estimate": 0.022000000000000002,
+      "time_estimate": 30,
+      "timestamp": "2025-12-12T00:33:48.005732"
+    },
+    {
+      "success": true,
+      "tool": "Benchmarking",
+      "sources": [
+        "Google Trends",
+        "Google Books"
+      ],
+      "sources_text": "Google Trends, Google Books",
+      "language": "es",
+      "category": "multi_source_pairs",
+      "hash": "benchmarking_google_books_google_trends_es_855f4a9dfd",
+      "generation_time": 0.004245,
+      "cost_estimate": 0.03,
+      "time_estimate": 90.0,
+      "timestamp": "2025-12-12T00:33:48.012070"
+    },
+    {
+      "success": true,
+      "tool": "Competencias Centrales",
+      "sources": [
+        "Google Trends",
+        "Bain Usability"
+      ],
+      "sources_text": "Google Trends, Bain Usability",
+      "language": "en",
+      "category": "multi_source_pairs",
+      "hash": "competencias_centrales_bain_usability_google_trends_en_2f0dc83b8b",
+      "generation_time": 0.003779,
+      "cost_estimate": 0.033,
+      "time_estimate": 90.0,
+      "timestamp": "2025-12-12T00:33:48.018403"
+    },
+    {
+      "success": true,
+      "tool": "Cuadro de Mando Integral",
+      "sources": [
+        "Google Books",
+        "Crossref"
+      ],
+      "sources_text": "Google Books, Crossref",
+      "language": "es",
+      "category": "multi_source_pairs",
+      "hash": "cuadro_de_mando_integral_crossref_google_books_es_03cb121f8e",
+      "generation_time": 0.003645,
+      "cost_estimate": 0.03,
+      "time_estimate": 90.0,
+      "timestamp": "2025-12-12T00:33:48.024282"
+    },
+    {
+      "success": true,
+      "tool": "Experiencia del Cliente",
+      "sources": [
+        "Bain Usability",
+        "Bain Satisfaction"
+      ],
+      "sources_text": "Bain Usability, Bain Satisfaction",
+      "language": "en",
+      "category": "multi_source_pairs",
+      "hash": "experiencia_del_cliente_bain_satisfaction_bain_usability_en_32a844df10",
+      "generation_time": 0.003604,
+      "cost_estimate": 0.033,
+      "time_estimate": 90.0,
+      "timestamp": "2025-12-12T00:33:48.030295"
+    },
+    {
+      "success": true,
+      "tool": "Gestión del Cambio",
+      "sources": [
+        "Google Trends",
+        "Crossref"
+      ],
+      "sources_text": "Google Trends, Crossref",
+      "language": "es",
+      "category": "multi_source_pairs",
+      "hash": "gestión_del_cambio_crossref_google_trends_es_dce21ec5a9",
+      "generation_time": 0.004094,
+      "cost_estimate": 0.03,
+      "time_estimate": 90.0,
+      "timestamp": "2025-12-12T00:33:48.035949"
+    },
+    {
+      "success": true,
+      "tool": "Innovación Colaborativa",
+      "sources": [
+        "Google Books",
+        "Bain Usability"
+      ],
+      "sources_text": "Google Books, Bain Usability",
+      "language": "en",
+      "category": "multi_source_pairs",
+      "hash": "innovación_colaborativa_bain_usability_google_books_en_3f31db87ff",
+      "generation_time": 0.004353,
+      "cost_estimate": 0.033,
+      "time_estimate": 90.0,
+      "timestamp": "2025-12-12T00:33:48.042297"
+    },
+    {
+      "success": true,
+      "tool": "Lealtad del Cliente",
+      "sources": [
+        "Google Trends",
+        "Bain Satisfaction"
+      ],
+      "sources_text": "Google Trends, Bain Satisfaction",
+      "language": "es",
+      "category": "multi_source_pairs",
+      "hash": "lealtad_del_cliente_bain_satisfaction_google_trends_es_46cfb20a43",
+      "generation_time": 0.003634,
+      "cost_estimate": 0.03,
+      "time_estimate": 90.0,
+      "timestamp": "2025-12-12T00:33:48.049189"
+    },
+    {
+      "success": true,
+      "tool": "Optimización de Precios",
+      "sources": [
+        "Crossref",
+        "Bain Usability"
+      ],
+      "sources_text": "Crossref, Bain Usability",
+      "language": "en",
+      "category": "multi_source_pairs",
+      "hash": "optimización_de_precios_bain_usability_crossref_en_a5b623479a",
+      "generation_time": 0.003551,
+      "cost_estimate": 0.033,
+      "time_estimate": 90.0,
+      "timestamp": "2025-12-12T00:33:48.054818"
+    },
+    {
+      "success": true,
+      "tool": "Reingeniería de Procesos",
+      "sources": [
+        "Google Books",
+        "Crossref"
+      ],
+      "sources_text": "Google Books, Crossref",
+      "language": "es",
+      "category": "multi_source_pairs",
+      "hash": "reingeniería_de_procesos_crossref_google_books_es_4c961a2507",
+      "generation_time": 0.00361,
+      "cost_estimate": 0.03,
+      "time_estimate": 90.0,
+      "timestamp": "2025-12-12T00:33:48.060466"
+    },
+    {
+      "success": true,
+      "tool": "Segmentación de Clientes",
+      "sources": [
+        "Bain Usability",
+        "Bain Satisfaction"
+      ],
+      "sources_text": "Bain Usability, Bain Satisfaction",
+      "language": "en",
+      "category": "multi_source_pairs",
+      "hash": "segmentación_de_clientes_bain_satisfaction_bain_usability_en_89f2fb4196",
+      "generation_time": 0.003511,
+      "cost_estimate": 0.033,
+      "time_estimate": 90.0,
+      "timestamp": "2025-12-12T00:33:48.065998"
+    },
+    {
+      "success": true,
+      "tool": "Benchmarking",
+      "sources": [
+        "Google Trends",
+        "Google Books",
+        "Bain Usability"
+      ],
+      "sources_text": "Google Trends, Google Books, Bain Usability",
+      "language": "es",
+      "category": "comprehensive",
+      "hash": "benchmarking_bain_usability_google_books_google_trends_es_8fd4f922f3",
+      "generation_time": 0.003597,
+      "cost_estimate": 0.035,
+      "time_estimate": 135.0,
+      "timestamp": "2025-12-12T00:33:48.071404"
+    },
+    {
+      "success": true,
+      "tool": "Competencias Centrales",
+      "sources": [
+        "Google Trends",
+        "Google Books",
+        "Bain Usability",
+        "Crossref",
+        "Bain Satisfaction"
+      ],
+      "sources_text": "All 5 Sources",
+      "language": "en",
+      "category": "comprehensive",
+      "hash": "competencias_centrales_bain_satisfaction_bain_usability_crossref_google_books_google_trends_en_1facc73fa0",
+      "generation_time": 0.004109,
+      "cost_estimate": 0.05500000000000001,
+      "time_estimate": 225.0,
+      "timestamp": "2025-12-12T00:33:48.077059"
+    },
+    {
+      "success": true,
+      "tool": "Experiencia del Cliente",
+      "sources": [
+        "Google Trends",
+        "Bain Usability",
+        "Bain Satisfaction"
+      ],
+      "sources_text": "Google Trends, Bain Usability, Bain Satisfaction",
+      "language": "es",
+      "category": "comprehensive",
+      "hash": "experiencia_del_cliente_bain_satisfaction_bain_usability_google_trends_es_8fe50d93e6",
+      "generation_time": 0.003695,
+      "cost_estimate": 0.035,
+      "time_estimate": 135.0,
+      "timestamp": "2025-12-12T00:33:48.083196"
+    },
+    {
+      "success": true,
+      "tool": "Gestión de la Cadena de Suministro",
+      "sources": [
+        "Google Books",
+        "Crossref",
+        "Bain Usability"
+      ],
+      "sources_text": "Google Books, Crossref, Bain Usability",
+      "language": "en",
+      "category": "comprehensive",
+      "hash": "gestión_de_la_cadena_de_suministro_bain_usability_crossref_google_books_en_eb3d5c8fdc",
+      "generation_time": 0.003537,
+      "cost_estimate": 0.038500000000000006,
+      "time_estimate": 135.0,
+      "timestamp": "2025-12-12T00:33:48.088976"
+    },
+    {
+      "success": true,
+      "tool": "Innovación Colaborativa",
+      "sources": [
+        "Google Trends",
+        "Google Books",
+        "Bain Usability",
+        "Crossref",
+        "Bain Satisfaction"
+      ],
+      "sources_text": "All 5 Sources",
+      "language": "es",
+      "category": "comprehensive",
+      "hash": "innovación_colaborativa_bain_satisfaction_bain_usability_crossref_google_books_google_trends_es_44d005f251",
+      "generation_time": 0.00378,
+      "cost_estimate": 0.05,
+      "time_estimate": 225.0,
+      "timestamp": "2025-12-12T00:33:48.094456"
+    },
+    {
+      "success": true,
+      "tool": "Planificación Estratégica",
+      "sources": [
+        "Google Trends",
+        "Google Books",
+        "Crossref"
+      ],
+      "sources_text": "Google Trends, Google Books, Crossref",
+      "language": "en",
+      "category": "comprehensive",
+      "hash": "planificación_estratégica_crossref_google_books_google_trends_en_d3b3faca4a",
+      "generation_time": 0.003963,
+      "cost_estimate": 0.038500000000000006,
+      "time_estimate": 135.0,
+      "timestamp": "2025-12-12T00:33:48.100175"
+    },
+    {
+      "success": true,
+      "tool": "Propósito y Visión",
+      "sources": [
+        "Google Trends",
+        "Bain Usability",
+        "Bain Satisfaction"
+      ],
+      "sources_text": "Google Trends, Bain Usability, Bain Satisfaction",
+      "language": "es",
+      "category": "comprehensive",
+      "hash": "propósito_y_visión_bain_satisfaction_bain_usability_google_trends_es_f179431799",
+      "generation_time": 0.003627,
+      "cost_estimate": 0.035,
+      "time_estimate": 135.0,
+      "timestamp": "2025-12-12T00:33:48.106252"
+    },
+    {
+      "success": true,
+      "tool": "Talento y Compromiso",
+      "sources": [
+        "Google Trends",
+        "Google Books",
+        "Bain Usability",
+        "Crossref",
+        "Bain Satisfaction"
+      ],
+      "sources_text": "All 5 Sources",
+      "language": "en",
+      "category": "comprehensive",
+      "hash": "talento_y_compromiso_bain_satisfaction_bain_usability_crossref_google_books_google_trends_en_75eb62f34e",
+      "generation_time": 0.004266,
+      "cost_estimate": 0.05500000000000001,
+      "time_estimate": 225.0,
+      "timestamp": "2025-12-12T00:33:48.111763"
+    },
+    {
+      "success": true,
+      "tool": "Alianzas y Capital de Riesgo",
+      "sources": [
+        "Google Books",
+        "Crossref",
+        "Bain Usability"
+      ],
+      "sources_text": "Google Books, Crossref, Bain Usability",
+      "language": "es",
+      "category": "comprehensive",
+      "hash": "alianzas_y_capital_de_riesgo_bain_usability_crossref_google_books_es_610aae9a1a",
+      "generation_time": 0.004373,
+      "cost_estimate": 0.035,
+      "time_estimate": 135.0,
+      "timestamp": "2025-12-12T00:33:48.143736"
+    },
+    {
+      "success": true,
+      "tool": "Estrategias de Crecimiento",
+      "sources": [
+        "Google Trends",
+        "Google Books",
+        "Bain Satisfaction"
+      ],
+      "sources_text": "Google Trends, Google Books, Bain Satisfaction",
+      "language": "en",
+      "category": "comprehensive",
+      "hash": "estrategias_de_crecimiento_bain_satisfaction_google_books_google_trends_en_ea74caf9ad",
+      "generation_time": 0.004055,
+      "cost_estimate": 0.038500000000000006,
+      "time_estimate": 135.0,
+      "timestamp": "2025-12-12T00:33:48.150052"
+    }
+  ],
+  "actual_time": 0.0,
+  "generation_started": "2025-12-12T00:33:47.940475",
+  "generation_completed": "2025-12-12T00:33:48.154963",
+  "duration_minutes": 0.0
+}

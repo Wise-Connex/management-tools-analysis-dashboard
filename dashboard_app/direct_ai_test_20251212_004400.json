@@ -1,0 +1,13 @@
+{
+  "test_timestamp": "20251212_004400",
+  "duration_seconds": 3.170395,
+  "success": true,
+  "model_used": "moonshotai/kimi-k2-instruct",
+  "provider_used": "groq",
+  "token_count": 1620,
+  "content_preview": {
+    "executive_summary": "El interés global por el Benchmarking como herramienta de gestión ha mostrado una tendencia decreciente desde 2004, con fluctuaciones estacionales que reflejan ciclos académicos y fiscales. Los picos ",
+    "principal_findings_count": 3,
+    "has_temporal_analysis": true
+  }
+}

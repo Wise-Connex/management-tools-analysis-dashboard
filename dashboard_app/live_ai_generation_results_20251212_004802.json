@@ -1,0 +1,67 @@
+{
+  "total_combinations": 4,
+  "successful": 4,
+  "failed": 0,
+  "ai_calls_made": 4,
+  "cost_estimate": 0.12,
+  "details": [
+    {
+      "success": true,
+      "tool": "Benchmarking",
+      "sources": [
+        "Google Trends"
+      ],
+      "language": "es",
+      "category": "test_single",
+      "generation_time": 0.006202,
+      "has_ai_content": false,
+      "content_preview": "No content",
+      "timestamp": "2025-12-12T00:47:56.037907"
+    },
+    {
+      "success": true,
+      "tool": "Competencias Centrales",
+      "sources": [
+        "Google Trends"
+      ],
+      "language": "en",
+      "category": "test_single",
+      "generation_time": 0.003295,
+      "has_ai_content": false,
+      "content_preview": "No content",
+      "timestamp": "2025-12-12T00:47:58.044369"
+    },
+    {
+      "success": true,
+      "tool": "Benchmarking",
+      "sources": [
+        "Google Trends",
+        "Google Books"
+      ],
+      "language": "es",
+      "category": "test_multi",
+      "generation_time": 0.004944,
+      "has_ai_content": false,
+      "content_preview": "No content",
+      "timestamp": "2025-12-12T00:48:00.048516"
+    },
+    {
+      "success": true,
+      "tool": "Experiencia del Cliente",
+      "sources": [
+        "Bain Usability",
+        "Bain Satisfaction"
+      ],
+      "language": "en",
+      "category": "test_multi",
+      "generation_time": 0.002998,
+      "has_ai_content": false,
+      "content_preview": "No content",
+      "timestamp": "2025-12-12T00:48:02.054564"
+    }
+  ],
+  "actual_time": 0.1,
+  "generation_started": "2025-12-12T00:47:56.037823",
+  "generation_completed": "2025-12-12T00:48:02.057653",
+  "duration_minutes": 0.1
+}

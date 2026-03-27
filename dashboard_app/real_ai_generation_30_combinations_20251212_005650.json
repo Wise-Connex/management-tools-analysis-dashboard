@@ -1,0 +1,346 @@
+{
+  "total_combinations": 30,
+  "successful": 0,
+  "failed": 30,
+  "ai_calls_made": 29,
+  "cost_estimate": 0.0,
+  "details": [
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Benchmarking",
+      "sources": [
+        "Google Trends"
+      ],
+      "language": "es",
+      "hash": "benchmarking_google_trends_es_457d64d712"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Competencias Centrales",
+      "sources": [
+        "Google Trends"
+      ],
+      "language": "en",
+      "hash": "competencias_centrales_google_trends_en_42726c3bb3"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Cuadro de Mando Integral",
+      "sources": [
+        "Google Books"
+      ],
+      "language": "es",
+      "hash": "cuadro_de_mando_integral_google_books_es_ab03d9a683"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Experiencia del Cliente",
+      "sources": [
+        "Bain Usability"
+      ],
+      "language": "en",
+      "hash": "experiencia_del_cliente_bain_usability_en_60d03aeb27"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Fusiones y Adquisiciones",
+      "sources": [
+        "Crossref"
+      ],
+      "language": "es",
+      "hash": "fusiones_y_adquisiciones_crossref_es_d1da96fd33"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Gestión de Costos",
+      "sources": [
+        "Bain Satisfaction"
+      ],
+      "language": "en",
+      "hash": "gestión_de_costos_bain_satisfaction_en_5140c53fc8"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Innovación Colaborativa",
+      "sources": [
+        "Google Trends"
+      ],
+      "language": "es",
+      "hash": "innovación_colaborativa_google_trends_es_435ff0bc0b"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Lealtad del Cliente",
+      "sources": [
+        "Google Books"
+      ],
+      "language": "en",
+      "hash": "lealtad_del_cliente_google_books_en_9252b76551"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Outsourcing",
+      "sources": [
+        "Bain Usability"
+      ],
+      "language": "es",
+      "hash": "outsourcing_bain_usability_es_8b5fc4f58d"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Planificación Estratégica",
+      "sources": [
+        "Crossref"
+      ],
+      "language": "en",
+      "hash": "planificación_estratégica_crossref_en_4db5c5d3bb"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Benchmarking",
+      "sources": [
+        "Google Trends",
+        "Google Books"
+      ],
+      "language": "es",
+      "hash": "benchmarking_google_books_google_trends_es_855f4a9dfd"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Competencias Centrales",
+      "sources": [
+        "Google Trends",
+        "Bain Usability"
+      ],
+      "language": "en",
+      "hash": "competencias_centrales_bain_usability_google_trends_en_2f0dc83b8b"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Cuadro de Mando Integral",
+      "sources": [
+        "Google Books",
+        "Crossref"
+      ],
+      "language": "es",
+      "hash": "cuadro_de_mando_integral_crossref_google_books_es_03cb121f8e"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Experiencia del Cliente",
+      "sources": [
+        "Bain Usability",
+        "Bain Satisfaction"
+      ],
+      "language": "en",
+      "hash": "experiencia_del_cliente_bain_satisfaction_bain_usability_en_32a844df10"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Gestión del Cambio",
+      "sources": [
+        "Google Trends",
+        "Crossref"
+      ],
+      "language": "es",
+      "hash": "gestión_del_cambio_crossref_google_trends_es_dce21ec5a9"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Innovación Colaborativa",
+      "sources": [
+        "Google Books",
+        "Bain Usability"
+      ],
+      "language": "en",
+      "hash": "innovación_colaborativa_bain_usability_google_books_en_3f31db87ff"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Lealtad del Cliente",
+      "sources": [
+        "Google Trends",
+        "Bain Satisfaction"
+      ],
+      "language": "es",
+      "hash": "lealtad_del_cliente_bain_satisfaction_google_trends_es_46cfb20a43"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Optimización de Precios",
+      "sources": [
+        "Crossref",
+        "Bain Usability"
+      ],
+      "language": "en",
+      "hash": "optimización_de_precios_bain_usability_crossref_en_a5b623479a"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Reingeniería de Procesos",
+      "sources": [
+        "Google Books",
+        "Crossref"
+      ],
+      "language": "es",
+      "hash": "reingeniería_de_procesos_crossref_google_books_es_4c961a2507"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Segmentación de Clientes",
+      "sources": [
+        "Bain Usability",
+        "Bain Satisfaction"
+      ],
+      "language": "en",
+      "hash": "segmentación_de_clientes_bain_satisfaction_bain_usability_en_89f2fb4196"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Benchmarking",
+      "sources": [
+        "Google Trends",
+        "Google Books",
+        "Bain Usability"
+      ],
+      "language": "es",
+      "hash": "benchmarking_bain_usability_google_books_google_trends_es_8fd4f922f3"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Competencias Centrales",
+      "sources": [
+        "Google Trends",
+        "Google Books",
+        "Bain Usability",
+        "Crossref",
+        "Bain Satisfaction"
+      ],
+      "language": "en",
+      "hash": "competencias_centrales_bain_satisfaction_bain_usability_crossref_google_books_google_trends_en_1facc73fa0"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Experiencia del Cliente",
+      "sources": [
+        "Google Trends",
+        "Bain Usability",
+        "Bain Satisfaction"
+      ],
+      "language": "es",
+      "hash": "experiencia_del_cliente_bain_satisfaction_bain_usability_google_trends_es_8fe50d93e6"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Gestión de la Cadena de Suministro",
+      "sources": [
+        "Google Books",
+        "Crossref",
+        "Bain Usability"
+      ],
+      "language": "en",
+      "hash": "gestión_de_la_cadena_de_suministro_bain_usability_crossref_google_books_en_eb3d5c8fdc"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Innovación Colaborativa",
+      "sources": [
+        "Google Trends",
+        "Google Books",
+        "Bain Usability",
+        "Crossref",
+        "Bain Satisfaction"
+      ],
+      "language": "es",
+      "hash": "innovación_colaborativa_bain_satisfaction_bain_usability_crossref_google_books_google_trends_es_44d005f251"
+    },
+    {
+      "success": false,
+      "error": "AI response parsing failed: AI response parsing failed: AI response missing required sections or malformed structure",
+      "tool": "Planificación Estratégica",
+      "sources": [
+        "Google Trends",
+        "Google Books",
+        "Crossref"
+      ],
+      "language": "en",
+      "hash": "planificación_estratégica_crossref_google_books_google_trends_en_d3b3faca4a"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Propósito y Visión",
+      "sources": [
+        "Google Trends",
+        "Bain Usability",
+        "Bain Satisfaction"
+      ],
+      "language": "es",
+      "hash": "propósito_y_visión_bain_satisfaction_bain_usability_google_trends_es_f179431799"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Talento y Compromiso",
+      "sources": [
+        "Google Trends",
+        "Google Books",
+        "Bain Usability",
+        "Crossref",
+        "Bain Satisfaction"
+      ],
+      "language": "en",
+      "hash": "talento_y_compromiso_bain_satisfaction_bain_usability_crossref_google_books_google_trends_en_75eb62f34e"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Alianzas y Capital de Riesgo",
+      "sources": [
+        "Google Books",
+        "Crossref",
+        "Bain Usability"
+      ],
+      "language": "es",
+      "hash": "alianzas_y_capital_de_riesgo_bain_usability_crossref_google_books_es_610aae9a1a"
+    },
+    {
+      "success": false,
+      "error": "Error binding parameter 13: type 'list' is not supported",
+      "tool": "Estrategias de Crecimiento",
+      "sources": [
+        "Google Trends",
+        "Google Books",
+        "Bain Satisfaction"
+      ],
+      "language": "en",
+      "hash": "estrategias_de_crecimiento_bain_satisfaction_google_books_google_trends_en_ea74caf9ad"
+    }
+  ],
+  "generation_completed": "2025-12-12T00:56:50.306744"
+}

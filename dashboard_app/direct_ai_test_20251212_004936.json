@@ -1,0 +1,13 @@
+{
+  "test_timestamp": "20251212_004936",
+  "duration_seconds": 5.020605,
+  "success": true,
+  "model_used": "moonshotai/kimi-k2-instruct",
+  "provider_used": "groq",
+  "token_count": 2221,
+  "content_preview": {
+    "executive_summary": "El análisis de la herramienta de gestión Benchmarking mediante Google Trends revela un comportamiento temporal marcado por ciclos de renovación tecnológica, con picos de interés cada 3-4 años coincidi",
+    "principal_findings_count": 3,
+    "has_temporal_analysis": true
+  }
+}
