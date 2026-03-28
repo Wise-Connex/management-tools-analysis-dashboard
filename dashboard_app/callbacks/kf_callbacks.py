@@ -5,8 +5,10 @@ Reads pre-generated reports from kf_reports_v2.db and renders them
 section-by-section in a modal. No live AI calls — all data is pre-generated.
 """
 
+import json
+import re
 import dash
-from dash import html
+from dash import dcc, html
 from dash.dependencies import Input, Output, State
 import logging
 
@@ -38,10 +40,56 @@ SECTION_TITLE_STYLE = {
 SECTION_CONTENT_STYLE = {
     "fontSize": "0.95rem",
     "lineHeight": "1.6",
-    "whiteSpace": "pre-line",
     "color": "#495057",
     "padding": "0.5rem 0",
 }
+
+
+def _extract_lang_content(content: str, lang_key: str) -> str:
+    """Extract language-specific content from potentially raw JSON strings.
+
+    Handles three cases:
+    1. Normal text (not JSON) — returned as-is
+    2. Complete JSON {"es": "...", "en": "..."} — parsed and extracted
+    3. Truncated JSON (API response cut off) — regex extraction with unescaping
+    """
+    stripped = content.strip()
+    if not stripped.startswith("{"):
+        return content
+
+    # Try complete JSON parse first
+    try:
+        parsed = json.loads(stripped)
+        if isinstance(parsed, dict) and lang_key in parsed:
+            return parsed[lang_key]
+    except (json.JSONDecodeError, TypeError):
+        pass
+
+    # Truncated JSON — extract with regex
+    # Match: "es": "..." or "en": "..." (greedy to get as much content as possible)
+    other_key = "en" if lang_key == "es" else "es"
+    # Try to extract preferred language first, then fallback
+    for key in [lang_key, other_key]:
+        pattern = rf'"{key}"\s*:\s*"(.*?)"\s*(?:,\s*"{other_key if key == lang_key else lang_key}"|\}})'
+        match = re.search(pattern, stripped, re.DOTALL)
+        if match:
+            text = match.group(1)
+            # Unescape JSON string escapes
+            text = text.replace("\\n", "\n").replace("\\t", "\t")
+            text = text.replace('\\"', '"').replace("\\\\", "\\")
+            return text
+
+    # Last resort: grab everything after "lang_key": " until end
+    for key in [lang_key, other_key]:
+        pattern = rf'"{key}"\s*:\s*"(.*)'
+        match = re.search(pattern, stripped, re.DOTALL)
+        if match:
+            text = match.group(1).rstrip('"} \n')
+            text = text.replace("\\n", "\n").replace("\\t", "\t")
+            text = text.replace('\\"', '"').replace("\\\\", "\\")
+            return text
+
+    return content
 
 
 def _make_title(selected_tool, selected_sources, language):
@@ -150,10 +198,15 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
 
             # Build modal body from sections
             modal_sections = []
+            lang_key = "es" if language == "es" else "en"
             for section in report["sections"]:
                 content = section["content"]
                 if not content or len(content.strip()) < 20:
                     continue
+
+                # Handle content that was stored as raw JSON {"es": ..., "en": ...}
+                # This happens when the generation pipeline failed to parse bilingual output
+                content = _extract_lang_content(content, lang_key)
 
                 modal_sections.append(
                     html.Div(
@@ -163,7 +216,7 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                                 className="section-title mb-3",
                                 style=SECTION_TITLE_STYLE,
                             ),
-                            html.Div(
+                            dcc.Markdown(
                                 content,
                                 className="text-justify section-content",
                                 style=SECTION_CONTENT_STYLE,

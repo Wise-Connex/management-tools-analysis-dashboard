@@ -225,6 +225,24 @@ class KFReportDB:
             ).fetchone()
             return row is not None
 
+    def get_section_keys_for_report(
+        self, tool_name: str, source_names: List[str]
+    ) -> List[str]:
+        """Return the section keys that already exist for a report."""
+        combo_hash = generate_report_hash(tool_name, source_names)
+        with self._conn() as conn:
+            report = conn.execute(
+                "SELECT id FROM kf_reports WHERE combination_hash = ? AND is_active = 1",
+                (combo_hash,),
+            ).fetchone()
+            if not report:
+                return []
+            rows = conn.execute(
+                "SELECT section_key FROM kf_report_sections WHERE report_id = ? AND length(content_es) > 10",
+                (report["id"],),
+            ).fetchall()
+            return [r["section_key"] for r in rows]
+
     def get_stats(self) -> Dict:
         """Return summary statistics about stored reports."""
         with self._conn() as conn:

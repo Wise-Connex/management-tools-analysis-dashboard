@@ -268,7 +268,7 @@ def call_glm_api(prompt: str, api_key: str, timeout: float = 300.0, max_retries:
         "model": MODEL,
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.7,
-        "max_tokens": 4096,
+        "max_tokens": 8192,
     }
 
     for attempt in range(max_retries):
@@ -371,13 +371,22 @@ def generate_report_for_combo(
     db: KFReportDB,
     api_key: str,
     delay: float = 1.0,
+    force: bool = False,
 ) -> bool:
     """Generate and store a full report for one tool + source combination."""
     source_names = [SOURCE_ID_TO_DISPLAY[s] for s in source_ids]
     num_sources = len(source_names)
     applicable_sections = get_applicable_sections(num_sources)
 
-    logger.info(f"  Generating: {tool_name} + {source_names} ({len(applicable_sections)} sections)")
+    # Check which sections already exist (skip if already done)
+    existing_sections = set(db.get_section_keys_for_report(tool_name, source_names)) if not force else set()
+    sections_to_generate = [s for s in applicable_sections if s not in existing_sections]
+
+    if not sections_to_generate:
+        logger.info(f"  All sections complete for: {tool_name} + {source_names}")
+        return True
+
+    logger.info(f"  Generating: {tool_name} + {source_names} ({len(sections_to_generate)}/{len(applicable_sections)} sections)")
 
     # Collect data context
     data_context = collect_data_context(tool_name, source_ids)
@@ -394,7 +403,7 @@ def generate_report_for_combo(
     )
 
     success_count = 0
-    for section_key in applicable_sections:
+    for section_key in sections_to_generate:
         prompt = build_section_prompt(section_key, tool_name, source_names, data_context)
 
         raw_response = call_glm_api(prompt, api_key)
@@ -420,7 +429,7 @@ def generate_report_for_combo(
 
         time.sleep(delay)
 
-    logger.info(f"  Done: {success_count}/{len(applicable_sections)} sections generated")
+    logger.info(f"  Done: {success_count}/{len(sections_to_generate)} sections generated")
     return success_count > 0
 
 
@@ -430,6 +439,7 @@ def main():
     parser.add_argument("--delay", type=float, default=1.5, help="Delay between API calls (seconds)")
     parser.add_argument("--dry-run", action="store_true", help="Show what would be generated without calling API")
     parser.add_argument("--db-path", type=str, help="Override database path")
+    parser.add_argument("--force", action="store_true", help="Regenerate all sections even if report exists")
     args = parser.parse_args()
 
     logger.info("=" * 60)
@@ -484,14 +494,21 @@ def main():
         for combo_idx, combo in enumerate(all_combos, 1):
             source_names = [SOURCE_ID_TO_DISPLAY[s] for s in combo]
 
-            # Skip if already generated
-            if db.has_report(tool, source_names):
-                skipped += 1
-                logger.info(f"  [{combo_idx}/{len(all_combos)}] Already exists: {source_names} — skipping")
-                continue
+            # Check if all sections are already complete
+            if not args.force and db.has_report(tool, source_names):
+                expected = get_applicable_sections(len(combo))
+                existing = db.get_section_keys_for_report(tool, source_names)
+                missing = [s for s in expected if s not in existing]
+                if not missing:
+                    skipped += 1
+                    logger.info(f"  [{combo_idx}/{len(all_combos)}] Complete: {source_names} — skipping")
+                    continue
+                else:
+                    logger.info(f"  [{combo_idx}/{len(all_combos)}] Incomplete ({len(missing)} missing sections): {missing}")
+                    # Fall through to generate missing sections only
 
             logger.info(f"  [{combo_idx}/{len(all_combos)}] Generating...")
-            success = generate_report_for_combo(tool, combo, db, api_key, args.delay)
+            success = generate_report_for_combo(tool, combo, db, api_key, args.delay, force=args.force)
             if success:
                 completed += 1
             else:
