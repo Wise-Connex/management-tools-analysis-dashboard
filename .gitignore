@@ -147,6 +147,7 @@ Thumbs.db
 # Project specific
 *.db
 !dashboard_app/data.db
+!dashboard_app/notes_and_doi.db
 *.sqlite
 *.sqlite3
 data/
