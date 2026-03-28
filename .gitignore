@@ -148,9 +148,13 @@ Thumbs.db
 *.db
 !dashboard_app/data.db
 !dashboard_app/notes_and_doi.db
+!data/kf_reports_v2.db
 *.sqlite
 *.sqlite3
 data/
+!data/
+data/*
+!data/kf_reports_v2.db
 logs/
 temp/
 cache/

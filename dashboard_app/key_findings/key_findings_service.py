@@ -7,6 +7,7 @@ doctoral-level analysis with direct database access and no caching layer.
 
 import asyncio
 import json
+import os
 import sqlite3
 import time
 import logging
@@ -1229,7 +1230,7 @@ class KeyFindingsService:
             logging.info(f"🔍 DEBUG: sources_text='{sources_text}'")
             logging.info(f"🔍 DEBUG: language='{language}'")
 
-            db_path = "/Users/Dimar/Documents/python-code/MTSA/tools-dashboard/data/precomputed_findings.db"
+            db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "precomputed_findings.db")
 
             conn = sqlite3.connect(db_path)
             cursor = conn.cursor()

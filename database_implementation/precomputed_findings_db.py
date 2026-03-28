@@ -5,6 +5,7 @@ Manages SQLite database for pre-populated key findings analyses.
 Provides high-performance caching and retrieval for 1,302 combinations.
 """
 
+import os
 import sqlite3
 import json
 import hashlib
@@ -31,7 +32,7 @@ class PrecomputedFindingsDBManager:
 
     def __init__(
         self,
-        db_path: str = "/Users/Dimar/Documents/python-code/MTSA/tools-dashboard/data/precomputed_findings.db",
+        db_path: str = None,
     ):
         """
         Initialize precomputed findings database manager.
@@ -39,6 +40,8 @@ class PrecomputedFindingsDBManager:
         Args:
             db_path: Path to SQLite database file
         """
+        if db_path is None:
+            db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "precomputed_findings.db")
         self.db_path = Path(db_path)
 
         # Ensure database directory exists

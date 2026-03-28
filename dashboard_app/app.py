@@ -77,8 +77,6 @@ from callbacks import register_ui_callbacks
 from callbacks.main_callbacks import register_main_callbacks
 from callbacks.graph_callbacks import register_graph_callbacks
 from callbacks.kf_callbacks import register_kf_callbacks
-from callbacks.kf_callbacks_refactored import register_refactored_kf_callbacks
-from callbacks.kf_callbacks_refactored import register_refactored_kf_callbacks
 
 # Import utility functions extracted for better organization
 from utils import (
@@ -589,9 +587,8 @@ register_graph_callbacks(app)
 # Initialize Key Findings service after app is created
 initialize_key_findings_service()
 
-# Register Key Findings callbacks if service is available
-if KEY_FINDINGS_AVAILABLE and key_findings_service:
-    register_refactored_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE)
+# Register Key Findings callbacks (v2: reads from pre-generated kf_reports_v2.db)
+register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE)
 
 
 def get_current_date_for_citation(language="es"):
