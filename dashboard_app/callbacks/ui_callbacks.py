@@ -747,19 +747,115 @@ def register_ui_callbacks(app):
 
         return subtitle, title, credits_content
 
-    # Callback to toggle notes modal
+    # Callback to toggle notes modal (info-icon clicks)
     @app.callback(
         Output("notes-modal", "is_open"),
-        Input("open-notes-modal", "n_clicks"),
+        Output("notes-content", "children"),
+        Input({"type": "info-icon", "index": ALL}, "n_clicks"),
         Input("close-notes-modal", "n_clicks"),
         State("notes-modal", "is_open"),
-        prevent_initial_call=True,
+        State("keyword-dropdown", "value"),
+        State({"type": "info-icon", "index": ALL}, "id"),
+        State("language-store", "data"),
     )
-    def toggle_notes_modal(n_open, n_close, is_open):
-        """Toggle notes modal open/close state"""
-        if n_open or n_close:
-            return not is_open
-        return is_open
+    def toggle_notes_modal(
+        icon_clicks, close_click, is_open, selected_tool, icon_ids, language
+    ):
+        """Toggle notes modal and populate content based on clicked info icon"""
+        from database import get_database_manager
+        from utils import parse_text_with_links
+        from translations import translate_database_content
+
+        if not selected_tool:
+            return False, ""
+
+        ctx = dash.callback_context
+        if not ctx.triggered:
+            return is_open, ""
+
+        trigger_id = ctx.triggered[0]["prop_id"]
+        if "close-notes-modal" in trigger_id:
+            return False, ""
+
+        if "info-icon" not in trigger_id:
+            return is_open, ""
+
+        if not any(clicks and clicks > 0 for clicks in icon_clicks):
+            return is_open, ""
+
+        # Find which icon was clicked
+        clicked_source = None
+        try:
+            import json
+
+            json_part = trigger_id.split(".n_clicks")[0]
+            trigger_data = json.loads(json_part)
+            clicked_index = trigger_data["index"]
+
+            for i, icon_id in enumerate(icon_ids):
+                if icon_id["index"] == clicked_index:
+                    clicked_source = icon_id["index"]
+                    break
+        except (json.JSONDecodeError, KeyError, IndexError):
+            for i, icon_id in enumerate(icon_ids):
+                if icon_clicks[i] and icon_clicks[i] > 0:
+                    clicked_source = icon_id["index"]
+                    break
+
+        if clicked_source:
+            mapped_source = DISPLAY_TO_NOTES_SOURCE.get(
+                clicked_source, clicked_source
+            )
+
+            db_manager = get_database_manager()
+            tool_notes = db_manager.get_tool_notes_and_doi(
+                selected_tool, mapped_source
+            )
+
+            if tool_notes and len(tool_notes) > 0:
+                notes = tool_notes[0].get("notes", get_text("no_notes", language))
+                links = tool_notes[0].get("links", "")
+                doi = tool_notes[0].get("doi", "")
+                if language != "es":
+                    notes = translate_database_content(notes, language)
+            else:
+                notes = get_text("no_notes", language)
+                links = ""
+                doi = ""
+
+            notes_components = parse_text_with_links(notes)
+
+            content = html.Div(
+                [
+                    html.Div(notes_components, style={"marginBottom": "10px"}),
+                    html.Span(
+                        get_text("source", language) + " ",
+                        style={"fontSize": "12px"},
+                    ),
+                    html.A(
+                        clicked_source,
+                        href=links,
+                        target="_blank",
+                        style={"fontSize": "12px"},
+                    )
+                    if links
+                    else html.Span(
+                        clicked_source, style={"fontSize": "12px"}
+                    ),
+                    html.Br() if doi else "",
+                    html.A(
+                        f"{get_text('doi', language)} {doi}",
+                        href=f"https://doi.org/{doi}",
+                        target="_blank",
+                        style={"fontSize": "12px"},
+                    )
+                    if doi
+                    else "",
+                ]
+            )
+            return True, content
+
+        return is_open, ""
 
     # Callback to toggle credits manually
     @app.callback(
