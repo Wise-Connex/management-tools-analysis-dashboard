@@ -1,41 +1,7 @@
 # Management Tools Analysis Dashboard
-# Root-level Dockerfile for Dokploy deployment
-# Multi-stage build to minimize disk usage and final image size
+# Single-stage build optimized for low-disk ARM64 servers (Dokploy)
+# All Python packages installed as pre-built binary wheels — no compiler needed.
 
-# ── Stage 1: Builder ─────────────────────────────────────────────
-FROM python:3.11-slim AS builder
-
-ENV PYTHONDONTWRITEBYTECODE=1
-
-# Minimal build deps — only gcc for packages that need C compilation.
-# gfortran and libopenblas-dev are NOT needed: heavy science packages
-# (numpy, scipy, etc.) are installed as pre-built binary wheels.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /build
-
-COPY dashboard_app/requirements.txt ./
-
-RUN pip install --upgrade pip
-
-# Install heavy science packages as binary-only wheels (no compilation needed)
-RUN pip install --no-cache-dir --only-binary=:all: \
-    "numpy>=1.26,<2.4" \
-    "pandas>=2.2,<2.4" \
-    "scipy>=1.13" \
-    "scikit-learn>=1.5" \
-    "statsmodels>=0.14,<0.15" \
-    "aiohttp>=3.10,<3.14"
-
-# Install remaining packages (Dash, plotly, etc.)
-RUN grep -vE "^(numpy|pandas|scipy|scikit.learn|statsmodels|aiohttp)==" requirements.txt \
-    > /tmp/req_filtered.txt && \
-    pip install --no-cache-dir --prefer-binary -r /tmp/req_filtered.txt
-
-# ── Stage 2: Runtime ─────────────────────────────────────────────
 FROM python:3.11-slim
 
 ENV PYTHONUNBUFFERED=1
@@ -43,16 +9,23 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV FLASK_ENV=production
 ENV DASH_DEBUG=false
 
-# Only runtime dependencies — curl for healthcheck
+# Runtime dependency only — curl for healthcheck
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy installed Python packages from builder
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
-
 WORKDIR /app
+
+# Copy requirements first for layer caching
+COPY dashboard_app/requirements.txt ./
+
+# Install all packages as binary wheels in a single step.
+# --only-binary=:all: ensures no source compilation (no gcc needed).
+# Strip hashes from uv-exported requirements to avoid platform mismatches.
+RUN sed 's/ *\\$//; /^[[:space:]]*--hash/d; /^[[:space:]]*#/d; /^$/d' requirements.txt \
+    > /tmp/req_clean.txt && \
+    pip install --no-cache-dir --only-binary=:all: -r /tmp/req_clean.txt && \
+    rm -f /tmp/req_clean.txt requirements.txt
 
 # Copy the full source code (respecting .dockerignore)
 COPY . .
