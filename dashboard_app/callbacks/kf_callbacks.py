@@ -234,18 +234,6 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                     language,
                 )
 
-            # Add metadata footer
-            modal_sections.append(
-                html.Div(
-                    html.Small(
-                        f"Modelo: {report.get('model_used', 'N/A')} | "
-                        f"Generado: {report.get('generated_at', 'N/A')}",
-                        className="text-muted",
-                    ),
-                    className="border-top pt-2 mt-3",
-                )
-            )
-
             final_body = html.Div(
                 modal_sections,
                 style={"maxHeight": "70vh", "overflowY": "auto"},
