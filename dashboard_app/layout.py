@@ -119,7 +119,7 @@ def create_sidebar():
                 style={
                     "overflowY": "auto",
                     "overflowX": "hidden",
-                    "height": "calc(100vh - 120px)",  # Reduced to make room for footer
+                    "height": "calc(100dvh - 120px)",
                     "paddingRight": "10px",
                 },
             ),
@@ -151,7 +151,7 @@ def create_sidebar():
                             "textAlign": "left",
                             "border": "none",
                             "backgroundColor": "transparent",
-                            "marginBottom": "5px",  # Move button 10px up
+                            "marginBottom": "5px",
                         },
                     ),
                     # Citation button
@@ -186,14 +186,14 @@ def create_sidebar():
                             id="credits-content",
                             style={
                                 "backgroundColor": "#f8f9fa",
-                                "padding": "8px 2px 12px 2px",  # 2px margins on sides
+                                "padding": "8px 2px 12px 2px",
                                 "borderTop": "1px solid #dee2e6",
                                 "marginTop": "5px",
-                                "width": "100%",  # Full width of container
+                                "width": "100%",
                             },
                         ),
                         id="credits-collapse",
-                        is_open=True,  # Default to expanded on page load
+                        is_open=True,
                     ),
                 ],
                 style={
@@ -202,14 +202,14 @@ def create_sidebar():
                     "left": 0,
                     "right": 0,
                     "backgroundColor": "#f3f4f6",
-                    "padding": "5px 2px 10px 2px",  # 2px margins on container
+                    "padding": "5px 2px 10px 2px",
                 },
             ),
         ],
         style={
             "backgroundColor": "#f3f4f6",
             "padding": "20px",
-            "height": "100vh",
+            "height": "100dvh",
             "position": "fixed",
             "width": "inherit",
             "display": "flex",
@@ -229,6 +229,24 @@ def create_header():
 
     header = html.Div(
         [
+            # Hamburger menu button — visible only on mobile (<992px)
+            html.Button(
+                html.I(className="fas fa-bars", style={"fontSize": "20px"}),
+                id="sidebar-toggle-btn",
+                className="d-lg-none sidebar-hamburger",
+                style={
+                    "background": "none",
+                    "border": "none",
+                    "color": "#495057",
+                    "padding": "5px 10px",
+                    "cursor": "pointer",
+                    "position": "absolute",
+                    "top": "10px",
+                    "left": "10px",
+                    "zIndex": 1001,
+                },
+                **{"n_clicks": 0},
+            ),
             # Language selector in top-right corner (flags with language codes)
             html.Div(
                 [
@@ -239,7 +257,7 @@ def create_header():
                                 "label": html.Div(
                                     [
                                         html.Span(
-                                            "🇪🇸",
+                                            "\U0001f1ea\U0001f1f8",
                                             style={
                                                 "fontSize": "16px",
                                                 "marginRight": "4px",
@@ -261,7 +279,7 @@ def create_header():
                                 "label": html.Div(
                                     [
                                         html.Span(
-                                            "🇺🇸",
+                                            "\U0001f1fa\U0001f1f8",
                                             style={
                                                 "fontSize": "16px",
                                                 "marginRight": "4px",
@@ -283,11 +301,11 @@ def create_header():
                         value="es",
                         clearable=False,
                         style={"width": "70px", "fontSize": "12px"},
-                        # Add defensive properties to handle extension conflicts
                         searchable=False,
                         multi=False,
                     )
                 ],
+                className="lang-selector-wrapper",
                 style={
                     "position": "absolute",
                     "top": "10px",
@@ -295,12 +313,12 @@ def create_header():
                     "zIndex": 1001,
                 },
             ),
-            # Text content on the right
+            # Text content
             html.Div(
                 [
-                    # Línea 1 (Subtítulo): Base analítica para la Investigación Doctoral
                     html.P(
                         id="header-subtitle",
+                        className="header-subtitle",
                         style={
                             "margin": "5px 0",
                             "fontSize": "14px",
@@ -309,9 +327,9 @@ def create_header():
                             "color": "#6c757d",
                         },
                     ),
-                    # Línea 2 (Título Principal): Herramientas gerenciales...
                     html.H3(
                         id="header-title",
+                        className="header-title",
                         style={
                             "margin": "8px 0",
                             "fontSize": "18px",
@@ -321,9 +339,9 @@ def create_header():
                             "lineHeight": "1.3",
                         },
                     ),
-                    # Línea 3 (Créditos): Investigador Principal...
                     html.P(
                         id="header-credits",
+                        className="header-credits-text",
                         style={
                             "margin": "5px 0",
                             "fontSize": "13px",
@@ -367,7 +385,7 @@ def create_notes_modal():
         ],
         id="notes-modal",
         size="lg",
-        centered=True,  # Position modal in vertical center of screen
+        centered=True,
     )
 
     return notes_modal
@@ -393,7 +411,6 @@ def create_key_findings_modal():
                         color="secondary",
                         className="me-2",
                     ),
-                    # Save button removed - no longer needed
                 ]
             ),
         ],
@@ -430,7 +447,7 @@ def create_citation_modal():
                         ],
                         id="download-current-ris",
                         href="",
-                        download="dashboard_citation.ris",  # This will be updated dynamically
+                        download="dashboard_citation.ris",
                         className="btn btn-success btn-sm",
                         style={"textDecoration": "none"},
                     ),
@@ -482,9 +499,22 @@ def create_layout():
 
     layout = dbc.Container(
         [
+            # Mobile sidebar backdrop overlay
+            html.Div(
+                id="sidebar-backdrop",
+                className="sidebar-backdrop",
+                n_clicks=0,
+            ),
             dbc.Row(
                 [
-                    dbc.Col([sidebar], width=2, className="bg-light"),
+                    # Sidebar: visible on desktop (lg+), hidden on mobile
+                    dbc.Col(
+                        [sidebar],
+                        id="sidebar-col",
+                        lg=2,
+                        className="bg-light d-none d-lg-block sidebar-column",
+                    ),
+                    # Main content: full width on mobile, 10/12 on desktop
                     dbc.Col(
                         [
                             header,
@@ -495,26 +525,28 @@ def create_layout():
                             dcc.Store(id="data-sources-store-v2", data=[]),
                             dcc.Store(
                                 id="language-store", data="es"
-                            ),  # Default to Spanish
+                            ),
                             dcc.Store(id="key-findings-button-state", data="idle"),
                             dcc.Store(
                                 id="key-findings-content-ready", data=False
-                            ),  # Store for content ready state
+                            ),
                             dcc.Store(
                                 id="key-findings-data-ready", data=None
-                            ),  # Store for modal report data
+                            ),
                             dcc.Store(
                                 id="current-url-store", data=""
-                            ),  # Store for current page URL
+                            ),
                             dcc.Store(
                                 id="react-warning-suppression", data=False
-                            ),  # Store for React warning suppression
+                            ),
                             dcc.Store(
                                 id="copy-store-citation", data=""
-                            ),  # Store for citation text to be copied
+                            ),
                             dcc.Store(
                                 id="copy-success", data=False
-                            ),  # Store for copy success status
+                            ),
+                            # Store to track sidebar open state on mobile
+                            dcc.Store(id="sidebar-open-store", data=False),
                             dcc.Loading(
                                 id="loading-main-content",
                                 type="circle",
@@ -523,7 +555,7 @@ def create_layout():
                                         id="main-content",
                                         className="w-100",
                                         style={
-                                            "height": "calc(100vh - 200px)",
+                                            "height": "calc(100dvh - 200px)",
                                             "overflowY": "auto",
                                             "overflowX": "hidden",
                                             "paddingRight": "10px",
@@ -531,26 +563,27 @@ def create_layout():
                                         },
                                     )
                                 ],
-                                style={"height": "calc(100vh - 200px)"},
+                                style={"height": "calc(100dvh - 200px)"},
                             ),
                         ],
-                        width=10,
-                        className="px-4",
-                        style={"height": "100vh", "overflow": "hidden"},
+                        lg=10,
+                        xs=12,
+                        className="px-4 main-content-col",
+                        style={"height": "100dvh", "overflow": "hidden"},
                     ),
                 ],
-                style={"height": "100vh"},
+                className="gx-0",
+                style={"height": "100dvh"},
             ),
             notes_modal,
             create_key_findings_modal(),
             create_citation_modal(),
             create_copy_toast(),
-            # Hidden store for citation text to be copied by JavaScript
             dcc.Store(id="copy-store", data=""),
         ],
         fluid=True,
         className="px-0",
-        style={"height": "100vh"},
+        style={"height": "100dvh"},
     )
 
     return layout

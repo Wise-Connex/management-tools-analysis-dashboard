@@ -953,3 +953,32 @@ ER  - """
         # This would need to be implemented as a proper download endpoint
         # For now, return empty string or placeholder
         return "#"  # Placeholder - would need actual implementation
+
+    # ---- Mobile sidebar toggle callbacks ----
+
+    app.clientside_callback(
+        """
+        function(toggleClicks, backdropClicks, sidebarCol) {
+            // Get the sidebar column element
+            var col = document.getElementById('sidebar-col');
+            var backdrop = document.getElementById('sidebar-backdrop');
+            if (!col || !backdrop) return window.dash_clientside.no_update;
+
+            // Determine if we should open or close
+            var isOpen = col.classList.contains('sidebar-mobile-open');
+
+            if (isOpen) {
+                col.classList.remove('sidebar-mobile-open');
+                backdrop.classList.remove('active');
+            } else {
+                col.classList.add('sidebar-mobile-open');
+                backdrop.classList.add('active');
+            }
+            return window.dash_clientside.no_update;
+        }
+        """,
+        Output("sidebar-open-store", "data"),
+        Input("sidebar-toggle-btn", "n_clicks"),
+        Input("sidebar-backdrop", "n_clicks"),
+        prevent_initial_call=True,
+    )

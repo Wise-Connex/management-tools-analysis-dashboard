@@ -304,6 +304,7 @@ app.index_string = """
 <html>
     <head>
         {%metas%}
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <title>{%title%}</title>
         {%favicon%}
         {%css%}
@@ -434,6 +435,124 @@ app.index_string = """
                 }
                 100% {
                     transform: scale(1);
+                }
+            }
+
+            /* ===== RESPONSIVE: Mobile sidebar drawer ===== */
+
+            /* Backdrop overlay for mobile sidebar */
+            .sidebar-backdrop {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 1040;
+            }
+            .sidebar-backdrop.active {
+                display: block;
+            }
+
+            /* Mobile (<992px): sidebar becomes a sliding drawer */
+            @media (max-width: 991.98px) {
+                /* Override Bootstrap d-none to allow our toggle */
+                .sidebar-column.sidebar-mobile-open {
+                    display: block !important;
+                    position: fixed !important;
+                    top: 0;
+                    left: 0;
+                    width: 280px !important;
+                    max-width: 80vw;
+                    height: 100dvh !important;
+                    z-index: 1050;
+                    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
+                    animation: slideIn 0.25s ease-out;
+                    overflow-y: auto;
+                }
+
+                @keyframes slideIn {
+                    from { transform: translateX(-100%); }
+                    to { transform: translateX(0); }
+                }
+
+                /* Fix sidebar inner div width when in drawer mode */
+                .sidebar-column.sidebar-mobile-open > div {
+                    width: 100% !important;
+                    position: relative !important;
+                }
+
+                /* Header: compact on mobile */
+                .header-subtitle {
+                    font-size: 11px !important;
+                    margin: 2px 0 !important;
+                }
+                .header-title {
+                    font-size: 14px !important;
+                    margin: 4px 0 !important;
+                    padding: 0 35px; /* space for hamburger + lang selector */
+                }
+                .header-credits-text {
+                    font-size: 10px !important;
+                    margin: 2px 0 !important;
+                }
+
+                /* Main content: adjust height for compact header */
+                .main-content-col {
+                    padding-left: 10px !important;
+                    padding-right: 10px !important;
+                }
+
+                /* Plotly charts: ensure full width */
+                .js-plotly-plot, .plotly {
+                    width: 100% !important;
+                }
+
+                /* Tables: horizontal scroll */
+                .dash-table-container {
+                    overflow-x: auto !important;
+                    -webkit-overflow-scrolling: touch;
+                }
+
+                /* Section spacing: reduce on mobile */
+                #section-mean-analysis {
+                    min-height: 400px !important;
+                    margin-bottom: 20px !important;
+                }
+                #section-temporal-3d {
+                    margin-top: 30px !important;
+                    min-height: 400px !important;
+                }
+
+                /* Modal: full width on mobile */
+                .modal-dialog {
+                    margin: 10px !important;
+                    max-width: calc(100vw - 20px) !important;
+                }
+                .modal-title {
+                    font-size: 16px !important;
+                }
+            }
+
+            /* Extra small phones (<576px) */
+            @media (max-width: 575.98px) {
+                .header-subtitle {
+                    display: none !important; /* hide subtitle on very small screens */
+                }
+                .header-title {
+                    font-size: 12px !important;
+                }
+                .header-credits-text {
+                    font-size: 9px !important;
+                }
+                .lang-selector-wrapper {
+                    top: 5px !important;
+                    right: 5px !important;
+                }
+                .sidebar-hamburger {
+                    top: 5px !important;
+                    left: 5px !important;
                 }
             }
         </style>
