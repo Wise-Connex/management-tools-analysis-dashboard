@@ -416,7 +416,7 @@ def create_key_findings_modal():
                         id="export-pdf-link",
                         href="",
                         download="key_findings.pdf",
-                        className="btn btn-success btn-sm me-2",
+                        className="btn btn-success me-2 d-flex align-items-center",
                         style={"textDecoration": "none", "display": "none"},
                     ),
                     dbc.Button(
