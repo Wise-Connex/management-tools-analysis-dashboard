@@ -254,28 +254,118 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
 
     # ---- PDF export callback ----
 
-    def _strip_markdown(text: str) -> str:
-        """Strip markdown formatting to plain text for PDF rendering."""
-        # Remove headers (## Header)
-        text = re.sub(r"^#{1,6}\s+", "", text, flags=re.MULTILINE)
-        # Bold **text** or __text__
-        text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
-        text = re.sub(r"__(.+?)__", r"\1", text)
-        # Italic *text* or _text_
-        text = re.sub(r"\*(.+?)\*", r"\1", text)
-        text = re.sub(r"(?<!\w)_(.+?)_(?!\w)", r"\1", text)
+    def _clean_markdown_line(text: str) -> str:
+        """Clean a single line of markdown, preserving **bold** for fpdf2."""
         # Inline code `code`
         text = re.sub(r"`(.+?)`", r"\1", text)
         # Links [text](url) -> text
         text = re.sub(r"\[(.+?)\]\(.+?\)", r"\1", text)
-        # Horizontal rules
-        text = re.sub(r"^[-*_]{3,}\s*$", "", text, flags=re.MULTILINE)
-        # Clean up bullet points: - item or * item -> bullet (use hyphen, Latin-1 safe)
-        text = re.sub(r"^\s*[-*+]\s+", "  - ", text, flags=re.MULTILINE)
-        # Numbered lists: keep as-is
-        # Remove excess blank lines
-        text = re.sub(r"\n{3,}", "\n\n", text)
-        return text.strip()
+        # Italic *text* (single asterisk only, not double)
+        text = re.sub(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", r"\1", text)
+        text = re.sub(r"(?<!\w)_(.+?)_(?!\w)", r"\1", text)
+        return text
+
+    def _render_section_content(pdf, content):
+        """Render section content with sub-heading and bold formatting."""
+        lines = content.split("\n")
+        i = 0
+        while i < len(lines):
+            line = lines[i].rstrip()
+
+            # Skip blank lines
+            if not line.strip():
+                i += 1
+                continue
+
+            # Horizontal rules -> skip
+            if re.match(r"^[-*_]{3,}\s*$", line):
+                i += 1
+                continue
+
+            # Sub-heading (## or ### etc.)
+            heading_match = re.match(r"^#{1,6}\s+(.+)$", line)
+            if heading_match:
+                title = heading_match.group(1).strip()
+                # Strip bold markers from heading text
+                title = re.sub(r"\*\*(.+?)\*\*", r"\1", title)
+                title = _sanitize_for_latin1(title)
+                pdf.ln(3)
+                pdf.set_font("Helvetica", "B", 11)
+                pdf.set_text_color(33, 37, 41)
+                pdf.cell(0, 6, title, new_x="LMARGIN", new_y="NEXT")
+                pdf.ln(1)
+                i += 1
+                continue
+
+            # Bold-only line (acts as sub-heading): **Some Title**
+            bold_line_match = re.match(r"^\*\*(.+?)\*\*\s*$", line.strip())
+            if bold_line_match:
+                title = bold_line_match.group(1).strip()
+                title = _sanitize_for_latin1(title)
+                pdf.ln(2)
+                pdf.set_font("Helvetica", "B", 10)
+                pdf.set_text_color(33, 37, 41)
+                pdf.cell(0, 6, title, new_x="LMARGIN", new_y="NEXT")
+                pdf.ln(1)
+                pdf.set_font("Helvetica", "", 10)
+                pdf.set_text_color(73, 80, 87)
+                i += 1
+                continue
+
+            # Numbered list item (1. text)
+            num_match = re.match(r"^(\d+\.)\s+(.+)$", line)
+            if num_match:
+                cleaned = _clean_markdown_line(line)
+                cleaned = _sanitize_for_latin1(cleaned)
+                pdf.set_x(pdf.l_margin)
+                pdf.set_font("Helvetica", "", 10)
+                pdf.set_text_color(73, 80, 87)
+                pdf.multi_cell(0, 5, cleaned, markdown=True)
+                i += 1
+                continue
+
+            # Bullet point
+            bullet_match = re.match(r"^\s*[-*+]\s+(.+)$", line)
+            if bullet_match:
+                cleaned = _clean_markdown_line(bullet_match.group(1))
+                cleaned = _sanitize_for_latin1(cleaned)
+                pdf.set_x(pdf.l_margin)
+                pdf.set_font("Helvetica", "", 10)
+                pdf.set_text_color(73, 80, 87)
+                pdf.multi_cell(0, 5, f"  - {cleaned}", markdown=True)
+                i += 1
+                continue
+
+            # Regular paragraph: collect consecutive non-blank, non-special lines
+            para_lines = []
+            while i < len(lines):
+                ln = lines[i].rstrip()
+                if not ln.strip():
+                    break
+                if re.match(r"^#{1,6}\s+", ln):
+                    break
+                if re.match(r"^\*\*(.+?)\*\*\s*$", ln.strip()):
+                    break
+                if re.match(r"^[-*_]{3,}\s*$", ln):
+                    break
+                if re.match(r"^\s*[-*+]\s+", ln):
+                    break
+                if re.match(r"^\d+\.\s+", ln):
+                    break
+                para_lines.append(ln)
+                i += 1
+            if para_lines:
+                para = " ".join(para_lines)
+                para = _clean_markdown_line(para)
+                para = _sanitize_for_latin1(para)
+                pdf.set_x(pdf.l_margin)
+                pdf.set_font("Helvetica", "", 10)
+                pdf.set_text_color(73, 80, 87)
+                pdf.multi_cell(0, 5, para, markdown=True)
+                pdf.ln(2)
+                continue
+
+            i += 1
 
     def _sanitize_for_latin1(text: str) -> str:
         """Replace non-Latin-1 characters with ASCII equivalents for PDF rendering.
@@ -334,11 +424,42 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                 pass  # skip unsupported characters
         return "".join(result).strip()
 
+    # Source abbreviation mapping for filenames (display name -> abbreviation)
+    _SOURCE_ABBREV = {
+        "Google Trends": "GT",
+        "Google Books": "GB",
+        "Bain Usability": "BU",
+        "Bain Satisfaction": "BS",
+        "Crossref": "CR",
+    }
+
+    def _abbreviate_sources(source_names):
+        """Build abbreviated source string for filenames, e.g. 'GT-GB-CR'."""
+        abbrevs = []
+        for src in sorted(source_names):
+            abbrev = _SOURCE_ABBREV.get(src, src[:2].upper())
+            if abbrev not in abbrevs:
+                abbrevs.append(abbrev)
+        return "-".join(abbrevs)
+
     def _generate_pdf(report, tool_name, sources_text, language):
         """Generate a PDF from the report data using fpdf2."""
         from fpdf import FPDF
 
-        pdf = FPDF(orientation="P", unit="mm", format="A4")
+        class FindingsPDF(FPDF):
+            """FPDF subclass with proper footer rendering on every page."""
+
+            def footer(self):
+                self.set_y(-15)
+                self.set_font("Helvetica", "I", 8)
+                self.set_text_color(150, 150, 150)
+                self.cell(0, 5, f"Page {self.page_no()}/{{nb}}",
+                          align="L")
+                self.set_x(self.l_margin)
+                self.cell(0, 5, "tempo.solidum360.com", align="R")
+
+        pdf = FindingsPDF(orientation="P", unit="mm", format="A4")
+        pdf.alias_nb_pages()
         pdf.set_auto_page_break(auto=True, margin=20)
         pdf.set_margins(left=20, top=20, right=20)
 
@@ -375,7 +496,9 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
         pdf.set_font("Helvetica", "B", 11)
         pdf.set_text_color(33, 37, 41)
 
-        tool_display = get_tool_name(tool_name, language) or tool_name
+        tool_display = _sanitize_for_latin1(
+            get_tool_name(tool_name, language) or tool_name
+        )
         pdf.cell(35, 7, f"{tool_label}:", new_x="END", new_y="TOP")
         pdf.set_font("Helvetica", "", 11)
         pdf.cell(0, 7, tool_display, new_x="LMARGIN", new_y="NEXT")
@@ -383,7 +506,9 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
         pdf.set_font("Helvetica", "B", 11)
         pdf.cell(35, 7, f"{sources_label}:", new_x="END", new_y="TOP")
         pdf.set_font("Helvetica", "", 11)
-        pdf.multi_cell(0, 7, sources_text)
+        pdf.multi_cell(0, 7, _sanitize_for_latin1(sources_text))
+        # Reset x to left margin after multi_cell (it leaves cursor at end of last line)
+        pdf.set_x(pdf.l_margin)
 
         pdf.set_font("Helvetica", "B", 11)
         pdf.cell(35, 7, f"{authors_label}:", new_x="END", new_y="TOP")
@@ -414,7 +539,6 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
                 continue
 
             content = _extract_lang_content(content, lang_key)
-            clean_content = _strip_markdown(content)
 
             # Section title (sanitized for Latin-1)
             section_title = _sanitize_for_latin1(section["title"])
@@ -428,23 +552,9 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
             pdf.line(20, pdf.get_y(), 190, pdf.get_y())
             pdf.ln(4)
 
-            # Section content (sanitized for Latin-1)
-            clean_content = _sanitize_for_latin1(clean_content)
-            pdf.set_font("Helvetica", "", 10)
-            pdf.set_text_color(73, 80, 87)
-            pdf.multi_cell(0, 5, clean_content)
+            # Section content with formatted sub-headings
+            _render_section_content(pdf, content)
             pdf.ln(4)
-
-        # ---- Footer on every page ----
-        total_pages = pdf.page
-        for page_num in range(1, total_pages + 1):
-            pdf.page = page_num
-            pdf.set_y(-15)
-            pdf.set_font("Helvetica", "I", 8)
-            pdf.set_text_color(150, 150, 150)
-            pdf.cell(0, 5, f"Page {page_num}/{total_pages}", align="L")
-            pdf.cell(0, 5, "tempo.solidum360.com", align="R",
-                     new_x="LMARGIN", new_y="TOP")
 
         # Output as bytes
         buf = io.BytesIO()
@@ -503,13 +613,14 @@ def register_kf_callbacks(app, key_findings_service, KEY_FINDINGS_AVAILABLE):
             pdf_b64 = base64.b64encode(pdf_bytes).decode("utf-8")
             data_uri = f"data:application/pdf;base64,{pdf_b64}"
 
-            # Filename
+            # Filename with tool + abbreviated sources
             tool_clean = re.sub(r"[^\w]", "_", selected_tool)
+            sources_abbrev = _abbreviate_sources(source_names)
             ts = datetime.now().strftime("%Y%m%d")
             if language == "es":
-                filename = f"Hallazgos_{tool_clean}_{ts}.pdf"
+                filename = f"Hallazgos_{tool_clean}_{sources_abbrev}_{ts}.pdf"
             else:
-                filename = f"KeyFindings_{tool_clean}_{ts}.pdf"
+                filename = f"KeyFindings_{tool_clean}_{sources_abbrev}_{ts}.pdf"
 
             return data_uri, filename, visible, btn_text
 
