@@ -244,6 +244,7 @@ TRANSLATIONS = {
         "optimized": "Optimizado",
         "average_compression": "85% promedio",
         # Key Findings Modal - Spanish
+        "export_pdf_button": "Exportar PDF",
         "key_findings_modal_title": "🧠 Hallazgos Principales",
         "generating_analysis": "Generando análisis...",
         "may_take_30_seconds": "Esto puede tomar hasta 30 segundos...",
@@ -538,6 +539,7 @@ TRANSLATIONS = {
         "optimized": "Optimized",
         "average_compression": "85% average",
         # Key Findings Modal - English
+        "export_pdf_button": "Export PDF",
         "key_findings_modal_title": "🧠 Principal Findings",
         "generating_analysis": "Generating analysis...",
         "may_take_30_seconds": "This may take up to 30 seconds...",

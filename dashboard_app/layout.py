@@ -405,6 +405,20 @@ def create_key_findings_modal():
             dbc.ModalBody(id="key-findings-modal-body"),
             dbc.ModalFooter(
                 [
+                    html.A(
+                        [
+                            html.I(
+                                className="fas fa-file-pdf",
+                                style={"marginRight": "5px"},
+                            ),
+                            html.Span(id="export-pdf-text"),
+                        ],
+                        id="export-pdf-link",
+                        href="",
+                        download="key_findings.pdf",
+                        className="btn btn-success btn-sm me-2",
+                        style={"textDecoration": "none", "display": "none"},
+                    ),
                     dbc.Button(
                         "Cerrar",
                         id="close-key-findings-modal",
