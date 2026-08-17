@@ -2,6 +2,7 @@ import dash
 from dash import html, dcc, dash_table
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State, ALL
+from flask_compress import Compress
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
@@ -268,6 +269,11 @@ except KeyError:
 
 # Get the underlying Flask server for production deployment
 server = app.server
+
+# Enable gzip/brotli compression for all responses (assets, CSS, JS, JSON).
+# Plotly.js is 4.83 MB uncompressed; with gzip it drops to ~1 MB.
+# On slow networks (~20-100 KB/s), this cuts load time from 44s to ~10s.
+Compress(server)
 
 
 # Add health check endpoint for Dokploy monitoring
