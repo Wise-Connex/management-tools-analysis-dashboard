@@ -235,6 +235,10 @@ app = dash.Dash(
     title="Management Tools Analysis Dashboard - " + str(time.time()),
     update_title=None,  # Suppress title updates to reduce console noise
 )
+# Serve plotly.js locally (no CDN, no 30s timeout on slow networks).
+# Dash 3.x removed the public `plotlyjs_url` kwarg; the internal field
+# `_plotlyjs_url` is used in the served config (see dash/dash.py:_config).
+app._plotlyjs_url = "assets/plotly.min.js"
 
 # Suppress React warnings in development mode
 try:
