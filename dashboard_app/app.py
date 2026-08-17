@@ -277,14 +277,17 @@ server = app.server
 Compress(server)
 
 
-# Long-lived cache for versioned assets (assets served with ?m=timestamp query).
-# These URLs change on every deploy, so the browser cache is safe forever.
+# Long-lived cache for versioned assets.
+# Dash adds ?m=<mtime> query params to /assets/ and ?m=<fingerprint>
+# to /_dash-component-suites/, so URLs change on every rebuild.
 # Without this, the browser re-downloads plotly.js (1.4 MB) on every visit.
 @app.server.after_request
 def add_cache_headers(response):
-    if request.path.startswith("/assets/"):
+    if request.path.startswith("/assets/") or request.path.startswith(
+        "/_dash-component-suites/"
+    ):
         # Replace whatever flask-compress/Flask added with a clean, aggressive
-        # cache policy. Versioned asset URLs are immutable.
+        # cache policy. Versioned URLs are immutable.
         response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
     return response
 
