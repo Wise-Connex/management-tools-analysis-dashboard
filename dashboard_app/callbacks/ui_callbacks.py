@@ -87,8 +87,7 @@ def register_ui_callbacks(app):
         affiliations = html.Div(
             [
                 html.Img(
-                    id="tempoloop-logo",
-                    src="",  # Empty initially; populated by clientside callback
+                    src="/assets/TempoLoop.webp",
                     alt="Tempo Logo",
                     style={
                         "width": "100%",
@@ -96,7 +95,6 @@ def register_ui_callbacks(app):
                         "display": "block",
                         "objectFit": "contain",
                         "borderRadius": "8px",
-                        "minHeight": "112px",  # Reserve space to avoid layout shift
                     },
                 ),
             ],
@@ -985,28 +983,9 @@ ER  - """
         prevent_initial_call=True,
     )
 
-    # ---- Lazy-load TempoLoop logo on idle / first interaction ----
-    # Saves ~10s on diomarmbp cold start by deferring the 196 KB WebP
-    # until the browser is idle or the user interacts.
-    app.clientside_callback(
-        """
-        function(_) {
-            // Use requestIdleCallback if available, fallback to setTimeout
-            var schedule = window.requestIdleCallback || function(cb) {
-                return setTimeout(cb, 1500);
-            };
-            return new Promise(function(resolve) {
-                schedule(function() {
-                    var img = document.getElementById('tempoloop-logo');
-                    if (img && !img.src) {
-                        img.src = '/assets/TempoLoop.webp';
-                    }
-                    resolve(window.dash_clientside.no_update);
-                });
-            });
-        }
-        """,
-        Output("tempoloop-logo", "src"),
-        Input("language-store", "data"),  # Fires once when language is set
-        prevent_initial_call=True,
-    )
+    # NOTE: TempoLoop lazy-load was removed. The clientside_callback
+    # approach (using Input("tempoloop-logo", "id")) never fired
+    # because the id doesn't change after the component is created.
+    # The 196 KB WebP loads with the initial render. Acceptable since
+    # it's now brotli-compressed, properly cached, and not the
+    # critical path.
