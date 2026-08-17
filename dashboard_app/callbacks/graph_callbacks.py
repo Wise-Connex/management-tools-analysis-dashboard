@@ -1072,7 +1072,7 @@ def register_heatmap_click_callback(app):
             Input("data-sources-store-v2", "data"),
             Input("language-store", "data"),
         ],
-        prevent_initial_call=False,
+        prevent_initial_call=True,
     )
     def update_regression_from_heatmap(
         click_data, selected_keyword, selected_sources, language

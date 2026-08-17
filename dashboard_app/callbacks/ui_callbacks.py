@@ -89,6 +89,7 @@ def register_ui_callbacks(app):
                 html.Img(
                     src="/assets/TempoLoop.webp",
                     alt="Tempo Logo",
+                    loading="lazy",
                     style={
                         "width": "100%",
                         "height": "auto",
@@ -546,7 +547,8 @@ def register_ui_callbacks(app):
                 [
                     html.A(
                         html.Img(
-                            src="assets/LogoSolidumBUSINESS.png",
+                            src="assets/LogoSolidumBUSINESS.webp",
+                            loading="lazy",
                             style={
                                 "height": "34px",
                                 "width": "auto",
@@ -560,7 +562,8 @@ def register_ui_callbacks(app):
                     ),
                     html.A(
                         html.Img(
-                            src="assets/WC-Logo-SQ.png",
+                            src="assets/WC-Logo-SQ.webp",
+                            loading="lazy",
                             style={
                                 "height": "34px",
                                 "width": "auto",

@@ -2,6 +2,7 @@ import dash
 from dash import html, dcc, dash_table
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State, ALL
+from flask import request
 from flask_compress import Compress
 import pandas as pd
 import numpy as np
@@ -276,6 +277,18 @@ server = app.server
 Compress(server)
 
 
+# Long-lived cache for versioned assets (assets served with ?m=timestamp query).
+# These URLs change on every deploy, so the browser cache is safe forever.
+# Without this, the browser re-downloads plotly.js (1.4 MB) on every visit.
+@app.server.after_request
+def add_cache_headers(response):
+    if request.path.startswith("/assets/"):
+        # Replace whatever flask-compress/Flask added with a clean, aggressive
+        # cache policy. Versioned asset URLs are immutable.
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    return response
+
+
 # Add health check endpoint for Dokploy monitoring
 @server.route("/health")
 def health_check():
@@ -318,6 +331,7 @@ app.index_string = """
         <title>{%title%}</title>
         {%favicon%}
         {%css%}
+        <link rel="preload" href="assets/plotly.min.js" as="script">
         <link rel="stylesheet" href="assets/font-awesome/css/all.min.css">
         <style>
             .nav-link:hover {
