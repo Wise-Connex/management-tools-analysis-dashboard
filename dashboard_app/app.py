@@ -312,7 +312,7 @@ app.index_string = """
         <title>{%title%}</title>
         {%favicon%}
         {%css%}
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+        <link rel="stylesheet" href="assets/font-awesome.all.min.css">
         <style>
             .nav-link:hover {
                 background-color: #e9ecef !important;
