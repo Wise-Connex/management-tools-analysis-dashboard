@@ -87,7 +87,7 @@ def register_ui_callbacks(app):
         affiliations = html.Div(
             [
                 html.Img(
-                    src="/assets/TempoLoop.gif",
+                    src="/assets/TempoLoop.webp",
                     alt="Tempo Logo",
                     style={
                         "width": "100%",
