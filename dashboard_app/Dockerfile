@@ -34,6 +34,10 @@ RUN pip install uv
 # Install Python dependencies using uv
 RUN uv pip install --system -r requirements.txt
 
+# Remove @babel/polyfill from Dash (saves ~36 KB per page load).
+# Patch is in scripts/patch_dash_no_polyfill.py and is idempotent.
+RUN python scripts/patch_dash_no_polyfill.py
+
 # Copy application code
 COPY . .
 
