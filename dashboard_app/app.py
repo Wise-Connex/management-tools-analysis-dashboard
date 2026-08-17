@@ -331,7 +331,6 @@ app.index_string = """
         <title>{%title%}</title>
         {%favicon%}
         {%css%}
-        <link rel="preload" href="assets/plotly.min.js" as="script">
         <link rel="stylesheet" href="assets/font-awesome/css/all.min.css">
         <style>
             .nav-link:hover {
