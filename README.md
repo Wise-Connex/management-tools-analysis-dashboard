@@ -677,7 +677,7 @@ This project is part of doctoral research on management tools analysis. See LICE
 ## 🙏 Acknowledgments
 
 - **Principal Investigator**: Diomar Añez (ORCID: 0000-0002-7925-5078)
-- **Academic Tutor**: Dra. Elizabeth Pereira (ULAC)
+- **Academic Tutor**: Universidad Latinoamericana y del Caribe (ULAC)
 - **Institution**: Solidum Consulting / Wise Connex
 - **Data Sources**: Google Trends, Google Books, Bain & Company, Crossref
 
